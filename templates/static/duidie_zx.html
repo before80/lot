@@ -1,0 +1,62 @@
+{{block "duidie_zx" .}}
+<div id="main{{.Xuhao}}" style="height:1200px;"></div>
+<script type="text/javascript">
+  // 基于准备好的dom，初始化echarts实例
+  var myChart = echarts.init(document.getElementById('main{{.Xuhao}}'));
+
+  // 指定图表的配置项和数据
+  var option = {
+    title: {
+      text: '设备{{.EqNum}}-{{.FB}}-{{.Type}}-间隔{{.Interval}}',
+    },
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data: [{{range $el := .Legends}} "{{$el}}", {{end}}],
+      selected:{ {{range $el := .Legends}} "{{$el}}":true, {{end}} },
+      selectedMode: true,
+      top: "5%",
+  },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {}
+      }
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: [{{range $element := .X}}"{{$element}}",{{end}}],
+      axisLabel: {
+          rotate: 60
+      }
+    },
+    yAxis: {
+      type: 'value',
+      nameLocation: "middle",
+      interval: {{.Interval}},
+      startValue: 0
+    },
+    series: [
+      {{range $idx, $element := .Legends}}
+      {
+          name: '{{$element}}',
+          type: 'line',
+          smooth: true,
+          // stack: 'Total',
+          data: [{{range $element2 := (index $.Ys $idx)}}"{{$element2}}", {{end}}]
+      },
+      {{end}}
+    ]
+  };
+
+  // 使用刚指定的配置项和数据显示图表。
+  myChart.setOption(option);
+</script>
+{{end}}

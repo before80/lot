@@ -1,0 +1,6 @@
+logs/*
+all/*
+*.log
+*.tmp
+*.exe
+.idea/*
