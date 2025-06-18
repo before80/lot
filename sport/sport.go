@@ -267,7 +267,7 @@ func getLotteryHistory(gameNo, pageSize, pageNo int, startTerm, endTerm string) 
 	if err != nil {
 		panic(fmt.Sprintf("解析%s返回结果，遇到错误：%v\n", url, err))
 	}
-	fmt.Printf("已完成第%d页（%d） %s~%s\n", pageNo, lotteryData.Value.Pages, startTerm, endTerm)
+	fmt.Printf("已完成第%d页（总页数为%d） %s~%s\n", pageNo, lotteryData.Value.Pages, startTerm, endTerm)
 	return
 }
 
@@ -296,7 +296,7 @@ func GetSomeDltFromWeb(lastDlt models.Dlt, endTerm string) (dlts []models.Dlt, e
 			startDrawNum = lastDlt.DrawNum
 		}
 		ld := GetLotteryHistory(85, 100, 1, 10, startDrawNum, endTerm)
-		fmt.Printf("%v\n", len(ld))
+		//fmt.Printf("%v\n", len(ld))
 		//fmt.Printf("%v\n", ld)
 		//fmt.Printf("%v\n", GenCrossTermYears("07001", "25053", 5))
 		var parseErr error
