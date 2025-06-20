@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>大乐透历史开奖结果</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#FF7D00',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129',
+                        light: '#FFFFFF',
+                        'blue-ball': '#165DFF',
+                        'yellow-ball': '#FFD166',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+
+            .ball {
+                @apply inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm mx-0.5 transition-all duration-300 transform hover:scale-110;
+            }
+
+            .blue-ball {
+                @apply ball bg-blue-ball shadow-lg shadow-blue-200;
+            }
+
+            .yellow-ball {
+                @apply ball bg-yellow-ball text-dark shadow-lg shadow-yellow-200;
+            }
+
+            .random-blue {
+                @apply inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm mx-0.5 bg-blue-100 text-blue-800 shadow-md transition-all duration-300 transform hover:scale-110;
+            }
+
+            .random-yellow {
+                @apply inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm mx-0.5 bg-yellow-100 text-yellow-800 shadow-md transition-all duration-300 transform hover:scale-110;
+            }
+
+            .table-hover-row {
+                @apply transition-all duration-200 hover:bg-blue-50;
+            }
+
+            .search-container {
+                @apply bg-white rounded-xl shadow-md p-4 mb-6 transition-all duration-300 hover:shadow-lg;
+            }
+
+            .result-card {
+                @apply bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl;
+            }
+
+            .table-header {
+                @apply bg-primary text-white font-bold py-3 px-4 transition-all duration-200 hover:bg-primary/90;
+            }
+
+            .pagination-btn {
+                @apply px-4 py-2 rounded-md transition-all duration-200 hover:bg-primary hover:text-white;
+            }
+
+            .active-page {
+                @apply bg-primary text-white;
+            }
+
+            .modal {
+                @apply fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300;
+            }
+
+            .modal.active {
+                @apply opacity-100 pointer-events-auto;
+            }
+
+            .modal-content {
+                @apply bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform scale-95 transition-transform duration-300;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+
+            .modal.active .modal-content {
+                @apply scale-100;
+            }
+
+            .modal-header {
+                @apply flex justify-between items-center p-4 border-b border-gray-200 cursor-move;
+            }
+
+            .modal-body {
+                @apply flex-grow overflow-hidden;
+            }
+
+            .modal-footer {
+                @apply p-4 border-t border-gray-200 flex justify-end;
+            }
+
+            .pdf-container {
+                @apply w-full h-full relative;
+            }
+
+            .pdf-loading {
+                @apply absolute inset-0 flex items-center justify-center bg-white z-10;
+            }
+
+            .pdf-iframe {
+                @apply w-full h-full border-0;
+            }
+
+            .resizer {
+                position: absolute;
+                background-color: #e2e8f0;
+                opacity: 0;
+                transition: opacity 0.2s;
+                z-indeX: 10;
+            }
+
+            .resizer:hover {
+                opacity: 1;
+            }
+
+            .resizer-n {
+                top: 0;
+                left: 0;
+                height: 5px;
+                width: 100%;
+                cursor: n-resize;
+            }
+
+            .resizer-s {
+                bottom: 0;
+                left: 0;
+                height: 5px;
+                width: 100%;
+                cursor: s-resize;
+            }
+
+            .resizer-e {
+                top: 0;
+                right: 0;
+                height: 100%;
+                width: 5px;
+                cursor: e-resize;
+            }
+
+            .resizer-w {
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 5px;
+                cursor: w-resize;
+            }
+
+            .resizer-ne {
+                top: 0;
+                right: 0;
+                height: 10px;
+                width: 10px;
+                cursor: ne-resize;
+            }
+
+            .resizer-nw {
+                top: 0;
+                left: 0;
+                height: 10px;
+                width: 10px;
+                cursor: nw-resize;
+            }
+
+            .resizer-se {
+                bottom: 0;
+                right: 0;
+                height: 10px;
+                width: 10px;
+                cursor: se-resize;
+            }
+
+            .resizer-sw {
+                bottom: 0;
+                left: 0;
+                height: 10px;
+                width: 10px;
+                cursor: sw-resize;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-neutral font-inter min-h-screen flex flex-col overflow-hidden">
+<header class="bg-white shadow-sm py-4 px-6">
+    <div class="mx-auto flex justify-between items-center px-4">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-trophy text-primary text-2xl"></i>
+            <h1 class="text-xl font-bold text-dark">大乐透历史开奖结果</h1>
+        </div>
+        <div class="flex items-center">
+            <a href="#" id="refreshButton"
+               class="text-primary hover:text-primary/80 transition-colors duration-200 flex items-center">
+                <i class="fa-solid fa-refresh mr-1"></i>
+                <span>刷新数据</span>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="flex-grow w-full px-4 py-8 flex flex-col">
+    <div class="search-container mx-auto w-full">
+        <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div class="flex flex-col md:flex-row gap-4 w-full">
+                <div class="w-full md:w-1/3">
+                    <label for="parityFilter" class="block text-sm font-medium text-gray-700 mb-1">奇偶性筛选</label>
+                    <select id="parityFilter"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200">
+                        <option value="">全部</option>
+                        <option value="0奇7偶">0奇7偶</option>
+                        <option value="1奇6偶">1奇6偶</option>
+                        <option value="2奇5偶">2奇5偶</option>
+                        <option value="3奇4偶">3奇4偶</option>
+                        <option value="4奇3偶">4奇3偶</option>
+                        <option value="5奇2偶">5奇2偶</option>
+                        <option value="6奇1偶">6奇1偶</option>
+                        <option value="7奇0偶">7奇0偶</option>
+                    </select>
+                </div>
+                <div class="w-full md:w-2/3">
+                    <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">搜索</label>
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="输入关键词搜索..."
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">共 <span id="totalResults"
+                                                             class="font-semibold text-primary">0</span> 条结果</span>
+                <button id="resetFilters"
+                        class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-200 flex items-center">
+                    <i class="fa-solid fa-refresh mr-1"></i>
+                    <span>重置</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-card mx-auto w-full flex-grow flex flex-col">
+        <div class="overflow-x-auto w-full flex-grow">
+            <div class="relative h-full">
+                <table class="min-w-full divide-y divide-gray-200 w-full">
+                    <thead class="sticky top-0 z-10">
+                    <tr>
+                        <th class="table-header">期号</th>
+                        <th class="table-header">开奖日期</th>
+                        <th class="table-header">开奖结果</th>
+                        <th class="table-header">乱序开奖号码</th>
+                        <th class="table-header">一等奖 - 基本注数</th>
+                        <th class="table-header">一等奖 - 基本奖金(元)</th>
+                        <th class="table-header">一等奖 - 追加注数</th>
+                        <th class="table-header">一等奖 - 追加奖金(元)</th>
+                        <th class="table-header">二等奖 - 基本注数</th>
+                        <th class="table-header">二等奖 - 基本奖金(元)</th>
+                        <th class="table-header">二等奖 - 追加注数</th>
+                        <th class="table-header">二等奖 - 追加奖金(元)</th>
+                        <th class="table-header">奇偶性</th>
+                        <th class="table-header">号码总和</th>
+                        <th class="table-header">销售额(元)</th>
+                        <th class="table-header">奖池奖金(元)</th>
+                        <th class="table-header">开奖公告</th>
+                    </tr>
+                    </thead>
+                    <tbody id="lotteryResults" class="bg-white divide-y divide-gray-200">
+                    <!-- 表格数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="noResults" class="hidden py-12 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-4">
+                <i class="fa-solid fa-search text-2xl text-blue-400"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-1">没有找到匹配的结果</h3>
+            <p class="text-gray-500">请尝试调整搜索条件或清除筛选器</p>
+        </div>
+
+        <div class="p-4 border-t border-gray-200 flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                总共 <span id="totalResultsCount" class="font-medium text-primary">0</span> 条，目前显示 <span
+                    id="currentResultsCount" class="font-medium text-primary">0</span> 条
+            </div>
+            <div class="hidden">
+                <!-- 移除分页按钮 -->
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-white border-t border-gray-200 py-6">
+    <div class="mx-auto px-4 text-center text-gray-500 text-sm">
+        <p>© 2025 中国体育彩票大乐透历史开奖结果查询平台 | 数据仅供参考</p>
+        <p class="mt-2">本网站内容仅供参考，不构成投资建议。购买彩票应该是基于娱乐目的，而并非一种可行的投资策略。</p>
+    </div>
+</footer>
+
+<!-- PDF查看模态框 -->
+<div id="pdfModal" class="modal">
+    <div class="modal-content" id="modalContent">
+        <div class="modal-header" id="modalHeader">
+            <h3 class="text-lg font-bold text-gray-900" id="modalTitle">开奖公告详情</h3>
+            <button id="closeModal" class="text-gray-500 hover:text-gray-700 transition-colors duration-200">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="pdf-container">
+                <div class="pdf-loading">
+                    <div class="flex flex-col items-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        <p class="mt-2 text-gray-600">正在加载PDF文件...</p>
+                    </div>
+                </div>
+                <iframe id="pdfIframe" class="pdf-iframe" src="" sandbox="allow-same-origin allow-scripts"></iframe>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="downloadPdf"
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 flex items-center">
+                <i class="fa-solid fa-download mr-1"></i>
+                <span>下载PDF</span>
+            </button>
+            <button id="closeModalBtn"
+                    class="px-4 py-2 ml-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200">
+                关闭
+            </button>
+        </div>
+
+        <!-- 调整大小的元素 -->
+        <div class="resizer resizer-n"></div>
+        <div class="resizer resizer-s"></div>
+        <div class="resizer resizer-e"></div>
+        <div class="resizer resizer-w"></div>
+        <div class="resizer resizer-ne"></div>
+        <div class="resizer resizer-nw"></div>
+        <div class="resizer resizer-se"></div>
+        <div class="resizer resizer-sw"></div>
+    </div>
+</div>
+
+<script>
+    // 示例数据 - 更新为真实的PDF链接
+    const lotteryData = [
+    {{range $dlt := .}}
+    {
+        draw_num: "{{$dlt.DrawNum}}",
+        draw_time: "{{$dlt.DrawTime}}",
+        fb: ["{{$dlt.F1}}", "{{$dlt.F2}}", "{{$dlt.F3}}", "{{$dlt.F4}}", "{{$dlt.F5}}", "{{$dlt.B1}}", "{{$dlt.B2}}"],
+        ufb: [{{ range $el := (split $dlt.UnSortDrawResult " ")}} "{{$el}}",{{end}}],
+        stake_count_101: {{$dlt.StakeCount101}},
+        stake_amount_101: {{$dlt.StakeAmount101}},
+        stake_count_201: {{$dlt.StakeCount201}},
+        stake_amount_201: {{$dlt.StakeAmount201}},
+        stake_count_301: {{$dlt.StakeCount301}},
+        stake_amount_301: {{$dlt.StakeAmount301}},
+        stake_count_302: {{$dlt.StakeCount302}},
+        stake_amount_302: {{$dlt.StakeAmount302}},
+        parity: "{{ oe $dlt.F1 $dlt.F2 $dlt.F3 $dlt.F4 $dlt.F5 $dlt.B1 $dlt.B2}}",
+        sum: {{ newSum $dlt.F1 $dlt.F2 $dlt.F3 $dlt.F4 $dlt.F5 $dlt.B1 $dlt.B2}},
+        total_sale_amount: {{$dlt.TotalSaleAmount}},
+        pool_balance: {{$dlt.PoolBalance}},
+        drawNotice: "https://lot.cn:8082/static/pdfjs/web/viewer.html?file=/download/{{$dlt.DrawPdfUrl}}" // 使用真实的PDF链接
+    },
+    {{end}}
+    ];
+
+    // 格式化金额为中文显示
+    function formatAmount(amount) {
+        if (amount === 0) return "0";
+        if (amount >= 100000000) {
+            return (amount / 100000000).toFixed(2) + "亿";
+        } else if (amount >= 10000) {
+            return (amount / 10000).toFixed(2) + "万";
+        }
+        return amount.toString();
+    }
+
+    // 显示加载状态
+    // function showLoading() {
+    //     document.querySelector('.pdf-loading').classList.remove('hidden');
+    //     document.querySelector('.pdf-loading').classList.add('flex');
+    // }
+    function showLoading() {
+        const loadingElement = document.querySelector('.pdf-loading');
+        loadingElement.classList.remove('hidden');
+        loadingElement.style.display = 'flex';
+    }
+
+    // 隐藏加载状态
+    // function hideLoading() {
+    //     document.querySelector('.pdf-loading').classList.add('hidden');
+    //     document.querySelector('.pdf-loading').classList.remove('flex');
+    // }
+    function hideLoading() {
+        const loadingElement = document.querySelector('.pdf-loading');
+        loadingElement.classList.add('hidden');
+        loadingElement.style.display = 'none';
+    }
+
+    // 打开PDF模态框
+    // function openPdfModal(drawNum, drawTime, pdfUrl) {
+    //     const modal = document.getElementById('pdfModal');
+    //     const modalTitle = document.getElementById('modalTitle');
+    //     const pdfIframe = document.getElementById('pdfIframe');
+    //     const downloadBtn = document.getElementById('downloadPdf');
+    //
+    //     // 设置模态框标题
+    //     modalTitle.textContent = `${drawNum}期 - ${drawTime} 开奖公告详情`;
+    //
+    //     // 设置PDF地址
+    //     // pdfUrl = pdfUrl || 'https://pdf.sporttery.cn/33800/25068/25068.pdf'; // 确保有默认值
+    //
+    //     // 设置iframe的src属性
+    //     pdfIframe.src = pdfUrl;
+    //
+    //     // 设置下载链接
+    //     downloadBtn.href = pdfUrl;
+    //     downloadBtn.download = `${drawNum}_开奖公告.pdf`;
+    //
+    //     // 显示加载状态
+    //     showLoading();
+    //
+    //     // 设置超时处理
+    //     const timeoutId = setTimeout(() => {
+    //         hideLoading();
+    //         // 检查iframe是否加载成功
+    //         try {
+    //             if (pdfIframe.contentDocument && pdfIframe.contentDocument.body.innerHTML) {
+    //                 // 内容存在，加载成功
+    //             } else {
+    //                 showPdfError();
+    //             }
+    //         } catch (e) {
+    //             // 跨域错误，显示错误信息
+    //             showPdfError();
+    //         }
+    //     }, 15000); // 15秒超时
+    //
+    //     // 监听iframe加载完成事件
+    //     pdfIframe.onload = () => {
+    //         clearTimeout(timeoutId);
+    //         hideLoading();
+    //     };
+    //     // 显示模态框
+    //     modal.classList.add('active');
+    //
+    //     // 重置模态框位置和大小
+    //     const modalContent = document.getElementById('modalContent');
+    //     modalContent.style.width = '800px';
+    //     modalContent.style.height = '600px';
+    //     modalContent.style.top = '50%';
+    //     modalContent.style.left = '50%';
+    //     modalContent.style.transform = 'translate(-50%, -50%)';
+    // }
+
+    // 打开PDF模态框
+    // function openPdfModal(drawNum, drawTime, pdfUrl) {
+    //     const modal = document.getElementById('pdfModal');
+    //     const modalTitle = document.getElementById('modalTitle');
+    //     const pdfIframe = document.getElementById('pdfIframe'); // 确保这里是iframe
+    //     const downloadBtn = document.getElementById('downloadPdf');
+    //
+    //     // 设置模态框标题
+    //     modalTitle.textContent = `${drawNum}期 - ${drawTime} 开奖公告详情`;
+    //
+    //     // 设置PDF地址
+    //     // pdfUrl = pdfUrl || 'https://lot.cn:8082/static/pdfjs/web/viewer.html?file=/download/25068.pdf';
+    //
+    //     // 设置iframe的src属性
+    //     pdfIframe.src = pdfUrl;
+    //
+    //     // 设置下载链接 - 直接指向PDF文件
+    //     const pdfFileUrl = pdfUrl.split('?file=')[1] || pdfUrl;
+    //     downloadBtn.href = pdfFileUrl;
+    //     downloadBtn.download = `${drawNum}_开奖公告.pdf`;
+    //
+    //     // 显示加载状态
+    //     showLoading();
+    //
+    //     // 清理旧的监听器
+    //     window.removeEventListener('message', handlePdfMessage);
+    //
+    //     // 定义消息处理函数
+    //     function handlePdfMessage(event) {
+    //         // 验证消息来源
+    //         if (event.origin !== new URL(pdfUrl).origin) {
+    //             return;
+    //         }
+    //
+    //         // 处理PDF.js发送的消息
+    //         const message = event.data;
+    //         if (message && message.type) {
+    //             switch (message.type) {
+    //                 case 'documentloaded':
+    //                     console.log('PDF文档已加载');
+    //                     break;
+    //                 case 'pagerendered':
+    //                     console.log('PDF页面已渲染:', message.pageNumber);
+    //                     // 可以在这里设置一个计数器，等待所有页面渲染完成
+    //                     break;
+    //                 case 'loadingbar':
+    //                     if (message.state === 'hidden') {
+    //                         console.log('PDF加载完成，加载条已隐藏');
+    //                         hideLoading();
+    //                         window.removeEventListener('message', handlePdfMessage);
+    //                     }
+    //                     break;
+    //             }
+    //         }
+    //     }
+    //
+    //     // 监听PDF.js发送的消息
+    //     window.addEventListener('message', handlePdfMessage);
+    //
+    //     // 设置较长的超时时间
+    //     const timeoutId = setTimeout(() => {
+    //         if (document.querySelector('.pdf-loading').classList.contains('hidden')) {
+    //             return; // 已经加载完成
+    //         }
+    //
+    //         console.log('PDF加载超时');
+    //         hideLoading();
+    //
+    //         // 检查iframe是否有内容
+    //         try {
+    //             if (pdfIframe.contentDocument && pdfIframe.contentDocument.body.innerHTML) {
+    //                 // 有内容，但可能是PDF.js的错误页面
+    //                 const errorElement = pdfIframe.contentDocument.querySelector('.error');
+    //                 if (errorElement) {
+    //                     showPdfError('PDF加载失败: ' + errorElement.textContent.trim());
+    //                 } else {
+    //                     // 可能仍在加载中，不显示错误
+    //                 }
+    //             } else {
+    //                 showPdfError();
+    //             }
+    //         } catch (e) {
+    //             showPdfError();
+    //         }
+    //     }, 1000); // 45秒超时
+    //
+    //     // 监听iframe加载完成事件 (viewer.html加载完成)
+    //     pdfIframe.onload = () => {
+    //         console.log('PDF.js viewer已加载');
+    //
+    //         // 尝试向PDF.js发送消息 (需要PDF.js启用消息传递)
+    //         try {
+    //             pdfIframe.contentWindow.postMessage({ type: 'ping' }, '*');
+    //         } catch (e) {
+    //             console.log('无法向PDF.js发送消息:', e);
+    //         }
+    //     };
+    //
+    //     // 显示模态框
+    //     modal.classList.add('active');
+    //
+    //     // 重置模态框位置和大小
+    //     const modalContent = document.getElementById('modalContent');
+    //     modalContent.style.width = '800px';
+    //     modalContent.style.height = '600px';
+    //     modalContent.style.top = '50%';
+    //     modalContent.style.left = '50%';
+    //     modalContent.style.transform = 'translate(-50%, -50%)';
+    // }
+
+    // 打开PDF模态框
+    // 打开PDF模态框
+    function openPdfModal(drawNum, drawTime, pdfUrl) {
+        const modal = document.getElementById('pdfModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const pdfIframe = document.getElementById('pdfIframe');
+        const downloadBtn = document.getElementById('downloadPdf');
+
+        // 设置模态框标题
+        modalTitle.textContent = `${drawNum}期 - ${drawTime} 开奖公告详情`;
+
+        // 设置PDF地址
+        // pdfUrl = pdfUrl || 'https://lot.cn:8082/static/pdfjs/web/viewer.html?file=/download/25068.pdf';
+
+        // 设置iframe的src属性
+        pdfIframe.src = pdfUrl;
+
+        // 提取实际PDF文件URL
+        const pdfFileUrl = extractPdfFileUrl(pdfUrl);
+
+        // 设置下载链接
+        downloadBtn.onclick = (e) => {
+            e.preventDefault();
+            downloadPdfFile(pdfFileUrl, `${drawNum}_开奖公告.pdf`);
+        };
+
+        // 显示加载状态
+        showLoading();
+
+
+        // 隐藏加载指示器
+        hideLoading();
+
+        // 显示模态框
+        modal.classList.add('active');
+
+        // 重置模态框位置和大小
+        const modalContent = document.getElementById('modalContent');
+        modalContent.style.width = '800px';
+        modalContent.style.height = '600px';
+        modalContent.style.top = '50%';
+        modalContent.style.left = '50%';
+        modalContent.style.transform = 'translate(-50%, -50%)';
+    }
+
+    // 提取实际PDF文件URL
+    function extractPdfFileUrl(pdfJsUrl) {
+        // 尝试从viewer.html?file=参数中提取
+        const match = pdfJsUrl.match(/\?file=([^&]+)/);
+        if (match && match[1]) {
+            return decodeURIComponent(match[1]);
+        }
+
+        // 如果无法提取，返回原始URL
+        return pdfJsUrl;
+    }
+
+    // 下载PDF文件的函数
+    function downloadPdfFile(url, filename) {
+        // 方法1: 尝试直接使用a标签下载
+        try {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+
+            // 检查是否同源
+            if (new URL(url).origin === window.location.origin) {
+                link.click(); // 同源URL可以直接点击
+            } else {
+                // 跨域URL使用fetch
+                fetch(url, {
+                    method: 'GET',
+                    mode: 'cors', // 确保支持跨域
+                    credentials: 'same-origin'
+                })
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        link.href = blobUrl;
+                        link.click();
+                        URL.revokeObjectURL(blobUrl);
+                    })
+                    .catch(error => {
+                        console.error('下载失败:', error);
+                        // 回退到打开新窗口
+                        window.open(url, '_blank');
+                    });
+            }
+
+            document.body.removeChild(link);
+            return true;
+        } catch (error) {
+            console.error('下载方法1失败:', error);
+        }
+
+        // 方法2: 使用iframe下载
+        try {
+            const downloadFrame = document.createElement('iframe');
+            downloadFrame.style.display = 'none';
+            downloadFrame.src = url;
+            document.body.appendChild(downloadFrame);
+
+            setTimeout(() => {
+                document.body.removeChild(downloadFrame);
+            }, 30000); // 30秒后移除
+
+            return true;
+        } catch (error) {
+            console.error('下载方法2失败:', error);
+        }
+
+        // 方法3: 打开新窗口
+        try {
+            window.open(url, '_blank');
+            return true;
+        } catch (error) {
+            console.error('下载方法3失败:', error);
+        }
+
+        // 如果所有方法都失败，提示用户
+        alert('无法自动下载PDF文件。请右键点击链接，选择"另存为"。');
+        return false;
+    }
+    // 显示PDF加载错误
+    function showPdfError() {
+        const pdfContainer = document.querySelector('.pdf-container');
+        pdfContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-full p-8">
+          <div class="text-red-500 text-4xl mb-4">
+            <i class="fa-solid fa-file-pdf"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">无法加载PDF文件</h3>
+          <p class="text-gray-600 mb-4 text-center">由于安全限制，可能无法直接在浏览器中预览此PDF文件。</p>
+          <div class="flex space-x-4">
+            <button onclick="downloadPdf()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 flex items-center">
+              <i class="fa-solid fa-download mr-1"></i>
+              <span>下载PDF文件</span>
+            </button>
+            <button onclick="closePdfModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200">
+              关闭
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // 关闭PDF模态框
+    function closePdfModal() {
+        const modal = document.getElementById('pdfModal');
+        const pdfIframe = document.getElementById('pdfIframe');
+
+        // 隐藏模态框
+        modal.classList.remove('active');
+
+        // 重置iframe源以停止加载
+        pdfIframe.src = '';
+    }
+
+    // 渲染表格数据
+    function renderTable(data) {
+        const tableBody = document.getElementById('lotteryResults');
+        const noResults = document.getElementById('noResults');
+
+        tableBody.innerHTML = '';
+
+        if (data.length === 0) {
+            noResults.classList.remove('hidden');
+            return;
+        }
+
+        noResults.classList.add('hidden');
+
+        data.forEach(result => {
+            const row = document.createElement('tr');
+            row.className = 'table-hover-row';
+
+            // 前区和后区号码
+            const frontNumbers = result.fb.slice(0, 5);
+            const backNumbers = result.fb.slice(5);
+
+            // 格式化前区号码
+            const frontNumberElements = frontNumbers.map(num =>
+                `<span class="blue-ball">${num}</span>`
+            ).join('');
+
+            // 格式化后区号码
+            const backNumberElements = backNumbers.map(num =>
+                `<span class="yellow-ball">${num}</span>`
+            ).join('');
+
+            // 处理可能为空的ufb字段
+            let frontUfbElements = '-';
+            let backUfbElements = '-';
+
+            if (result.ufb && result.ufb.length > 0) {
+                // 格式化乱序开奖号码
+                const frontUfbNumbers = result.ufb.slice(0, 5);
+                const backUfbNumbers = result.ufb.slice(5);
+
+                // 格式化乱序前区号码
+                frontUfbElements = frontUfbNumbers.map(num =>
+                    `<span class="blue-ball">${num}</span>`
+                ).join('');
+
+                // 格式化乱序后区号码
+                backUfbElements = backUfbNumbers.map(num =>
+                    `<span class="yellow-ball">${num}</span>`
+                ).join('');
+            }
+
+            row.innerHTML = `
+          <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${result.draw_num}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.draw_time}</td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <div class="flex">
+              ${frontNumberElements}
+              ${backNumberElements}
+            </div>
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <div class="flex">
+              ${frontUfbElements}
+              ${backUfbElements}
+            </div>
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_count_101 || '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_101 ? formatAmount(result.stake_amount_101) : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_count_201 || '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_201 ? formatAmount(result.stake_amount_201) : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_count_301 || '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_301 ? formatAmount(result.stake_amount_301) : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_count_302 || '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_302 ? formatAmount(result.stake_amount_302) : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.parity}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">${result.sum}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.total_sale_amount ? formatAmount(result.total_sale_amount) : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.pool_balance ? formatAmount(result.pool_balance) : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-primary">
+            <button onclick="openPdfModal('${result.draw_num}', '${result.draw_time}', '${result.drawNotice}')" class="hover:text-primary/80 transition-colors duration-200 flex items-center justify-center">
+              <i class="fa-solid fa-file-text mr-1"></i>
+              <span>查看</span>
+            </button>
+          </td>
+        `;
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    // 搜索功能
+    function searchResults() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const parityFilter = document.getElementById('parityFilter').value;
+
+        let filteredData = lotteryData;
+
+        // 应用奇偶性筛选
+        if (parityFilter) {
+            filteredData = filteredData.filter(result => result.parity === parityFilter);
+        }
+
+        // 应用搜索词筛选
+        if (searchTerm) {
+            filteredData = filteredData.filter(result => {
+                return result.draw_num.toLowerCase().includes(searchTerm) ||
+                    result.draw_time.includes(searchTerm) ||
+                    result.fb.some(num => num.toString().includes(searchTerm)) ||
+                    (result.ufb && result.ufb.some(num => num.toString().includes(searchTerm))) ||
+                    result.parity.toLowerCase().includes(searchTerm) ||
+                    formatAmount(result.stake_amount_101).includes(searchTerm) ||
+                    formatAmount(result.stake_amount_201).includes(searchTerm) || // 新增搜索字段
+                    formatAmount(result.stake_amount_301).includes(searchTerm) ||
+                    formatAmount(result.stake_amount_302).includes(searchTerm) ||
+                    result.sum.toString().includes(searchTerm) ||
+                    formatAmount(result.total_sale_amount).includes(searchTerm) ||
+                    formatAmount(result.pool_balance).includes(searchTerm);
+            });
+        }
+
+        // 更新结果计数
+        document.getElementById('totalResults').textContent = filteredData.length;
+        document.getElementById('totalResultsCount').textContent = lotteryData.length;
+        document.getElementById('currentResultsCount').textContent = filteredData.length;
+
+        // 渲染表格
+        renderTable(filteredData);
+    }
+
+    // 初始化事件监听器
+    function initEventListeners() {
+        document.getElementById('searchInput').addEventListener('input', searchResults);
+        document.getElementById('parityFilter').addEventListener('change', searchResults);
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('parityFilter').value = '';
+            searchResults();
+        });
+
+        // 添加刷新按钮事件监听
+        document.getElementById('refreshButton').addEventListener('click', (e) => {
+            e.preventDefault();
+            location.reload();
+        });
+
+        // 添加模态框关闭事件监听
+        document.getElementById('closeModal').addEventListener('click', closePdfModal);
+        document.getElementById('closeModalBtn').addEventListener('click', closePdfModal);
+
+        // 阻止模态框内容的点击事件冒泡到背景
+        document.getElementById('modalContent').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // 初始化模态框拖拽功能
+        initModalDragging();
+
+        // 初始化模态框调整大小功能
+        initModalResizing();
+    }
+
+    // 初始化模态框拖拽功能
+    function initModalDragging() {
+        const modalContent = document.getElementById('modalContent');
+        const modalHeader = document.getElementById('modalHeader');
+
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        modalHeader.addEventListener('mousedown', (e) => {
+            isDragging = true;
+
+            // 计算鼠标与模态框左上角的偏移量
+            const rect = modalContent.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+
+            // 添加拖拽样式
+            modalHeader.style.cursor = 'grabbing';
+            modalContent.style.transition = 'none';
+
+            // 阻止事件冒泡，避免触发模态框的点击事件
+            e.stopPropagation();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            // 计算新位置
+            const x = e.clientX - offsetX;
+            const y = e.clientY - offsetY;
+
+            // 设置模态框位置
+            modalContent.style.left = `${x}px`;
+            modalContent.style.top = `${y}px`;
+            modalContent.style.transform = 'none';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                modalHeader.style.cursor = 'move';
+                modalContent.style.transition = 'transform 0.3s';
+            }
+        });
+    }
+
+    // 初始化模态框调整大小功能
+    function initModalResizing() {
+        const modalContent = document.getElementById('modalContent');
+        const resizers = document.querySelectorAll('.resizer');
+
+        let currentResizer = null;
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+
+        resizers.forEach(resizer => {
+            resizer.addEventListener('mousedown', (e) => {
+                currentResizer = resizer;
+                isResizing = true;
+
+                // 保存初始状态
+                const rect = modalContent.getBoundingClientRect();
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = rect.width;
+                startHeight = rect.height;
+
+                // 阻止事件冒泡
+                e.stopPropagation();
+
+                // 添加调整大小样式
+                document.body.style.cursor = resizer.classList.contains('resizer-n') || resizer.classList.contains('resizer-s') ? 'ns-resize' :
+                    resizer.classList.contains('resizer-e') || resizer.classList.contains('resizer-w') ? 'ew-resize' :
+                        resizer.classList.contains('resizer-ne') || resizer.classList.contains('resizer-sw') ? 'nesw-resize' : 'nwse-resize';
+            });
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            // 计算新的宽高
+            let newWidth, newHeight, newLeft, newTop;
+
+            if (currentResizer.classList.contains('resizer-e')) {
+                newWidth = startWidth + (e.clientX - startX);
+                modalContent.style.width = `${newWidth}px`;
+            } else if (currentResizer.classList.contains('resizer-w')) {
+                newWidth = startWidth - (e.clientX - startX);
+                newLeft = parseInt(modalContent.style.left) + (e.clientX - startX);
+
+                if (newWidth >= 400) { // 设置最小宽度
+                    modalContent.style.width = `${newWidth}px`;
+                    modalContent.style.left = `${newLeft}px`;
+                }
+            } else if (currentResizer.classList.contains('resizer-s')) {
+                newHeight = startHeight + (e.clientY - startY);
+                modalContent.style.height = `${newHeight}px`;
+            } else if (currentResizer.classList.contains('resizer-n')) {
+                newHeight = startHeight - (e.clientY - startY);
+                newTop = parseInt(modalContent.style.top) + (e.clientY - startY);
+
+                if (newHeight >= 300) { // 设置最小高度
+                    modalContent.style.height = `${newHeight}px`;
+                    modalContent.style.top = `${newTop}px`;
+                }
+            } else if (currentResizer.classList.contains('resizer-ne')) {
+                newWidth = startWidth + (e.clientX - startX);
+                newHeight = startHeight + (e.clientY - startY);
+
+                modalContent.style.width = `${newWidth}px`;
+                modalContent.style.height = `${newHeight}px`;
+            } else if (currentResizer.classList.contains('resizer-nw')) {
+                newWidth = startWidth - (e.clientX - startX);
+                newLeft = parseInt(modalContent.style.left) + (e.clientX - startX);
+                newHeight = startHeight - (e.clientY - startY);
+                newTop = parseInt(modalContent.style.top) + (e.clientY - startY);
+
+                if (newWidth >= 400 && newHeight >= 300) { // 设置最小宽高
+                    modalContent.style.width = `${newWidth}px`;
+                    modalContent.style.left = `${newLeft}px`;
+                    modalContent.style.height = `${newHeight}px`;
+                    modalContent.style.top = `${newTop}px`;
+                }
+            } else if (currentResizer.classList.contains('resizer-se')) {
+                newWidth = startWidth + (e.clientX - startX);
+                newHeight = startHeight + (e.clientY - startY);
+
+                modalContent.style.width = `${newWidth}px`;
+                modalContent.style.height = `${newHeight}px`;
+            } else if (currentResizer.classList.contains('resizer-sw')) {
+                newWidth = startWidth - (e.clientX - startX);
+                newLeft = parseInt(modalContent.style.left) + (e.clientX - startX);
+                newHeight = startHeight + (e.clientY - startY);
+
+                if (newWidth >= 400) { // 设置最小宽度
+                    modalContent.style.width = `${newWidth}px`;
+                    modalContent.style.left = `${newLeft}px`;
+                    modalContent.style.height = `${newHeight}px`;
+                }
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+            }
+        });
+    }
+
+    // 下载PDF文件
+    function downloadPdf() {
+        const downloadBtn = document.getElementById('downloadPdf');
+        // 创建一个临时的a标签来触发下载
+        const tempLink = document.createElement('a');
+        tempLink.href = downloadBtn.href;
+        tempLink.download = downloadBtn.download;
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        // 渲染表格数据
+        renderTable(lotteryData);
+
+        // 更新结果计数
+        document.getElementById('totalResults').textContent = lotteryData.length;
+        document.getElementById('totalResultsCount').textContent = lotteryData.length;
+        document.getElementById('currentResultsCount').textContent = lotteryData.length;
+
+        // 初始化事件监听器
+        initEventListeners();
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

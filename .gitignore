@@ -1,5 +1,6 @@
 logs/*
 all/*
+download/*
 *.log
 *.tmp
 *.exe

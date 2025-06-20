@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"github.com/before80/lot/ana"
 	"github.com/before80/lot/dbop"
+	"github.com/before80/lot/dlt"
 	"github.com/before80/lot/lg"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -29,8 +32,136 @@ func StartServer() {
 
 	http.HandleFunc("/r", handleRRequest)
 	http.HandleFunc("/rmin", handleRMinRequest)
+	http.HandleFunc("/his", handleHisRequest)
+	//http.HandleFunc("/pdf", handlePdfRequest) // 只用于临时下载pdf文件
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	//_ = os.MkdirAll("download", os.ModePerm)
+	//// 固定使用当前目录下的download目录
+	//rootDir, err := filepath.Abs("./download")
+	//if err != nil {
+	//	lg.ErrorToFile(fmt.Sprintf("获取目录绝对路径失败: %v", err))
+	//	return
+	//}
+	//
+	//// 检查目录是否存在
+	//if _, err = os.Stat(rootDir); os.IsNotExist(err) {
+	//	lg.ErrorToFile(fmt.Sprintf("目录不存在: %s", rootDir))
+	//	return
+	//}
+	//
+	//// 确保目录可读
+	//if _, err = os.Open(rootDir); err != nil {
+	//	lg.ErrorToFile(fmt.Sprintf("无法访问目录: %s, 错误: %v", rootDir, err))
+	//	return
+	//}
+	//
+	//// 创建文件服务器
+	//fileServer := http.FileServer(http.Dir(rootDir))
+
+	// 自定义处理函数
+	//http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//	// 记录请求日志
+	//	lg.InfoToFileAndStdOut(fmt.Sprintf("请求: %s %s 来自 %s", r.Method, r.URL.Path, r.RemoteAddr))
+	//
+	//	// 安全检查：防止目录遍历攻击
+	//	if strings.Contains(r.URL.Path, "..") {
+	//		http.Error(w, "非法请求路径", http.StatusBadRequest)
+	//		return
+	//	}
+	//
+	//	// 确保只提供PDF文件
+	//	if !strings.HasSuffix(strings.ToLower(r.URL.Path), ".pdf") {
+	//		http.NotFound(w, r)
+	//		return
+	//	}
+	//
+	//	if strings.HasPrefix(r.URL.Path, "/download/") {
+	//		_, file := filepath.Split(r.URL.Path)
+	//		if file != "" { // 如果不是目录请求
+	//			r.URL.Path = file
+	//		}
+	//	}
+	//
+	//	// 构建完整文件路径
+	//	reqPath := filepath.Join(rootDir, filepath.Clean(r.URL.Path))
+	//
+	//	lg.InfoToFileAndStdOut(fmt.Sprintf("reqPath: %s\n", reqPath))
+	//
+	//	// 检查文件是否存在
+	//	if _, err = os.Stat(reqPath); os.IsNotExist(err) {
+	//		http.NotFound(w, r)
+	//		return
+	//	}
+	//
+	//	// 设置响应头，强制下载
+	//	filename := filepath.Base(r.URL.Path)
+	//	//w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	//	w.Header().Set("Content-Type", "application/pdf")
+	//	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%s", filename))
+	//	// 启用跨域资源共享(CORS)，允许iframe嵌入
+	//	w.Header().Set("Access-Control-Allow-Origin", "*")
+	//	w.Header().Set("X-Content-Type-Options", "nosniff")
+	//	//w.Header().Set("X-Frame-Options", "SAMEORIGIN") // 只能在同源的 iframe 中显示，但 X-Frame-Options: SAMEORIGIN 有一个例外：当被嵌入的是文件资源（如 PDF）时，某些浏览器会严格限制。
+	//	//w.Header().Set("X-Frame-Options", "ALLOW-FROM *") // 允许所有域名的iframe嵌入（测试时使用）
+	//	//w.Header().Set("Content-Security-Policy", "frame-ancestors 'self' https://lot.cn:8082;")
+	//	w.Header().Set("Content-Security-Policy", "frame-ancestors *;") // CSP 策略优先级高于 X-Frame-Options
+	//
+	//	// 让文件服务器处理请求
+	//	fileServer.ServeHTTP(w, r)
+	//})
+
+	http.Handle("/download/", http.StripPrefix("/download/",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// 记录请求
+			lg.InfoToFileAndStdOut(fmt.Sprintf("PDF请求: %s %s 来自 %s",
+				r.Method, r.URL.Path, r.RemoteAddr))
+
+			// 安全检查
+			if strings.Contains(r.URL.Path, "..") {
+				http.Error(w, "非法请求路径", http.StatusBadRequest)
+				return
+			}
+
+			// 验证PDF扩展名
+			if !strings.HasSuffix(strings.ToLower(r.URL.Path), ".pdf") {
+				http.NotFound(w, r)
+				return
+			}
+
+			// 构建文件路径
+			filePath := filepath.Join("download", filepath.Clean(r.URL.Path))
+
+			// 检查文件是否存在
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				http.NotFound(w, r)
+				return
+			}
+
+			// 设置关键响应头
+			w.Header().Set("Content-Type", "application/pdf")
+			w.Header().Set("Content-Disposition", "inline; filename="+filepath.Base(r.URL.Path))
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+
+			// 关键修复: 使用 CSP 替代 X-Frame-Options
+			// 允许从同源的 iframe 嵌入
+			w.Header().Set("Content-Security-Policy", "frame-ancestors 'self'")
+
+			// 添加缓存控制头，避免浏览器重复验证证书
+			w.Header().Set("Cache-Control", "public, max-age=3600")
+
+			// 直接提供文件
+			http.ServeFile(w, r, filePath)
+		}),
+	))
+
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	//log.Fatal(http.ListenAndServe(":8081", nil))
+	log.Fatal(http.ListenAndServeTLS(":8082", // 监听端口
+		"lot.cn.crt", // 证书文件
+		"lot.cn.key", // 私钥文件
+		nil,          // 处理器 (使用默认多路复用器)))
+	))
 }
 
 // 处理/r路径的请求
@@ -265,4 +396,141 @@ func handleRMinRequest(w http.ResponseWriter, r *http.Request) {
 		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 3)
 		return
 	}
+}
+
+func handleHisRequest(w http.ResponseWriter, r *http.Request) {
+	fms := make(template.FuncMap)
+	fms["join"] = strings.Join
+	fms["split"] = strings.Split
+	fms["oe"] = func(f1, f2, f3, f4, f5, b1, b2 string) string {
+		oddNum := 0
+		evenNum := 0
+		if1, _ := strconv.Atoi(f1)
+		if if1%2 == 0 {
+			evenNum++
+		} else {
+			oddNum++
+		}
+		if2, _ := strconv.Atoi(f2)
+		if if2%2 == 0 {
+			evenNum++
+		} else {
+			oddNum++
+		}
+		if3, _ := strconv.Atoi(f3)
+		if if3%2 == 0 {
+			evenNum++
+		} else {
+			oddNum++
+		}
+		if4, _ := strconv.Atoi(f4)
+		if if4%2 == 0 {
+			evenNum++
+		} else {
+			oddNum++
+		}
+		if5, _ := strconv.Atoi(f5)
+		if if5%2 == 0 {
+			evenNum++
+		} else {
+			oddNum++
+		}
+		ib1, _ := strconv.Atoi(b1)
+		if ib1%2 == 0 {
+			evenNum++
+		} else {
+			oddNum++
+		}
+		ib2, _ := strconv.Atoi(b2)
+		if ib2%2 == 0 {
+			evenNum++
+		} else {
+			oddNum++
+		}
+		return fmt.Sprintf("%d奇%d偶", oddNum, evenNum)
+	}
+	fms["newSum"] = func(f1, f2, f3, f4, f5, b1, b2 string) int {
+		total := 0
+		if1, _ := strconv.Atoi(f1)
+		total += if1
+		if2, _ := strconv.Atoi(f2)
+		total += if2
+		if3, _ := strconv.Atoi(f3)
+		total += if3
+		if4, _ := strconv.Atoi(f4)
+		total += if4
+		if5, _ := strconv.Atoi(f5)
+		total += if5
+		ib1, _ := strconv.Atoi(b1)
+		total += ib1
+		ib2, _ := strconv.Atoi(b2)
+		total += ib2
+		return total
+	}
+	templatesDir := "./templates/http"
+
+	// 解析目录中所有匹配的模板文件
+	tmpl, err := template.New("his").Funcs(fms).ParseGlob(templatesDir + "/*.html")
+	if err != nil {
+		lg.ErrorToFile(fmt.Sprintf("解析模板错误: %v", err))
+		return
+	}
+
+	allDlts, err := dbop.ReadDltGETDrawNum("25051")
+	if err != nil {
+		lg.ErrorToFile(fmt.Sprintf("从数据表中读取数据出现错误：%v\n", err))
+		return
+	}
+
+	for i, d := range allDlts {
+		//if i < 10 {
+		//	lg.InfoToFileAndStdOut(fmt.Sprintf("d.DrawNum: %v\n", d.DrawNum))
+		//}
+		if strings.Contains(d.DrawPdfUrl, ".pdf") {
+			allDlts[i].DrawPdfUrl = filepath.Base(d.DrawPdfUrl)
+		}
+	}
+
+	err = tmpl.ExecuteTemplate(w, "dltHis.html", allDlts)
+	if err != nil {
+		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 3)
+		return
+	}
+}
+
+func handlePdfRequest(w http.ResponseWriter, r *http.Request) {
+	var err error
+	dlts, err := dbop.ReadDltGETDrawNum("19081")
+	if err != nil {
+		lg.ErrorToFile(fmt.Sprintf("从数据表中读取数据出现错误：%v\n", err))
+	}
+	var urls []string
+	for _, dlt := range dlts {
+		urls = append(urls, dlt.DrawPdfUrl)
+	}
+	for _, url := range urls {
+		err = dlt.DownloadPDF(url)
+		if err != nil {
+			lg.ErrorToFile(fmt.Sprintf("下载%s 所在的PDF文件失败: %v\n", url, err))
+		}
+	}
+}
+
+// 辅助函数：打印目录内容（调试用）
+func printDirContents(dir string) error {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			fmt.Printf("  [目录] %s/\n", file.Name())
+		} else if strings.HasSuffix(strings.ToLower(file.Name()), ".pdf") {
+			fmt.Printf("  [PDF]  %s\n", file.Name())
+		} else {
+			fmt.Printf("  [其他] %s\n", file.Name())
+		}
+	}
+	return nil
 }
