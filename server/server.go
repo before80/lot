@@ -262,7 +262,7 @@ func handleRRequest(w http.ResponseWriter, r *http.Request) {
 	templatesDir := "./templates/http"
 
 	// 解析目录中所有匹配的模板文件
-	tmpl, err := template.New("qt").Funcs(fms).ParseGlob(templatesDir + "/*.html")
+	tmpl, err := template.New("qt").Funcs(fms).ParseGlob(templatesDir + "/qt*.html")
 	if err != nil {
 		lg.ErrorToFile(fmt.Sprintf("解析模板错误: %v", err))
 		return
@@ -338,7 +338,7 @@ func handleRMinRequest(w http.ResponseWriter, r *http.Request) {
 
 	dlts, err := dbop.ReadDltGETDrawNum(startDrawNum)
 	if err != nil {
-		lg.ErrorToFile(fmt.Sprintf("从数据表中读取数据出现错误：%v\n", err))
+		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("从数据表中读取数据出现错误：%v\n", err), 1)
 		return
 	}
 	drawNum2Type2NotExistCount := ana.MinComb(dlts, eqNum, accumulateStartDrawNum)
@@ -351,7 +351,7 @@ func handleRMinRequest(w http.ResponseWriter, r *http.Request) {
 	slices.Sort(drawNums)
 	var ys [][]string
 	for _, comb := range legends {
-		fmt.Printf("comb: %s\n\n\n", comb)
+		//fmt.Printf("comb: %s\n\n\n", comb)
 		var y []string
 		for _, drawNum := range drawNums {
 			y = append(y, strconv.Itoa(drawNum2Type2NotExistCount[drawNum][comb].NoExistCombCount))
@@ -380,20 +380,22 @@ func handleRMinRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	fms := make(template.FuncMap)
 	fms["join"] = strings.Join
+	fms["split"] = strings.Split
 	templatesDir := "./templates/http"
 
 	// 解析目录中所有匹配的模板文件
-	tmpl, err := template.New("qmint").Funcs(fms).ParseGlob(templatesDir + "/*.html")
+	tmpl, err := template.New("qmint").Funcs(fms).ParseGlob(templatesDir + "/qmint*.html")
 	if err != nil {
-		lg.ErrorToFile(fmt.Sprintf("解析模板错误: %v", err))
+		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("解析模板错误: %v", err), 1)
 		return
 	}
+	lg.InfoToFileAndStdOut(fmt.Sprintf("len(remainCombs): %d\n", len(remainCombs)))
 	title := "组合递减折线图"
 	err = tmpl.ExecuteTemplate(w, "qmint.html", Data{
 		Title: title, EqNum: eqNum, Xuhao: 1, Interval: 10, Legends: legends, Ys: ys, X: drawNums, RemainCombs: remainCombs,
 	})
 	if err != nil {
-		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 3)
+		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 1)
 		return
 	}
 }
@@ -470,13 +472,14 @@ func handleHisRequest(w http.ResponseWriter, r *http.Request) {
 	templatesDir := "./templates/http"
 
 	// 解析目录中所有匹配的模板文件
-	tmpl, err := template.New("his").Funcs(fms).ParseGlob(templatesDir + "/*.html")
+	tmpl, err := template.New("his").Funcs(fms).ParseGlob(templatesDir + "/dltHis.html")
 	if err != nil {
 		lg.ErrorToFile(fmt.Sprintf("解析模板错误: %v", err))
 		return
 	}
 
-	allDlts, err := dbop.ReadDltGETDrawNum("25051")
+	//allDlts, err := dbop.ReadDltGETDrawNum("25051")
+	allDlts, err := dbop.ReadAllDlt(true)
 	if err != nil {
 		lg.ErrorToFile(fmt.Sprintf("从数据表中读取数据出现错误：%v\n", err))
 		return

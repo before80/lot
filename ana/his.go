@@ -585,6 +585,6 @@ func MinComb(dlts []models.Dlt, eqN int, accumulateStartDrawNum string) (drawNum
 			}
 		}
 	}
-	fmt.Println(drawNum2Type2NotExistCount[lastDrawNum])
+	//fmt.Println(drawNum2Type2NotExistCount[lastDrawNum])
 	return
 }

@@ -420,173 +420,7 @@
         loadingElement.style.display = 'none';
     }
 
-    // 打开PDF模态框
-    // function openPdfModal(drawNum, drawTime, pdfUrl) {
-    //     const modal = document.getElementById('pdfModal');
-    //     const modalTitle = document.getElementById('modalTitle');
-    //     const pdfIframe = document.getElementById('pdfIframe');
-    //     const downloadBtn = document.getElementById('downloadPdf');
-    //
-    //     // 设置模态框标题
-    //     modalTitle.textContent = `${drawNum}期 - ${drawTime} 开奖公告详情`;
-    //
-    //     // 设置PDF地址
-    //     // pdfUrl = pdfUrl || 'https://pdf.sporttery.cn/33800/25068/25068.pdf'; // 确保有默认值
-    //
-    //     // 设置iframe的src属性
-    //     pdfIframe.src = pdfUrl;
-    //
-    //     // 设置下载链接
-    //     downloadBtn.href = pdfUrl;
-    //     downloadBtn.download = `${drawNum}_开奖公告.pdf`;
-    //
-    //     // 显示加载状态
-    //     showLoading();
-    //
-    //     // 设置超时处理
-    //     const timeoutId = setTimeout(() => {
-    //         hideLoading();
-    //         // 检查iframe是否加载成功
-    //         try {
-    //             if (pdfIframe.contentDocument && pdfIframe.contentDocument.body.innerHTML) {
-    //                 // 内容存在，加载成功
-    //             } else {
-    //                 showPdfError();
-    //             }
-    //         } catch (e) {
-    //             // 跨域错误，显示错误信息
-    //             showPdfError();
-    //         }
-    //     }, 15000); // 15秒超时
-    //
-    //     // 监听iframe加载完成事件
-    //     pdfIframe.onload = () => {
-    //         clearTimeout(timeoutId);
-    //         hideLoading();
-    //     };
-    //     // 显示模态框
-    //     modal.classList.add('active');
-    //
-    //     // 重置模态框位置和大小
-    //     const modalContent = document.getElementById('modalContent');
-    //     modalContent.style.width = '800px';
-    //     modalContent.style.height = '600px';
-    //     modalContent.style.top = '50%';
-    //     modalContent.style.left = '50%';
-    //     modalContent.style.transform = 'translate(-50%, -50%)';
-    // }
 
-    // 打开PDF模态框
-    // function openPdfModal(drawNum, drawTime, pdfUrl) {
-    //     const modal = document.getElementById('pdfModal');
-    //     const modalTitle = document.getElementById('modalTitle');
-    //     const pdfIframe = document.getElementById('pdfIframe'); // 确保这里是iframe
-    //     const downloadBtn = document.getElementById('downloadPdf');
-    //
-    //     // 设置模态框标题
-    //     modalTitle.textContent = `${drawNum}期 - ${drawTime} 开奖公告详情`;
-    //
-    //     // 设置PDF地址
-    //     // pdfUrl = pdfUrl || 'https://lot.cn:8082/static/pdfjs/web/viewer.html?file=/download/25068.pdf';
-    //
-    //     // 设置iframe的src属性
-    //     pdfIframe.src = pdfUrl;
-    //
-    //     // 设置下载链接 - 直接指向PDF文件
-    //     const pdfFileUrl = pdfUrl.split('?file=')[1] || pdfUrl;
-    //     downloadBtn.href = pdfFileUrl;
-    //     downloadBtn.download = `${drawNum}_开奖公告.pdf`;
-    //
-    //     // 显示加载状态
-    //     showLoading();
-    //
-    //     // 清理旧的监听器
-    //     window.removeEventListener('message', handlePdfMessage);
-    //
-    //     // 定义消息处理函数
-    //     function handlePdfMessage(event) {
-    //         // 验证消息来源
-    //         if (event.origin !== new URL(pdfUrl).origin) {
-    //             return;
-    //         }
-    //
-    //         // 处理PDF.js发送的消息
-    //         const message = event.data;
-    //         if (message && message.type) {
-    //             switch (message.type) {
-    //                 case 'documentloaded':
-    //                     console.log('PDF文档已加载');
-    //                     break;
-    //                 case 'pagerendered':
-    //                     console.log('PDF页面已渲染:', message.pageNumber);
-    //                     // 可以在这里设置一个计数器，等待所有页面渲染完成
-    //                     break;
-    //                 case 'loadingbar':
-    //                     if (message.state === 'hidden') {
-    //                         console.log('PDF加载完成，加载条已隐藏');
-    //                         hideLoading();
-    //                         window.removeEventListener('message', handlePdfMessage);
-    //                     }
-    //                     break;
-    //             }
-    //         }
-    //     }
-    //
-    //     // 监听PDF.js发送的消息
-    //     window.addEventListener('message', handlePdfMessage);
-    //
-    //     // 设置较长的超时时间
-    //     const timeoutId = setTimeout(() => {
-    //         if (document.querySelector('.pdf-loading').classList.contains('hidden')) {
-    //             return; // 已经加载完成
-    //         }
-    //
-    //         console.log('PDF加载超时');
-    //         hideLoading();
-    //
-    //         // 检查iframe是否有内容
-    //         try {
-    //             if (pdfIframe.contentDocument && pdfIframe.contentDocument.body.innerHTML) {
-    //                 // 有内容，但可能是PDF.js的错误页面
-    //                 const errorElement = pdfIframe.contentDocument.querySelector('.error');
-    //                 if (errorElement) {
-    //                     showPdfError('PDF加载失败: ' + errorElement.textContent.trim());
-    //                 } else {
-    //                     // 可能仍在加载中，不显示错误
-    //                 }
-    //             } else {
-    //                 showPdfError();
-    //             }
-    //         } catch (e) {
-    //             showPdfError();
-    //         }
-    //     }, 1000); // 45秒超时
-    //
-    //     // 监听iframe加载完成事件 (viewer.html加载完成)
-    //     pdfIframe.onload = () => {
-    //         console.log('PDF.js viewer已加载');
-    //
-    //         // 尝试向PDF.js发送消息 (需要PDF.js启用消息传递)
-    //         try {
-    //             pdfIframe.contentWindow.postMessage({ type: 'ping' }, '*');
-    //         } catch (e) {
-    //             console.log('无法向PDF.js发送消息:', e);
-    //         }
-    //     };
-    //
-    //     // 显示模态框
-    //     modal.classList.add('active');
-    //
-    //     // 重置模态框位置和大小
-    //     const modalContent = document.getElementById('modalContent');
-    //     modalContent.style.width = '800px';
-    //     modalContent.style.height = '600px';
-    //     modalContent.style.top = '50%';
-    //     modalContent.style.left = '50%';
-    //     modalContent.style.transform = 'translate(-50%, -50%)';
-    // }
-
-    // 打开PDF模态框
     // 打开PDF模态框
     function openPdfModal(drawNum, drawTime, pdfUrl) {
         const modal = document.getElementById('pdfModal');
@@ -614,7 +448,6 @@
 
         // 显示加载状态
         showLoading();
-
 
         // 隐藏加载指示器
         hideLoading();
@@ -645,59 +478,6 @@
 
     // 下载PDF文件的函数
     function downloadPdfFile(url, filename) {
-        // 方法1: 尝试直接使用a标签下载
-        try {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            link.target = '_blank';
-            document.body.appendChild(link);
-
-            // 检查是否同源
-            if (new URL(url).origin === window.location.origin) {
-                link.click(); // 同源URL可以直接点击
-            } else {
-                // 跨域URL使用fetch
-                fetch(url, {
-                    method: 'GET',
-                    mode: 'cors', // 确保支持跨域
-                    credentials: 'same-origin'
-                })
-                    .then(response => response.blob())
-                    .then(blob => {
-                        const blobUrl = URL.createObjectURL(blob);
-                        link.href = blobUrl;
-                        link.click();
-                        URL.revokeObjectURL(blobUrl);
-                    })
-                    .catch(error => {
-                        console.error('下载失败:', error);
-                        // 回退到打开新窗口
-                        window.open(url, '_blank');
-                    });
-            }
-
-            document.body.removeChild(link);
-            return true;
-        } catch (error) {
-            console.error('下载方法1失败:', error);
-        }
-
-        // 方法2: 使用iframe下载
-        try {
-            const downloadFrame = document.createElement('iframe');
-            downloadFrame.style.display = 'none';
-            downloadFrame.src = url;
-            document.body.appendChild(downloadFrame);
-
-            setTimeout(() => {
-                document.body.removeChild(downloadFrame);
-            }, 30000); // 30秒后移除
-
-            return true;
-        } catch (error) {
-            console.error('下载方法2失败:', error);
-        }
 
         // 方法3: 打开新窗口
         try {
@@ -1083,19 +863,66 @@
         // 初始化事件监听器
         initEventListeners();
 
-        // 平滑滚动
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
+        // // 平滑滚动
+        // document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        //     anchor.addEventListener('click', function (e) {
+        //         e.preventDefault();
+        //         const target = document.querySelector(this.getAttribute('href'));
+        //         if (target) {
+        //             target.scrollIntoView({
+        //                 behavior: 'smooth'
+        //             });
+        //         }
+        //     });
+        // });
+        // 设置表格高度
+        setTableHeight();
+
+        // 监听窗口大小变化，重新设置表格高度
+        window.addEventListener('resize', setTableHeight);
     });
+
+    // 设置表格高度，使其加上搜索区域高度等于页面高度
+    function setTableHeight() {
+        const headerHeight = document.querySelector('header').offsetHeight;
+        const footerHeight = document.querySelector('footer').offsetHeight;
+        const searchContainerHeight = document.querySelector('.search-container').offsetHeight;
+        const paginationHeight = document.querySelector('.p-4.border-t').offsetHeight;
+        const noResultsHeight = document.getElementById('noResults').offsetHeight || 0;
+
+        // 获取main元素的内边距
+        const mainPaddingTop = parseInt(getComputedStyle(document.querySelector('main')).paddingTop);
+        const mainPaddingBottom = parseInt(getComputedStyle(document.querySelector('main')).paddingBottom);
+
+        // 获取表格容器和表格内容
+        const resultCard = document.querySelector('.result-card');
+        const tableContainer = resultCard.querySelector('.overflow-x-auto');
+
+        // 计算表格容器可用高度
+        const availableHeight = window.innerHeight - headerHeight - footerHeight - searchContainerHeight - paginationHeight - mainPaddingTop - mainPaddingBottom - 40;
+
+        // 设置表格容器高度
+        tableContainer.style.maxHeight = `${availableHeight - noResultsHeight}px`;
+        tableContainer.style.overflowY = 'auto';
+
+        // 防止页面出现垂直滚动条
+        const body = document.body;
+        const html = document.documentElement;
+
+        const bodyHeight = Math.max(
+            body.scrollHeight,
+            body.offsetHeight,
+            html.clientHeight,
+            html.scrollHeight,
+            html.offsetHeight
+        );
+
+        if (bodyHeight > window.innerHeight) {
+            // 如果内容高度超过窗口高度，微调表格高度
+            const adjustment = bodyHeight - window.innerHeight;
+            tableContainer.style.maxHeight = `${parseInt(tableContainer.style.maxHeight) - adjustment}px`;
+        }
+    }
 </script>
 </body>
 </html>
