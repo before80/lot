@@ -376,8 +376,8 @@
         stake_amount_201: {{$dlt.StakeAmount201}},
         stake_count_301: {{$dlt.StakeCount301}},
         stake_amount_301: {{$dlt.StakeAmount301}},
-        stake_count_302: {{$dlt.StakeCount302}},
-        stake_amount_302: {{$dlt.StakeAmount302}},
+        stake_count_401: {{$dlt.StakeCount401}},
+        stake_amount_401: {{$dlt.StakeAmount401}},
         parity: "{{ oe $dlt.F1 $dlt.F2 $dlt.F3 $dlt.F4 $dlt.F5 $dlt.B1 $dlt.B2}}",
         sum: {{ newSum $dlt.F1 $dlt.F2 $dlt.F3 $dlt.F4 $dlt.F5 $dlt.B1 $dlt.B2}},
         total_sale_amount: {{$dlt.TotalSaleAmount}},
@@ -599,8 +599,8 @@
           <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_201 ? formatAmount(result.stake_amount_201) : '-'}</td>
           <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_count_301 || '-'}</td>
           <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_301 ? formatAmount(result.stake_amount_301) : '-'}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_count_302 || '-'}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_302 ? formatAmount(result.stake_amount_302) : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_count_401 || '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.stake_amount_401 ? formatAmount(result.stake_amount_401) : '-'}</td>
           <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.parity}</td>
           <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">${result.sum}</td>
           <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${result.total_sale_amount ? formatAmount(result.total_sale_amount) : '-'}</td>
@@ -640,7 +640,7 @@
                     formatAmount(result.stake_amount_101).includes(searchTerm) ||
                     formatAmount(result.stake_amount_201).includes(searchTerm) || // 新增搜索字段
                     formatAmount(result.stake_amount_301).includes(searchTerm) ||
-                    formatAmount(result.stake_amount_302).includes(searchTerm) ||
+                    formatAmount(result.stake_amount_401).includes(searchTerm) ||
                     result.sum.toString().includes(searchTerm) ||
                     formatAmount(result.total_sale_amount).includes(searchTerm) ||
                     formatAmount(result.pool_balance).includes(searchTerm);
