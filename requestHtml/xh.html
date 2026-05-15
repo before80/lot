@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大乐透生成随机号码</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .form-input-focus {
+                @apply ring-2 ring-primary/30 border-primary;
+            }
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .dropdown-active {
+                @apply border-primary ring-2 ring-primary/30;
+            }
+            .number-input {
+                @apply appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200;
+            }
+            .checkbox-grid {
+                @apply grid grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-3;
+            }
+            .checkbox-item {
+                @apply relative border-2 border-gray-300 rounded-lg transition-all duration-200 cursor-pointer;
+            }
+            .checkbox-item:hover {
+                @apply border-primary/50 bg-primary/5;
+            }
+            .checkbox-item.selected {
+                @apply border-primary bg-primary/20 shadow-md;
+            }
+            .checkbox-input {
+                @apply absolute opacity-0 w-full h-full cursor-pointer;
+            }
+            .checkbox-label {
+                @apply block w-full h-full p-3 text-center text-sm font-semibold text-gray-700 select-none cursor-pointer;
+            }
+            .checkbox-item.selected .checkbox-label {
+                @apply text-primary;
+            }
+            .checkbox-item input:checked + .checkbox-label {
+                @apply text-primary;
+            }
+            .slider-container {
+                @apply mt-4 p-4 bg-gray-50 rounded-lg;
+            }
+            .section-title {
+                @apply text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200;
+            }
+            .section-subtitle {
+                @apply text-sm font-medium text-gray-700 mb-2;
+            }
+            .section-description {
+                @apply text-xs text-gray-500 mt-1;
+            }
+            .limit-badge {
+                @apply inline-block px-3 py-1 text-xs font-medium rounded-full ml-2;
+            }
+            .limit-badge-info {
+                @apply bg-blue-100 text-blue-800;
+            }
+            .limit-badge-warning {
+                @apply bg-yellow-100 text-yellow-800;
+            }
+            .noUi-connect {
+                @apply bg-primary;
+            }
+            .noUi-handle {
+                @apply border-2 border-primary bg-white shadow-md;
+            }
+            .noUi-handle:after, .noUi-handle:before {
+                @apply bg-primary/70;
+            }
+            .noUi-target {
+                @apply border-gray-300 shadow-sm;
+            }
+            .radio-group {
+                @apply flex flex-wrap gap-4;
+            }
+            .radio-item {
+                @apply flex items-center space-x-2;
+            }
+            .radio-input {
+                @apply h-4 w-4 text-primary border-gray-300;
+            }
+            .radio-label {
+                @apply text-sm text-gray-700 cursor-pointer;
+            }
+            .quick-set-btn {
+                @apply px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200;
+            }
+            .quick-set-btn.active {
+                @apply bg-primary text-white border-primary hover:bg-primary/90;
+            }
+            .number-display {
+                @apply font-mono text-sm bg-gray-50 p-3 rounded-lg border border-gray-200;
+            }
+            .loading-overlay {
+                @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden;
+            }
+            .loading-spinner {
+                @apply w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin;
+            }
+            .section-header {
+                @apply flex items-center justify-between mb-4 pb-2 border-b border-gray-200;
+            }
+            .combination-item {
+                @apply relative border-2 border-gray-300 rounded-lg transition-all duration-200 cursor-pointer p-2;
+            }
+            .combination-item:hover {
+                @apply border-blue-300 bg-blue-50;
+            }
+            .combination-item.selected {
+                @apply border-blue-500 bg-blue-100 shadow-sm;
+            }
+            .combination-label {
+                @apply block w-full text-center text-xs font-medium text-gray-700 select-none cursor-pointer p-1;
+            }
+            .combination-item.selected .combination-label {
+                @apply text-blue-700 font-semibold;
+            }
+            .front-position-item {
+                @apply relative border-2 border-purple-300 rounded-lg transition-all duration-200 cursor-pointer;
+            }
+            .front-position-item:hover {
+                @apply border-purple-400 bg-purple-50;
+            }
+            .front-position-item.selected {
+                @apply border-purple-600 bg-purple-100 shadow-md;
+            }
+            .front-position-label {
+                @apply block w-full h-full p-3 text-center text-sm font-semibold text-purple-700 select-none cursor-pointer;
+            }
+            .front-position-item.selected .front-position-label {
+                @apply text-purple-800 font-bold;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen">
+<!-- 加载遮罩层 -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center">
+        <div class="loading-spinner mb-4"></div>
+        <p class="text-gray-700 font-medium">正在生成随机号码...</p>
+        <p class="text-gray-500 text-sm mt-1">请稍候</p>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- 表单卡片 -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">大乐透生成随机号码</h1>
+            <p class="opacity-80 mt-1">请设置生成参数并开始生成</p>
+        </div>
+
+        <form id="analysisForm" class="p-6 space-y-8" method="POST">
+            <!-- 0. 随机注数 -->
+            <div class="space-y-4">
+                <h3 class="section-title">1. 随机注数</h3>
+                <div class="radio-group">
+                    <!-- 选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择要生成的随机号码注数
+                </div>
+            </div>
+
+            <!-- 2. 组合 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">2. 组合选择</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllCombinations"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllCombinations"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="combinationsCount" class="limit-badge limit-badge-info">18/18</span>
+                    </div>
+                </div>
+                <div id="combinationsGroup" class="checkbox-grid">
+                    <!-- 组合选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择要分析的组合类型，默认全选
+                </div>
+            </div>
+
+            <!-- 3. 奇偶 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">3. 奇偶比例</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllParity"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllParity"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="parityCount" class="limit-badge limit-badge-info">8/8</span>
+                    </div>
+                </div>
+                <div id="parityGroup" class="checkbox-grid">
+                    <!-- 奇偶选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择奇偶比例，格式如"07"表示0个奇数7个偶数
+                </div>
+            </div>
+
+            <!-- 4. 和值范围 -->
+            <div class="space-y-4">
+                <h3 class="section-title">4. 和值范围</h3>
+                <div class="slider-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">最小值</label>
+                                <input type="number" id="hzMin" name="hzMin" min="18" max="188" value="90"
+                                       class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus">
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">最大值</label>
+                                <input type="number" id="hzMax" name="hzMax" min="18" max="188" value="116"
+                                       class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus">
+                            </div>
+                        </div>
+                        <div class="text-lg font-bold text-primary" id="hzValueDisplay">90 - 116</div>
+                    </div>
+                    <div id="hzSlider" class="mt-4"></div>
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 拖动滑块或输入数字设置和值范围，最小18，最大188
+                </div>
+            </div>
+
+            <!-- 5. 是否移除历史 -->
+            <div class="space-y-4">
+                <h3 class="section-title">5. 是否移除历史数据</h3>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" id="removeHistoryYes" name="removeHistory" value="1" checked class="radio-input">
+                        <label for="removeHistoryYes" class="radio-label">移除历史数据</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="removeHistoryNo" name="removeHistory" value="2" class="radio-input">
+                        <label for="removeHistoryNo" class="radio-label">不移除历史数据</label>
+                    </div>
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择是否在分析中排除历史数据
+                </div>
+            </div>
+
+            <!-- 6. 胆码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">6. 胆码选择</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="clearDanma"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="danmaCount" class="limit-badge limit-badge-info">已选 0/4</span>
+                    </div>
+                </div>
+                <div id="danmaGroup" class="checkbox-grid">
+                    <!-- 胆码选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 最多选择4个胆码号码（01-35）
+                </div>
+            </div>
+
+            <!-- 7. 前区必须包括的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">7. 前区必须包括的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllFrontInclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllFrontInclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="frontIncludeCount" class="limit-badge limit-badge-info">0/35</span>
+                    </div>
+                </div>
+                <div id="frontIncludeGroup" class="checkbox-grid">
+                    <!-- 前区必须包括的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 8. 后区必须包括的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">8. 后区必须包括的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllBackInclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllBackInclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="backIncludeCount" class="limit-badge limit-badge-info">0/12</span>
+                    </div>
+                </div>
+                <div id="backIncludeGroup" class="checkbox-grid">
+                    <!-- 后区必须包括的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 9. 后续必须包含的组合 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">9. 后续必须包含的组合</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllCombinationsInclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllCombinationsInclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="combinationsIncludeCount" class="limit-badge limit-badge-info">0/66</span>
+                    </div>
+                </div>
+                <div id="combinationsIncludeGroup" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    <!-- 后续必须包含的组合选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择后续分析中必须包含的号码组合
+                </div>
+            </div>
+
+            <!-- 10. 前区必须排除的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">10. 前区必须排除的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllFrontExclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllFrontExclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="frontExcludeCount" class="limit-badge limit-badge-info">0/35</span>
+                    </div>
+                </div>
+                <div id="frontExcludeGroup" class="checkbox-grid">
+                    <!-- 前区必须排除的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 11. 后区必须排除的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">11. 后区必须排除的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllBackExclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllBackExclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="backExcludeCount" class="limit-badge limit-badge-info">0/12</span>
+                    </div>
+                </div>
+                <div id="backExcludeGroup" class="checkbox-grid">
+                    <!-- 后区必须排除的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 12. 后区必须排除的组合 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">12. 后区必须排除的组合</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllCombinationsExclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllCombinationsExclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="combinationsExcludeCount" class="limit-badge limit-badge-info">0/66</span>
+                    </div>
+                </div>
+                <div id="combinationsExcludeGroup" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    <!-- 后区必须排除的组合选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择后续分析中必须排除的号码组合
+                </div>
+            </div>
+
+            <!-- 13. 前区前中后 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">13. 前区前中后</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllFrontPosition"
+                                class="px-3 py-1.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllFrontPosition"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="frontPositionCount" class="limit-badge" style="background-color: #e9d5ff; color: #7c3aed;">0/8</span>
+                    </div>
+                </div>
+                <div id="frontPositionGroup" class="checkbox-grid">
+                    <!-- 前区前中后选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择前区号码在前、中、后区的分布比例（如"500"表示5个前区号码都在前区）
+                </div>
+            </div>
+
+            <!-- 14. 新4重号数必须大于等于 -->
+            <div class="space-y-4">
+                <h3 class="section-title">14. 新4重号数必须大于等于</h3>
+                <div class="flex flex-col space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <input type="number" id="newFourRepeat" name="newFourRepeat" min="0" max="300" value="28"
+                               class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200">
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-700 mb-2">快速设置:</div>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" data-value="0" class="quick-set-btn">设为0</button>
+                                <button type="button" data-value="10" class="quick-set-btn">设为10</button>
+                                <button type="button" data-value="20" class="quick-set-btn">设为20</button>
+                                <button type="button" data-value="25" class="quick-set-btn">设为25</button>
+                                <button type="button" data-value="28" class="quick-set-btn active">设为28</button>
+                                <button type="button" data-value="30" class="quick-set-btn">设为30</button>
+                                <button type="button" data-value="40" class="quick-set-btn">设为40</button>
+                                <button type="button" data-value="50" class="quick-set-btn">设为50</button>
+                                <button type="button" data-value="300" class="quick-set-btn">设为300</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 输入0-300之间的数字，表示新4重号数的最小值
+                </div>
+            </div>
+
+            <!-- 错误提示 -->
+            <div id="errorMessage" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-200">
+                <i class="fa fa-exclamation-circle mr-1"></i> <span></span>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="pt-4">
+                <button type="button" id="submitBtn"
+                        class="w-full py-3 px-6 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl">
+                    <i class="fa fa-random mr-2"></i> 开始生成随机号码
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 生成的号码展示区域 -->
+    <div id="resultArea" class="mt-8 bg-white rounded-xl shadow-lg p-6 hidden fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-800">生成的随机号码</h2>
+            <button type="button" id="copyAllNumbersBtn"
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 flex items-center">
+                <i class="fa fa-copy mr-2"></i> 复制所有号码
+            </button>
+        </div>
+
+        <div id="numbersDisplay" class="space-y-4">
+            <!-- 号码会动态显示在这里 -->
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 元素引用
+        const form = document.getElementById('analysisForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultArea = document.getElementById('resultArea');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const copyAllNumbersBtn = document.getElementById('copyAllNumbersBtn');
+        const numbersDisplay = document.getElementById('numbersDisplay');
+        const hzSlider = document.getElementById('hzSlider');
+        const hzMinInput = document.getElementById('hzMin');
+        const hzMaxInput = document.getElementById('hzMax');
+        const hzValueDisplay = document.getElementById('hzValueDisplay');
+        const newFourRepeatInput = document.getElementById('newFourRepeat');
+        const quickSetButtons = document.querySelectorAll('.quick-set-btn');
+
+        // 数据配置
+        const combinations = [
+            'OtherT', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8',
+            'T9', 'T10', 'T11', 'T12', 'T13', 'T14', 'T15', 'T16', 'T17'
+        ];
+
+        const parityOptions = ['07', '16', '25', '34', '43', '52', '61', '70'];
+
+        // 前区前中后选项
+        const frontPositionOptions = ['500', '410', '311', '302', '203', '113', '014', '005'];
+
+        // 随机注数选项
+        const randomCountOptions = [1,2,3,4,5,6,7,8,9,10,15,20,25,30,40,50,100];
+
+        // 生成组合对（01,02 到 11,12）
+        const generateCombinationPairs = () => {
+            const pairs = [];
+            for (let i = 1; i <= 12; i++) {
+                for (let j = i + 1; j <= 12; j++) {
+                    pairs.push(`${i.toString().padStart(2, '0')},${j.toString().padStart(2, '0')}`);
+                }
+            }
+            return pairs;
+        };
+        const combinationPairs = generateCombinationPairs();
+
+        // 初始化滑块（默认值90-116）
+        let hzSliderInstance = null;
+        function initHzSlider() {
+            if (hzSliderInstance) {
+                hzSliderInstance.destroy();
+            }
+
+            hzSliderInstance = noUiSlider.create(hzSlider, {
+                start: [90, 116], // 默认值90-116
+                connect: true,
+                range: {
+                    'min': 18,
+                    'max': 188
+                },
+                step: 1,
+                format: {
+                    to: function(value) {
+                        return Math.round(value);
+                    },
+                    from: function(value) {
+                        return Number(value);
+                    }
+                }
+            });
+
+            // 滑块更新事件
+            hzSliderInstance.on('update', function(values) {
+                const min = Math.round(values[0]);
+                const max = Math.round(values[1]);
+
+                hzMinInput.value = min;
+                hzMaxInput.value = max;
+                hzValueDisplay.textContent = `${min} - ${max}`;
+            });
+
+            // 输入框更新事件
+            hzMinInput.addEventListener('change', function() {
+                let value = parseInt(this.value);
+                if (isNaN(value) || value < 18) value = 18;
+                if (value > 188) value = 188;
+                this.value = value;
+
+                const currentValues = hzSliderInstance.get();
+                if (value > currentValues[1]) {
+                    hzSliderInstance.set([currentValues[1] - 1, currentValues[1]]);
+                } else {
+                    hzSliderInstance.set([value, null]);
+                }
+            });
+
+            hzMaxInput.addEventListener('change', function() {
+                let value = parseInt(this.value);
+                if (isNaN(value) || value > 188) value = 188;
+                if (value < 18) value = 18;
+                this.value = value;
+
+                const currentValues = hzSliderInstance.get();
+                if (value < currentValues[0]) {
+                    hzSliderInstance.set([currentValues[0], currentValues[0] + 1]);
+                } else {
+                    hzSliderInstance.set([null, value]);
+                }
+            });
+        }
+
+        // 生成复选框组
+        function generateCheckboxGroup(containerId, options, defaultChecked = true) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            options.forEach(option => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                if (defaultChecked) {
+                    div.classList.add('selected');
+                }
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = option;
+                checkbox.id = `${containerId}_${option}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = defaultChecked;
+
+                checkbox.dataset.group = containerId;
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${option}`;
+                label.className = 'checkbox-label';
+                label.textContent = option;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateCount(this.dataset.group);
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            // 初始化计数
+            updateCount(containerId);
+        }
+
+        // 生成数字复选框组（01-35或01-12）
+        function generateNumberCheckboxGroup(containerId, min, max, defaultChecked = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            for (let i = min; i <= max; i++) {
+                const numberStr = i.toString().padStart(2, '0');
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                if (defaultChecked) {
+                    div.classList.add('selected');
+                }
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = numberStr;
+                checkbox.id = `${containerId}_${numberStr}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = defaultChecked;
+                checkbox.dataset.group = containerId;
+
+                // 胆码的特殊限制
+                if (containerId === 'danmaGroup') {
+                    checkbox.addEventListener('change', function() {
+                        updateDanmaCount();
+                        updateCount(containerId);
+                    });
+                } else {
+                    checkbox.addEventListener('change', function() {
+                        updateCount(containerId);
+                    });
+                }
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${numberStr}`;
+                label.className = 'checkbox-label';
+                label.textContent = numberStr;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            }
+
+            // 初始化计数
+            updateCount(containerId);
+        }
+
+        // 生成组合复选框组（01,02 到 11,12）
+        function generateCombinationCheckboxGroup(containerId, pairs, defaultChecked = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            pairs.forEach(pair => {
+                const div = document.createElement('div');
+                div.className = 'combination-item';
+                if (defaultChecked) {
+                    div.classList.add('selected');
+                }
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = pair;
+                checkbox.id = `${containerId}_${pair.replace(',', '_')}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = defaultChecked;
+                checkbox.dataset.group = containerId;
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${pair.replace(',', '_')}`;
+                label.className = 'combination-label';
+                label.textContent = pair;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateCount(this.dataset.group);
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            // 初始化计数
+            updateCount(containerId);
+        }
+
+        // 生成前区前中后复选框组
+        function generateFrontPositionCheckboxGroup(containerId, options, defaultChecked = true) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            options.forEach(option => {
+                const div = document.createElement('div');
+                div.className = 'front-position-item';
+                if (defaultChecked) {
+                    div.classList.add('selected');
+                }
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = option;
+                checkbox.id = `${containerId}_${option}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = defaultChecked;
+                checkbox.dataset.group = containerId;
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${option}`;
+                label.className = 'front-position-label';
+                label.textContent = option;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateCount(this.dataset.group);
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            // 初始化计数
+            updateCount(containerId);
+        }
+
+        // 生成随机注数单选按钮
+        function generateRandomCountRadio() {
+            const radioGroup = document.querySelector('.radio-group');
+            radioGroup.innerHTML = '';
+
+            randomCountOptions.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'radio-item';
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.id = `randomCount_${num}`;
+                radio.name = 'randomCount';
+                radio.value = num;
+                radio.className = 'radio-input';
+                if (num === 5) radio.checked = true;
+
+                const label = document.createElement('label');
+                label.htmlFor = `randomCount_${num}`;
+                label.className = 'radio-label';
+                label.textContent = `${num}注`;
+
+                div.appendChild(radio);
+                div.appendChild(label);
+                radioGroup.appendChild(div);
+            });
+        }
+
+        // 更新计数显示
+        function updateCount(groupId) {
+            const checkboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]`);
+            const checkedCount = document.querySelectorAll(`#${groupId} input[type="checkbox"]:checked`).length;
+            const totalCount = checkboxes.length;
+
+            let countElement = null;
+            switch(groupId) {
+                case 'combinationsGroup':
+                    countElement = document.getElementById('combinationsCount');
+                    break;
+                case 'parityGroup':
+                    countElement = document.getElementById('parityCount');
+                    break;
+                case 'frontIncludeGroup':
+                    countElement = document.getElementById('frontIncludeCount');
+                    break;
+                case 'backIncludeGroup':
+                    countElement = document.getElementById('backIncludeCount');
+                    break;
+                case 'combinationsIncludeGroup':
+                    countElement = document.getElementById('combinationsIncludeCount');
+                    break;
+                case 'frontExcludeGroup':
+                    countElement = document.getElementById('frontExcludeCount');
+                    break;
+                case 'backExcludeGroup':
+                    countElement = document.getElementById('backExcludeCount');
+                    break;
+                case 'combinationsExcludeGroup':
+                    countElement = document.getElementById('combinationsExcludeCount');
+                    break;
+                case 'frontPositionGroup':
+                    countElement = document.getElementById('frontPositionCount');
+                    break;
+                case 'danmaGroup':
+                    countElement = document.getElementById('danmaCount');
+                    countElement.textContent = `已选 ${checkedCount}/4`;
+                    return;
+            }
+
+            if (countElement) {
+                countElement.textContent = `${checkedCount}/${totalCount}`;
+                if (checkedCount === totalCount) {
+                    countElement.classList.remove('limit-badge-warning');
+                    countElement.classList.add('limit-badge-info');
+                } else if (checkedCount === 0) {
+                    countElement.classList.remove('limit-badge-warning');
+                    countElement.classList.add('limit-badge-info');
+                } else {
+                    countElement.classList.remove('limit-badge-info');
+                    countElement.classList.add('limit-badge-warning');
+                }
+            }
+        }
+
+        // 更新胆码计数
+        function updateDanmaCount() {
+            const checkboxes = document.querySelectorAll('#danmaGroup input[type="checkbox"]:checked');
+            const count = checkboxes.length;
+            const danmaCount = document.getElementById('danmaCount');
+            danmaCount.textContent = `已选 ${count}/4`;
+
+            // 如果超过4个，禁用其他复选框
+            if (count >= 4) {
+                document.querySelectorAll('#danmaGroup input[type="checkbox"]:not(:checked)').forEach(cb => {
+                    cb.disabled = true;
+                    cb.parentElement.classList.add('opacity-50');
+                });
+                danmaCount.classList.remove('limit-badge-info');
+                danmaCount.classList.add('limit-badge-warning');
+            } else {
+                document.querySelectorAll('#danmaGroup input[type="checkbox"]').forEach(cb => {
+                    cb.disabled = false;
+                    cb.parentElement.classList.remove('opacity-50');
+                });
+                danmaCount.classList.remove('limit-badge-warning');
+                danmaCount.classList.add('limit-badge-info');
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.querySelector('span').textContent = message;
+            errorMessage.classList.remove('hidden');
+
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        // 全选/清空函数
+        function setupSelectionButtons(selectBtnId, deselectBtnId, groupId) {
+            document.getElementById(selectBtnId).addEventListener('click', function() {
+                document.querySelectorAll(`#${groupId} .checkbox-item, #${groupId} .combination-item, #${groupId} .front-position-item`).forEach(item => {
+                    item.classList.add('selected');
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    checkbox.checked = true;
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+                if (groupId === 'danmaGroup') updateDanmaCount();
+                updateCount(groupId);
+            });
+
+            document.getElementById(deselectBtnId).addEventListener('click', function() {
+                document.querySelectorAll(`#${groupId} .checkbox-item, #${groupId} .combination-item, #${groupId} .front-position-item`).forEach(item => {
+                    item.classList.remove('selected');
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    checkbox.checked = false;
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+                if (groupId === 'danmaGroup') updateDanmaCount();
+                updateCount(groupId);
+            });
+        }
+
+        // 获取复选框选中值
+        function getCheckboxValues(groupId) {
+            const values = [];
+            document.querySelectorAll(`#${groupId} input[type="checkbox"]:checked`).forEach(cb => {
+                values.push(cb.value);
+            });
+            return values;
+        }
+
+        // 初始化所有复选框组
+        function initAllCheckboxGroups() {
+            // 1. 组合
+            generateCheckboxGroup('combinationsGroup', combinations, true);
+            setupSelectionButtons('selectAllCombinations', 'deselectAllCombinations', 'combinationsGroup');
+
+            // 2. 奇偶
+            generateCheckboxGroup('parityGroup', parityOptions, true);
+            setupSelectionButtons('selectAllParity', 'deselectAllParity', 'parityGroup');
+
+            // 3. 胆码
+            generateNumberCheckboxGroup('danmaGroup', 1, 35, false);
+            updateDanmaCount();
+
+            // 4. 前区必须包括的号码
+            generateNumberCheckboxGroup('frontIncludeGroup', 1, 35, false);
+            setupSelectionButtons('selectAllFrontInclude', 'deselectAllFrontInclude', 'frontIncludeGroup');
+
+            // 5. 后区必须包括的号码
+            generateNumberCheckboxGroup('backIncludeGroup', 1, 12, false);
+            setupSelectionButtons('selectAllBackInclude', 'deselectAllBackInclude', 'backIncludeGroup');
+
+            // 6. 后续必须包含的组合
+            generateCombinationCheckboxGroup('combinationsIncludeGroup', combinationPairs, false);
+            setupSelectionButtons('selectAllCombinationsInclude', 'deselectAllCombinationsInclude', 'combinationsIncludeGroup');
+
+            // 7. 前区必须排除的号码
+            generateNumberCheckboxGroup('frontExcludeGroup', 1, 35, false);
+            setupSelectionButtons('selectAllFrontExclude', 'deselectAllFrontExclude', 'frontExcludeGroup');
+
+            // 8. 后区必须排除的号码
+            generateNumberCheckboxGroup('backExcludeGroup', 1, 12, false);
+            setupSelectionButtons('selectAllBackExclude', 'deselectAllBackExclude', 'backExcludeGroup');
+
+            // 9. 后区必须排除的组合
+            generateCombinationCheckboxGroup('combinationsExcludeGroup', combinationPairs, false);
+            setupSelectionButtons('selectAllCombinationsExclude', 'deselectAllCombinationsExclude', 'combinationsExcludeGroup');
+
+            // 10. 前区前中后（新增）
+            generateFrontPositionCheckboxGroup('frontPositionGroup', frontPositionOptions, true);
+            setupSelectionButtons('selectAllFrontPosition', 'deselectAllFrontPosition', 'frontPositionGroup');
+        }
+
+        // 验证表单
+        function validateForm() {
+            // 验证和值范围
+            const hzMin = parseInt(hzMinInput.value);
+            const hzMax = parseInt(hzMaxInput.value);
+
+            if (isNaN(hzMin) || hzMin < 18 || hzMin > 188) {
+                showError('和值最小值必须在18-188之间');
+                hzMinInput.focus();
+                return false;
+            }
+
+            if (isNaN(hzMax) || hzMax < 18 || hzMax > 188) {
+                showError('和值最大值必须在18-188之间');
+                hzMaxInput.focus();
+                return false;
+            }
+
+            if (hzMin > hzMax) {
+                showError('和值最小值不能大于最大值');
+                hzMinInput.focus();
+                return false;
+            }
+
+            // 验证胆码数量
+            const danmaCount = getCheckboxValues('danmaGroup').length;
+            if (danmaCount > 4) {
+                showError('胆码最多只能选择4个');
+                return false;
+            }
+
+            // 验证新4重号数
+            const fourRepeat = parseInt(newFourRepeatInput.value);
+            if (isNaN(fourRepeat) || fourRepeat < 0 || fourRepeat > 300) {
+                showError('新4重号数必须在0-300之间');
+                newFourRepeatInput.focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        // 生成表单数据
+        function getFormData() {
+            return {
+                randomCount: parseInt(document.querySelector('input[name="randomCount"]:checked').value),
+                combinations: getCheckboxValues('combinationsGroup'),
+                parity: getCheckboxValues('parityGroup'),
+                hzMin: parseInt(hzMinInput.value),
+                hzMax: parseInt(hzMaxInput.value),
+                removeHistory: parseInt(document.querySelector('input[name="removeHistory"]:checked').value),
+                danma: getCheckboxValues('danmaGroup'),
+                frontInclude: getCheckboxValues('frontIncludeGroup'),
+                backInclude: getCheckboxValues('backIncludeGroup'),
+                combinationsInclude: getCheckboxValues('combinationsIncludeGroup'),
+                frontExclude: getCheckboxValues('frontExcludeGroup'),
+                backExclude: getCheckboxValues('backExcludeGroup'),
+                combinationsExclude: getCheckboxValues('combinationsExcludeGroup'),
+                frontPosition: getCheckboxValues('frontPositionGroup'), // 新增字段
+                newFourRepeat: parseInt(newFourRepeatInput.value)
+            };
+        }
+
+        // 显示生成的号码
+        function displayGeneratedNumbers(numbers) {
+            numbersDisplay.innerHTML = '';
+
+            if (!numbers || numbers.length === 0) {
+                numbersDisplay.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fa fa-exclamation-circle text-3xl mb-2"></i>
+                        <p class="text-lg font-medium mb-1">未生成任何号码</p>
+                        <p class="text-sm">请调整参数后重试</p>
+                    </div>
+                `;
+                return;
+            }
+
+            numbers.forEach((number, index) => {
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200 shadow-sm';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'flex items-center justify-between mb-2';
+
+                const numberLabel = document.createElement('div');
+                numberLabel.className = 'font-medium text-gray-700 flex items-center';
+                numberLabel.innerHTML = `<span class="w-6 h-6 flex items-center justify-center bg-primary text-white rounded-full text-xs mr-2">${index + 1}</span>第 ${index + 1} 注`;
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'px-3 py-1 text-xs bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition duration-200 flex items-center';
+                copyBtn.innerHTML = '<i class="fa fa-copy mr-1"></i>复制';
+                copyBtn.dataset.number = number;
+
+                copyBtn.addEventListener('click', function() {
+                    navigator.clipboard.writeText(this.dataset.number).then(() => {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fa fa-check mr-1"></i>已复制';
+                        this.classList.remove('bg-primary/10');
+                        this.classList.add('bg-green-100', 'text-green-700');
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.classList.remove('bg-green-100', 'text-green-700');
+                            this.classList.add('bg-primary/10', 'text-primary');
+                        }, 2000);
+                    });
+                });
+
+                headerDiv.appendChild(numberLabel);
+                headerDiv.appendChild(copyBtn);
+
+                const numberContent = document.createElement('div');
+                numberContent.className = 'number-display font-bold text-gray-800 text-center py-3';
+                numberContent.textContent = number;
+
+                numberDiv.appendChild(headerDiv);
+                numberDiv.appendChild(numberContent);
+                numbersDisplay.appendChild(numberDiv);
+            });
+        }
+
+        // AJAX提交表单
+        // 修改前端的submitForm函数，添加详细日志
+        async function submitForm() {
+            if (!validateForm()) {
+                return null;
+            }
+
+            const formData = getFormData();
+
+            // 详细的调试信息
+            console.log("=== 前端调试信息 ===");
+            console.log("表单数据对象:", formData);
+            console.log("表单数据JSON字符串:", JSON.stringify(formData));
+            console.log("随机注数类型:", typeof formData.randomCount);
+            console.log("组合类型:", typeof formData.combinations);
+            console.log("前区前中后类型:", typeof formData.frontPosition);
+
+            // 检查关键字段
+            if (!formData.combinations) {
+                console.error("错误: combinations字段为undefined");
+            }
+            if (!formData.frontPosition) {
+                console.error("错误: frontPosition字段为undefined");
+            }
+
+            showLoading();
+
+            try {
+                const jsonData = JSON.stringify(formData);
+                console.log("最终发送的JSON:", jsonData);
+
+                const response = await fetch('/rxh', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: jsonData
+                });
+
+                console.log("响应状态码:", response.status);
+                console.log("响应状态文本:", response.statusText);
+
+                const responseText = await response.text();
+                console.log("响应原始文本:", responseText);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP错误! 状态码: ${response.status}, 响应: ${responseText}`);
+                }
+
+                const result = JSON.parse(responseText);
+                console.log("解析后的响应:", result);
+
+                hideLoading();
+
+                if (result.success && result.numbers) {
+                    return result.numbers;
+                } else if (result.error) {
+                    showError(result.error);
+                    return [];
+                } else {
+                    showError('服务器返回数据格式错误');
+                    return [];
+                }
+
+            } catch (error) {
+                console.error("提交失败详情:", error);
+                hideLoading();
+                showError('生成号码失败: ' + error.message);
+                return null;
+            }
+        }
+
+        // 初始化
+        initHzSlider();
+        generateRandomCountRadio();
+        initAllCheckboxGroups();
+
+        // 快速设置按钮事件
+        quickSetButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const value = this.dataset.value;
+                newFourRepeatInput.value = value;
+                newFourRepeatInput.dispatchEvent(new Event('input'));
+
+                // 更新按钮状态
+                quickSetButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 输入验证
+        newFourRepeatInput.addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value)) value = 0;
+            if (value < 0) value = 0;
+            if (value > 300) value = 300;
+            this.value = value;
+
+            // 更新快速设置按钮状态
+            let found = false;
+            quickSetButtons.forEach(btn => {
+                if (parseInt(btn.dataset.value) === value) {
+                    btn.classList.add('active');
+                    found = true;
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // 如果没有匹配的快速设置按钮，清除所有active状态
+            if (!found) {
+                quickSetButtons.forEach(btn => btn.classList.remove('active'));
+            }
+        });
+
+        // 表单提交
+        submitBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在生成...';
+
+            try {
+                const numbers = await submitForm();
+                if (numbers !== null) {
+                    displayGeneratedNumbers(numbers);
+                    resultArea.classList.remove('hidden');
+                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        });
+
+        // 复制所有号码按钮
+        copyAllNumbersBtn.addEventListener('click', function() {
+            const numberElements = document.querySelectorAll('.number-display');
+            if (numberElements.length === 0) {
+                showError('没有号码可以复制');
+                return;
+            }
+
+            const allNumbers = Array.from(numberElements).map(el => el.textContent).join('\n');
+
+            navigator.clipboard.writeText(allNumbers).then(() => {
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fa fa-check mr-2"></i>已复制所有号码';
+                this.classList.remove('bg-primary');
+                this.classList.add('bg-green-500', 'hover:bg-green-600');
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    this.classList.add('bg-primary', 'hover:bg-primary/90');
+                }, 2000);
+            });
+        });
+    });
+</script>
+<script>
+    // 配置参数 - 这里简化了部分参数，你可以根据需要扩展
+    const xuHaoSt = {
+        HzMin: 50,
+        HzMax: 150,
+        FrontDanMaHms: [],
+        FrontIncludeHms: [],
+        FrontExcludeHms: [],
+        QzhSlice: [],
+        Tx: [],
+        BackIncludeHms: [],
+        BackExcludeHms: [],
+        BackIncludeCombs: [],
+        BackExcludeCombs: [],
+        RemoveHis: 0,
+        Oes: [],
+        Ch4MustGetCount: 0
+    };
+
+    // 获取CPU核心数
+    const cpuCores = navigator.hardwareConcurrency || 4;
+
+    // 全局变量
+    let workerManager = null;
+    let isProcessing = false;
+
+    // 工具函数
+    const utils = {
+        sliceIntersection: (arr1, arr2) => {
+            if (!arr1 || !arr2) return [];
+            return arr1.filter(item => arr2.includes(item));
+        },
+
+        shuffleArray: (array) => {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        },
+
+        calDltHz: (numbers) => {
+            return numbers.reduce((sum, num) => sum + parseInt(num), 0);
+        },
+
+        // 生成组合
+        getCombinations: function(arr, k) {
+            const result = [];
+
+            function combine(start, current) {
+                if (current.length === k) {
+                    result.push([...current]);
+                    return;
+                }
+
+                for (let i = start; i < arr.length; i++) {
+                    current.push(arr[i]);
+                    combine(i + 1, current);
+                    current.pop();
+                }
+            }
+
+            combine(0, []);
+            return result;
+        },
+
+        // 交叉组合
+        crossComb: function(front, back, frontCount, backCount) {
+            const result = [];
+
+            const frontCombs = this.getCombinations(front, frontCount);
+            const backCombs = this.getCombinations(back, backCount);
+
+            for (const f of frontCombs) {
+                for (const b of backCombs) {
+                    result.push([...f, ...b].sort().join(','));
+                }
+            }
+
+            return result;
+        }
+    };
+
+    // Worker管理器
+    class DltWorkerManager {
+        constructor(workerCount) {
+            this.workerCount = Math.min(workerCount, cpuCores);
+            this.workers = [];
+            this.workerPromises = new Map();
+            this.nextWorkerId = 0;
+            this.taskQueue = [];
+            this.isProcessingQueue = false;
+
+            // 创建Worker
+            this.createWorkers();
+        }
+
+        createWorkers() {
+            // 创建Worker代码字符串
+            const workerCode = this.getWorkerCode();
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(blob);
+
+            for (let i = 0; i < this.workerCount; i++) {
+                const worker = new Worker(workerUrl);
+                const id = this.nextWorkerId++;
+
+                worker.id = id;
+                worker.busy = false;
+
+                worker.onmessage = (event) => {
+                    const { taskId, result, error } = event.data;
+                    worker.busy = false;
+
+                    const promise = this.workerPromises.get(taskId);
+                    if (promise) {
+                        if (error) {
+                            promise.reject(new Error(error));
+                        } else {
+                            promise.resolve(result);
+                        }
+                        this.workerPromises.delete(taskId);
+                    }
+
+                    this.processQueue();
+                };
+
+                worker.onerror = (error) => {
+                    console.error(`Worker ${id} error:`, error);
+                    worker.busy = false;
+                    this.processQueue();
+                };
+
+                this.workers.push(worker);
+            }
+
+            // 清理URL
+            setTimeout(() => URL.revokeObjectURL(workerUrl), 1000);
+        }
+
+        getWorkerCode() {
+            return `
+                    ${utils.getCombinations.toString()}
+
+                    ${utils.calDltHz.toString()}
+
+                    ${utils.crossComb.toString()}
+
+                    // Worker工具函数
+                    const workerUtils = {
+                        getCombinations: ${utils.getCombinations.toString()},
+                        calDltHz: ${utils.calDltHz.toString()},
+                        crossComb: ${utils.crossComb.toString()},
+                        shuffleArray: (array) => {
+                            const shuffled = [...array];
+                            for (let i = shuffled.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                            }
+                            return shuffled;
+                        }
+                    };
+
+                    // 构建4重号映射
+                    function buildC4Map(historicalData) {
+                        const c4ms = new Map();
+
+                        for (const dlt of historicalData) {
+                            const front = [dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5];
+                            const back = [dlt.B1, dlt.B2];
+
+                            // 生成所有4个号码的组合
+                            const combinations = [];
+
+                            // 前区4个 + 后区0个
+                            const front4 = workerUtils.getCombinations(front, 4);
+                            front4.forEach(comb => combinations.push(comb.sort().join(',')));
+
+                            // 前区3个 + 后区1个
+                            const front3 = workerUtils.getCombinations(front, 3);
+                            const back1 = workerUtils.getCombinations(back, 1);
+                            front3.forEach(f => {
+                                back1.forEach(b => {
+                                    combinations.push([...f, ...b].sort().join(','));
+                                });
+                            });
+
+                            // 添加到映射
+                            const fullStr = front.join(',') + '|' + back.join(',');
+                            combinations.forEach(comb => {
+                                if (!c4ms.has(comb)) {
+                                    c4ms.set(comb, []);
+                                }
+                                c4ms.get(comb).push(fullStr);
+                            });
+                        }
+
+                        return c4ms;
+                    }
+
+                    // 生成历史号码字符串数组
+                    function buildHistoryStrings(historicalData) {
+                        return historicalData.map(dlt =>
+                            dlt.F1 + ',' + dlt.F2 + ',' + dlt.F3 + ',' + dlt.F4 + ',' + dlt.F5 + '|' + dlt.B1 + ',' + dlt.B2
+                        );
+                    }
+
+                    // 检查条件
+                    function checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms) {
+                        const frontStr = front.join(',');
+                        const backStr = back.join(',');
+                        const fullStr = frontStr + '|' + backStr;
+
+                        // 移除历史检查
+                        if (xuHaoSt.RemoveHis === 1 && hisFullHmStrSlice.includes(fullStr)) {
+                            return false;
+                        }
+
+                        // 4重号检查
+                        if (xuHaoSt.Ch4MustGetCount > 0) {
+                            const ic4s = workerUtils.crossComb(front, back, 4, 0)
+                                .concat(workerUtils.crossComb(front, back, 3, 1))
+                                .concat(workerUtils.crossComb(front, back, 2, 2));
+
+                            let addCh4Count = 0;
+                            for (const ic4 of ic4s) {
+                                const n = c4ms.get(ic4)?.length || 0;
+                                if (n === 1) {
+                                    addCh4Count += 2;
+                                } else if (n >= 2) {
+                                    addCh4Count += 1;
+                                }
+                            }
+
+                            if (addCh4Count < xuHaoSt.Ch4MustGetCount) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+
+                    // 主处理函数
+                    function processTask(taskData) {
+                        const { xuHaoSt, rangeA, historicalData, finalCombMaxCount } = taskData;
+
+                        // 准备数据
+                        const c4ms = buildC4Map(historicalData);
+                        const hisFullHmStrSlice = buildHistoryStrings(historicalData);
+
+                        // 乱序号码
+                        const allDltFrontHms = workerUtils.shuffleArray(
+                            Array.from({length: 35}, (_, i) => (i + 1).toString().padStart(2, '0'))
+                        );
+
+                        const allDltBackHms = workerUtils.shuffleArray(
+                            Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'))
+                        );
+
+                        const finalCombForRandSlice = [];
+                        let finalCombCount = 0;
+
+                        const { start: aStart, end: aEnd } = rangeA;
+
+                        // 简化处理逻辑 - 只处理一部分组合
+                        const maxCombinationsPerWorker = 10000;
+                        let processedCount = 0;
+                        // && processedCount < maxCombinationsPerWorker;
+                        for (let a = aStart; a <= aEnd; a++) {
+                            for (let b = a + 1; b <= 31; b++) {
+                                for (let c = b + 1; c <= 32; c++) {
+                                    for (let d = c + 1; d <= 33; d++) {
+                                        for (let e = d + 1; e <= 34; e++) {
+                                            const front = [
+                                                allDltFrontHms[a],
+                                                allDltFrontHms[b],
+                                                allDltFrontHms[c],
+                                                allDltFrontHms[d],
+                                                allDltFrontHms[e]
+                                            ].sort();
+
+                                            // 简单的前区和值检查
+                                            const frontHz = workerUtils.calDltHz(front);
+                                            if (frontHz < (xuHaoSt.HzMin - 23)) {
+                                                continue;
+                                            }
+
+                                            // 后区组合
+                                            //  && processedCount < maxCombinationsPerWorker
+                                            for (let x = 0; x <= 10; x++) {
+                                                //  && processedCount < maxCombinationsPerWorker
+                                                for (let y = x + 1; y <= 11; y++) {
+                                                    const back = [
+                                                        allDltBackHms[x],
+                                                        allDltBackHms[y]
+                                                    ].sort();
+
+                                                    // 检查条件
+                                                    if (checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms)) {
+                                                        const fullStr = front.join(',') + '|' + back.join(',');
+
+                                                        finalCombForRandSlice.push(fullStr);
+                                                        // if (finalCombCount < finalCombMaxCount) {
+                                                        //     finalCombForRandSlice.push(fullStr);
+                                                        // } else {
+                                                        //     // 随机替换
+                                                        //     const randomIndex = Math.floor(Math.random() * finalCombMaxCount);
+                                                        //     finalCombForRandSlice[randomIndex] = fullStr;
+                                                        // }
+                                                        finalCombCount++;
+                                                    }
+
+                                                    processedCount++;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        return finalCombForRandSlice;
+                    }
+
+                    // Worker消息处理
+                    self.onmessage = (event) => {
+                        const { taskId, ...taskData } = event.data;
+
+                        try {
+                            const result = processTask(taskData);
+
+                            self.postMessage({
+                                taskId,
+                                result
+                            });
+                        } catch (error) {
+                            self.postMessage({
+                                taskId,
+                                error: error.message
+                            });
+                        }
+                    };
+                `;
+        }
+
+        assignTask(task) {
+            return new Promise((resolve, reject) => {
+                const taskId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+                this.taskQueue.push({
+                    id: taskId,
+                    task,
+                    resolve,
+                    reject
+                });
+
+                this.processQueue();
+            });
+        }
+
+        processQueue() {
+            if (this.isProcessingQueue) return;
+            this.isProcessingQueue = true;
+
+            while (this.taskQueue.length > 0) {
+                const availableWorker = this.workers.find(w => !w.busy);
+                if (!availableWorker) break;
+
+                const taskItem = this.taskQueue.shift();
+                availableWorker.busy = true;
+
+                this.workerPromises.set(taskItem.id, {
+                    resolve: taskItem.resolve,
+                    reject: taskItem.reject
+                });
+
+                availableWorker.postMessage({
+                    taskId: taskItem.id,
+                    ...taskItem.task
+                });
+            }
+
+            this.isProcessingQueue = false;
+        }
+
+        async terminate() {
+            for (const worker of this.workers) {
+                worker.terminate();
+            }
+            this.workers = [];
+            this.workerPromises.clear();
+            this.taskQueue = [];
+        }
+    }
+
+    // 分割任务
+    function splitTasks(xuHaoSt, workerCount) {
+        const tasks = [];
+
+        // 基于前区第一个数字的范围分割任务
+        const ranges = [];
+        const step = Math.ceil(31 / workerCount); // a从0到30
+
+        for (let i = 0; i < 31; i += step) {
+            const start = i;
+            const end = Math.min(i + step - 1, 30);
+            if (start <= end) {
+                ranges.push({ start, end });
+            }
+        }
+
+        // 创建模拟历史数据
+        const historicalData = createMockHistoricalData();
+
+        for (const range of ranges) {
+            tasks.push({
+                xuHaoSt,
+                historicalData,
+                rangeA: range,
+                finalCombMaxCount: 2000
+            });
+        }
+
+        return tasks;
+    }
+
+    // 创建模拟历史数据
+    function createMockHistoricalData() {
+        const data = [];
+        for (let i = 0; i < 100; i++) {
+            // 生成随机的大乐透号码
+            const front = [];
+            while (front.length < 5) {
+                const num = Math.floor(Math.random() * 35) + 1;
+                const numStr = num.toString().padStart(2, '0');
+                if (!front.includes(numStr)) {
+                    front.push(numStr);
+                }
+            }
+            front.sort();
+
+            const back = [];
+            while (back.length < 2) {
+                const num = Math.floor(Math.random() * 12) + 1;
+                const numStr = num.toString().padStart(2, '0');
+                if (!back.includes(numStr)) {
+                    back.push(numStr);
+                }
+            }
+            back.sort();
+
+            data.push({
+                F1: front[0],
+                F2: front[1],
+                F3: front[2],
+                F4: front[3],
+                F5: front[4],
+                B1: back[0],
+                B2: back[1]
+            });
+        }
+        return data;
+    }
+
+    // 随机选择组合
+    function selectRandomCombinations(combinations, count) {
+        if (combinations.length <= count) {
+            return [...combinations];
+        }
+
+        const selected = new Set();
+        const result = [];
+
+        while (result.length < count && selected.size < combinations.length) {
+            const randomIndex = Math.floor(Math.random() * combinations.length);
+            if (!selected.has(randomIndex)) {
+                selected.add(randomIndex);
+                result.push(combinations[randomIndex]);
+            }
+        }
+
+        return result;
+    }
+
+    // 更新进度
+    function updateProgress(completed, total) {
+        const progressContainer = document.getElementById('progressContainer');
+        const progress = document.getElementById('progress');
+        const status = document.getElementById('status');
+
+        if (total > 0) {
+            const percentage = Math.round((completed / total) * 100);
+            progress.style.width = percentage + '%';
+            status.textContent = `处理中: ${completed}/${total} 个任务 (${percentage}%)`;
+            progressContainer.style.display = 'block';
+        }
+    }
+
+    // 开始选号
+    async function startSelection() {
+        if (isProcessing) {
+            alert('正在处理中，请稍候...');
+            return;
+        }
+
+        isProcessing = true;
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resultsDiv = document.getElementById('results');
+        const statusDiv = document.getElementById('status');
+        const resultCount = document.getElementById('resultCount');
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        resultsDiv.innerHTML = '';
+        statusDiv.textContent = '正在初始化...';
+        resultCount.textContent = '0';
+
+        const zhuShu = parseInt(document.getElementById('zhuShu').value) || 10;
+        const workerCount = parseInt(document.getElementById('workerCount').value) || cpuCores;
+
+        try {
+            console.time('选号总耗时');
+
+            // 创建Worker管理器
+            workerManager = new DltWorkerManager(workerCount);
+
+            // 分割任务
+            const tasks = splitTasks(xuHaoSt, workerManager.workerCount);
+            statusDiv.textContent = `任务已分割为 ${tasks.length} 个子任务`;
+
+            // 并行执行所有任务
+            const workerPromises = tasks.map((task, index) => {
+                updateProgress(index, tasks.length);
+                return workerManager.assignTask(task);
+            });
+
+            // 等待所有Worker完成
+            const results = await Promise.all(workerPromises);
+            updateProgress(tasks.length, tasks.length);
+
+            // 合并所有结果
+            const allCombinations = results.flat();
+
+            // 随机选择指定数量的结果
+            const finalSelections = selectRandomCombinations(allCombinations, zhuShu);
+
+            console.timeEnd('选号总耗时');
+            console.log(`总组合数: ${allCombinations.length}, 最终选择: ${finalSelections.length}`);
+
+            // 显示结果
+            resultsDiv.innerHTML = finalSelections.map((r, i) =>
+                `<div class="result-item">第${i + 1}注: ${r}</div>`
+            ).join('');
+
+            resultCount.textContent = finalSelections.length;
+            statusDiv.textContent = `完成！共生成 ${allCombinations.length} 个组合，最终选择 ${finalSelections.length} 注`;
+
+            // 隐藏进度条
+            document.getElementById('progressContainer').style.display = 'none';
+
+        } catch (error) {
+            console.error('选号失败:', error);
+            statusDiv.textContent = '选号失败: ' + error.message;
+            statusDiv.style.color = 'red';
+        } finally {
+            // 清理Worker
+            if (workerManager) {
+                await workerManager.terminate();
+                workerManager = null;
+            }
+
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            isProcessing = false;
+        }
+    }
+
+    // 停止选号
+    function stopSelection() {
+        if (workerManager) {
+            workerManager.terminate();
+            workerManager = null;
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('status').textContent = '已停止';
+            isProcessing = false;
+        }
+    }
+</script>
+
+
+</body>
+</html>

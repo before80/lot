@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>号码选择表单</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .form-input-focus {
+                @apply ring-2 ring-primary/30 border-primary;
+            }
+            .number-tag {
+                @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary;
+            }
+            .tag-section {
+                @apply px-1.5 py-0.5 rounded mr-1 text-xs font-medium;
+            }
+            .front-section {
+                @apply bg-blue-100 text-blue-800;
+            }
+            .back-section {
+                @apply bg-green-100 text-green-800;
+            }
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .dropdown-active {
+                @apply border-primary ring-2 ring-primary/30;
+            }
+            .number-input {
+                @apply appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200 pr-10;
+            }
+            .dropdown-icon {
+                @apply pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700;
+            }
+            .dropdown-menu {
+                @apply absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg py-1 max-h-60 overflow-y-auto border border-gray-200;
+            }
+            .dropdown-item {
+                @apply block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen">
+<div class="container mx-auto px-4 py-8 max-w-3xl">
+    <!-- 表单卡片 -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">号码选择表单</h1>
+            <p class="opacity-80 mt-1">请填写以下信息并提交</p>
+        </div>
+
+        <form id="numberForm" class="p-6 space-y-6" method="GET">
+            <!-- 基础信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label for="startDrawNum" class="block text-sm font-medium text-gray-700">起始期号</label>
+                    <div class="relative" id="startDrawNumContainer">
+                        <input type="text" id="startDrawNumInput" name="startDrawNum"
+                               class="number-input"
+                               placeholder="请输入5位期号" maxlength="5">
+                        <div class="dropdown-icon">
+                            <i class="fa fa-chevron-down text-xs"></i>
+                        </div>
+                        <div id="startDrawNumDropdown" class="dropdown-menu hidden">
+                            <!-- 选项会动态生成 -->
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        <i class="fa fa-info-circle"></i> 必须为5位数字，且数值 >= 07001
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="eqNum" class="block text-sm font-medium text-gray-700">设备号</label>
+                    <select id="eqNum" name="eqNum"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200">
+                        <option value="0">任意设备</option>
+                        <option value="1">设备1</option>
+                        <option value="2">设备2</option>
+                        <option value="3">设备3</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 间隔期数 -->
+            <div class="space-y-2">
+                <label for="interval" class="block text-sm font-medium text-gray-700">间隔期数</label>
+                <div class="relative" id="intervalContainer">
+                    <input type="text" id="intervalInput" name="interval"
+                           class="number-input"
+                           placeholder="请输入1-3位数字" maxlength="3">
+                    <div class="dropdown-icon">
+                        <i class="fa fa-chevron-down text-xs"></i>
+                    </div>
+                    <div id="intervalDropdown" class="dropdown-menu hidden">
+                        <!-- 选项会动态生成 -->
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500">
+                    <i class="fa fa-info-circle"></i> 请输入1-3位数字或从下拉列表选择
+                </div>
+            </div>
+
+            <!-- 类型选择 -->
+            <div class="space-y-2">
+                <label for="type" class="block text-sm font-medium text-gray-700">类型</label>
+                <select id="type" name="type"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200">
+                    <option value="">请选择类型</option>
+                    <option value="1">前区</option>
+                    <option value="2">后区</option>
+                    <option value="3">前后区</option>
+                </select>
+            </div>
+
+            <!-- 号码选择区域 -->
+            <div id="numberSelectionArea" class="space-y-4 hidden fade-in">
+                <!-- 前区/后区控制按钮 -->
+                <div id="checkboxControlButtons" class="flex space-x-3 hidden fade-in">
+                    <button type="button" id="selectAllBtn"
+                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 flex items-center">
+                        <i class="fa fa-check-square mr-1"></i> 全选
+                    </button>
+                    <button type="button" id="deselectAllBtn"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center">
+                        <i class="fa fa-square mr-1"></i> 取消全选
+                    </button>
+                </div>
+
+                <!-- 前区/后区多选框 -->
+                <div id="numberCheckboxGroup" class="grid grid-cols-7 gap-2 hidden fade-in">
+                    <!-- 号码选项会动态生成 -->
+                </div>
+
+                <!-- 前后区输入框 -->
+                <div id="numberInputGroup" class="space-y-3 hidden fade-in">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="numberInput"
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200"
+                               placeholder="输入号码 (如: 01,02|03,04)" maxlength="200">
+                        <button type="button" id="addNumberBtn"
+                                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 flex items-center">
+                            <i class="fa fa-plus mr-1"></i> 添加
+                        </button>
+                    </div>
+
+                    <div class="text-xs text-gray-500">
+                        <i class="fa fa-info-circle"></i> 格式: 前区号码|后区号码 (如: 01,02|03,04)，|前为前区(01-35)，|后为后区(01-12)
+                    </div>
+
+                    <div id="selectedNumbers" class="flex flex-wrap gap-2 pt-2">
+                        <!-- 选中的号码会动态添加到这里 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 错误提示 -->
+            <div id="errorMessage" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-200">
+                <i class="fa fa-exclamation-circle mr-1"></i> <span></span>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="pt-4">
+                <button type="button" id="submitBtn"
+                        class="w-full py-3 px-6 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl">
+                    <i class="fa fa-paper-plane mr-2"></i> 提交表单
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 结果展示区域 -->
+    <div id="resultArea" class="mt-8 bg-white rounded-xl shadow-lg p-6 hidden fade-in">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">提交结果</h2>
+
+        <div class="mb-4">
+            <p class="font-medium mb-2">生成的URL:</p>
+            <div class="relative">
+                <input type="text" id="generatedUrl"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono overflow-x-auto cursor-pointer"
+                       readonly>
+                <button type="button" id="copyUrlBtn"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition duration-200 text-sm">
+                    复制
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <p class="font-medium mb-2">JSON数据:</p>
+            <pre id="resultData" class="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto"></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const typeSelect = document.getElementById('type');
+        const numberSelectionArea = document.getElementById('numberSelectionArea');
+        const numberCheckboxGroup = document.getElementById('numberCheckboxGroup');
+        const numberInputGroup = document.getElementById('numberInputGroup');
+        const numberInput = document.getElementById('numberInput');
+        const addNumberBtn = document.getElementById('addNumberBtn');
+        const selectedNumbers = document.getElementById('selectedNumbers');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultArea = document.getElementById('resultArea');
+        const resultData = document.getElementById('resultData');
+        const startDrawNumInput = document.getElementById('startDrawNumInput');
+        const startDrawNumContainer = document.getElementById('startDrawNumContainer');
+        const startDrawNumDropdown = document.getElementById('startDrawNumDropdown');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
+        const checkboxControlButtons = document.getElementById('checkboxControlButtons');
+        const submitBtn = document.getElementById('submitBtn');
+        const generatedUrl = document.getElementById('generatedUrl');
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        const intervalInput = document.getElementById('intervalInput');
+        const intervalDropdown = document.getElementById('intervalDropdown');
+        const intervalContainer = document.getElementById('intervalContainer');
+
+        let maxNumber = 0;
+        let selectedNumberTags = new Set();
+        let intervalOptions = [
+            "10", "20", "30", "40", "50", "60", "70", "80", "90", "100",
+            "110", "120", "130", "140", "150", "160", "170", "180", "190", "200"
+        ];
+
+        // 生成起始期号下拉选项 (07001-25001，每1000期一个选项)
+        function generateStartDrawNumOptions() {
+            startDrawNumDropdown.innerHTML = '';
+
+            // 生成07001-25001，每1000期一个选项
+            for (let year = 7; year <= 25; year++) {
+                const optionValue = year.toString().padStart(2, '0') + '001';
+
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = optionValue;
+                item.dataset.value = optionValue;
+
+                item.addEventListener('click', function() {
+                    startDrawNumInput.value = optionValue;
+                    closeStartDrawNumDropdown();
+                });
+
+                startDrawNumDropdown.appendChild(item);
+            }
+        }
+
+        // 生成间隔期数下拉选项
+        function generateIntervalOptions() {
+            intervalDropdown.innerHTML = '';
+            intervalOptions.forEach(option => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = option + '期';
+                item.dataset.value = option;
+
+                item.addEventListener('click', function() {
+                    intervalInput.value = option;
+                    closeDropdown();
+                });
+
+                intervalDropdown.appendChild(item);
+            });
+        }
+
+        // 打开起始期号下拉菜单
+        function openStartDrawNumDropdown() {
+            startDrawNumDropdown.classList.remove('hidden');
+            startDrawNumContainer.classList.add('dropdown-active');
+        }
+
+        // 关闭起始期号下拉菜单
+        function closeStartDrawNumDropdown() {
+            startDrawNumDropdown.classList.add('hidden');
+            startDrawNumContainer.classList.remove('dropdown-active');
+        }
+
+        // 打开间隔期数下拉菜单
+        function openDropdown() {
+            intervalDropdown.classList.remove('hidden');
+            intervalContainer.classList.add('dropdown-active');
+        }
+
+        // 关闭间隔期数下拉菜单
+        function closeDropdown() {
+            intervalDropdown.classList.add('hidden');
+            intervalContainer.classList.remove('dropdown-active');
+        }
+
+        // 监听起始期号输入
+        startDrawNumInput.addEventListener('input', function() {
+            // 只允许输入数字
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+            // 限制最大长度
+            if (this.value.length > 5) {
+                this.value = this.value.substring(0, 5);
+            }
+        });
+
+        // 点击起始期号容器
+        startDrawNumContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (startDrawNumDropdown.classList.contains('hidden')) {
+                openStartDrawNumDropdown();
+            } else {
+                closeStartDrawNumDropdown();
+            }
+        });
+
+        // 监听间隔期数输入
+        intervalInput.addEventListener('input', function() {
+            // 只允许输入数字
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+            // 限制最大长度
+            if (this.value.length > 3) {
+                this.value = this.value.substring(0, 3);
+            }
+        });
+
+        // 点击间隔期数容器
+        intervalContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (intervalDropdown.classList.contains('hidden')) {
+                openDropdown();
+            } else {
+                closeDropdown();
+            }
+        });
+
+        // 点击页面其他区域关闭下拉菜单
+        document.addEventListener('click', function() {
+            closeStartDrawNumDropdown();
+            closeDropdown();
+        });
+
+        // 生成起始期号选项
+        generateStartDrawNumOptions();
+
+        // 生成间隔期数选项
+        generateIntervalOptions();
+
+        // 监听类型选择变化
+        typeSelect.addEventListener('change', function() {
+            const selectedType = this.value;
+
+            // 隐藏所有选项区域
+            numberSelectionArea.classList.add('hidden');
+            numberCheckboxGroup.classList.add('hidden');
+            numberInputGroup.classList.add('hidden');
+            checkboxControlButtons.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+
+            // 重置已选号码
+            selectedNumbers.innerHTML = '';
+            selectedNumberTags.clear();
+
+            if (selectedType === '1' || selectedType === '2') {
+                // 前区或后区 - 显示多选框和控制按钮
+                numberSelectionArea.classList.remove('hidden');
+                numberCheckboxGroup.classList.remove('hidden');
+                checkboxControlButtons.classList.remove('hidden');
+
+                // 设置最大号码
+                maxNumber = selectedType === '1' ? 35 : 12;
+
+                // 生成多选框
+                generateCheckboxes(maxNumber);
+            } else if (selectedType === '3') {
+                // 前后区 - 显示输入框
+                numberSelectionArea.classList.remove('hidden');
+                numberInputGroup.classList.remove('hidden');
+            }
+        });
+
+        // 生成号码多选框
+        function generateCheckboxes(max) {
+            numberCheckboxGroup.innerHTML = '';
+
+            for (let i = 1; i <= max; i++) {
+                const numberStr = i.toString().padStart(2, '0');
+
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'flex items-center justify-center';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `number-${numberStr}`;
+                checkbox.name = 'numbers';
+                checkbox.value = numberStr;
+                checkbox.className = 'hidden peer';
+
+                const label = document.createElement('label');
+                label.htmlFor = `number-${numberStr}`;
+                label.className = 'w-full aspect-square flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 cursor-pointer peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all duration-200 hover:border-primary/50 hover:bg-primary/5';
+                label.textContent = numberStr;
+
+                // 点击事件处理
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        addNumberTag(this.value);
+                    } else {
+                        removeNumberTag(this.value);
+                    }
+                });
+
+                checkboxContainer.appendChild(checkbox);
+                checkboxContainer.appendChild(label);
+                numberCheckboxGroup.appendChild(checkboxContainer);
+            }
+        }
+
+        // 全选按钮点击事件
+        selectAllBtn.addEventListener('click', function() {
+            const checkboxes = numberCheckboxGroup.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    checkbox.checked = true;
+                    addNumberTag(checkbox.value);
+                }
+            });
+        });
+
+        // 取消全选按钮点击事件
+        deselectAllBtn.addEventListener('click', function() {
+            const checkboxes = numberCheckboxGroup.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    checkbox.checked = false;
+                    removeNumberTag(checkbox.value);
+                }
+            });
+        });
+
+        // 添加号码标签
+        function addNumberTag(number) {
+            if (selectedNumberTags.has(number)) {
+                showError('号码组合已存在');
+                return;
+            }
+
+            // 验证格式
+            if (typeSelect.value === '3') {
+                // 前后区格式验证
+                const regex = /^([0-9,]*)\|([0-9,]*)$/;
+                if (!regex.test(number)) {
+                    showError('前后区格式应为 "前区号码|后区号码" (如: 01,02|03,04)');
+                    return;
+                }
+
+                // 分割前区和后区
+                const [, frontPart, backPart] = number.match(regex);
+
+                // 验证前区号码 (01-35)
+                if (frontPart) {
+                    const frontNumbers = frontPart.split(',').filter(n => n);
+                    const invalidFront = frontNumbers.find(n => {
+                        const numRegex = /^(0[1-9]|1[0-9]|2[0-9]|3[0-5])$/;
+                        return !numRegex.test(n);
+                    });
+                    if (invalidFront) {
+                        showError(`前区号码 ${invalidFront} 无效，范围应为 01-35`);
+                        return;
+                    }
+                }
+
+                // 验证后区号码 (01-12)
+                if (backPart) {
+                    const backNumbers = backPart.split(',').filter(n => n);
+                    const invalidBack = backNumbers.find(n => {
+                        const numRegex = /^(0[1-9]|1[0-9]|1[0-2])$/;
+                        return !numRegex.test(n);
+                    });
+                    if (invalidBack) {
+                        showError(`后区号码 ${invalidBack} 无效，范围应为 01-12`);
+                        return;
+                    }
+                }
+            } else {
+                // 前区/后区格式验证
+                const regex = /^(0[1-9]|1[0-9]|2[0-9]|3[0-5])$/;
+                if (!regex.test(number)) {
+                    showError('无效的号码，必须是01-35之间的数字');
+                    return;
+                }
+            }
+
+            selectedNumberTags.add(number);
+
+            const tag = document.createElement('div');
+            tag.className = 'number-tag fade-in';
+            tag.dataset.number = number;
+
+            // 为前后区创建特殊样式
+            if (typeSelect.value === '3') {
+                // 解析前区和后区
+                const [frontPart, backPart] = number.split('|');
+                let innerHTML = '';
+
+                if (frontPart) {
+                    innerHTML += '<span class="tag-section front-section">前区</span> ';
+                    const frontNumbers = frontPart.split(',').filter(n => n);
+                    innerHTML += frontNumbers.join(' ');
+                }
+
+                if (frontPart && backPart) {
+                    innerHTML += ' | ';
+                }
+
+                if (backPart) {
+                    innerHTML += '<span class="tag-section back-section">后区</span> ';
+                    const backNumbers = backPart.split(',').filter(n => n);
+                    innerHTML += backNumbers.join(' ');
+                }
+
+                tag.innerHTML = `
+            ${innerHTML}
+            <button type="button" class="ml-1 text-primary/70 hover:text-primary">
+              <i class="fa fa-times-circle"></i>
+            </button>
+          `;
+            } else {
+                tag.innerHTML = `
+            ${number}
+            <button type="button" class="ml-1 text-primary/70 hover:text-primary">
+              <i class="fa fa-times-circle"></i>
+            </button>
+          `;
+            }
+
+            // 删除按钮事件
+            tag.querySelector('button').addEventListener('click', function() {
+                const number = tag.dataset.number;
+                selectedNumberTags.delete(number);
+
+                // 如果是多选模式，取消勾选对应的复选框
+                const checkbox = document.getElementById(`number-${number}`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+
+                tag.classList.add('opacity-0');
+                setTimeout(() => {
+                    tag.remove();
+                }, 300);
+            });
+
+            selectedNumbers.appendChild(tag);
+        }
+
+        // 移除号码标签
+        function removeNumberTag(number) {
+            selectedNumberTags.delete(number);
+
+            // 找到并移除对应的标签
+            const tags = selectedNumbers.querySelectorAll('.number-tag');
+            tags.forEach(tag => {
+                if (tag.dataset.number === number) {
+                    tag.classList.add('opacity-0');
+                    setTimeout(() => {
+                        tag.remove();
+                    }, 300);
+                }
+            });
+        }
+
+        // 添加号码按钮点击事件
+        addNumberBtn.addEventListener('click', function() {
+            addNumberFromInput();
+        });
+
+        // 输入框回车事件
+        numberInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                addNumberFromInput();
+            }
+        });
+
+        // 从输入框添加号码
+        function addNumberFromInput() {
+            const value = numberInput.value.trim();
+
+            if (!value) {
+                showError('请输入号码');
+                return;
+            }
+
+            if (typeSelect.value === '3') {
+                // 前后区模式 - 作为一个整体添加
+                addNumberTag(value);
+            } else {
+                // 前区/后区模式 - 按逗号或竖线分割
+                const numbers = value.split(/[,\|]/).map(num => num.trim()).filter(num => num);
+
+                if (numbers.length === 0) {
+                    showError('无效的号码格式');
+                    return;
+                }
+
+                numbers.forEach(num => addNumberTag(num));
+            }
+
+            numberInput.value = '';
+            numberInput.focus();
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.querySelector('span').textContent = message;
+            errorMessage.classList.remove('hidden');
+
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 3000);
+        }
+
+        // 验证起始期号
+        function validateStartDrawNum() {
+            const value = startDrawNumInput.value;
+
+            // 验证是否为空
+            if (!value) {
+                showError('请输入起始期号');
+                return false;
+            }
+
+            // 验证是否为5位数字
+            if (value.length !== 5) {
+                showError('起始期号必须为5位数字');
+                return false;
+            }
+
+            // 验证数值 >= 7001
+            const numericValue = parseInt(value, 10);
+            if (numericValue < 7001) {
+                showError('起始期号必须 >= 07001');
+                return false;
+            }
+
+            return true;
+        }
+
+        // 验证间隔期数
+        function validateInterval() {
+            const value = intervalInput.value;
+
+            // 验证是否为空
+            if (!value) {
+                showError('请输入间隔期数');
+                return false;
+            }
+
+            // 验证是否为1-3位数字
+            const regex = /^[1-9]\d{0,2}$/;
+            if (!regex.test(value)) {
+                showError('间隔期数必须为1-3位数字，且不能以0开头');
+                return false;
+            }
+
+            // 验证数值范围
+            const numericValue = parseInt(value, 10);
+            if (numericValue < 1 || numericValue > 999) {
+                showError('间隔期数必须在1-999之间');
+                return false;
+            }
+
+            return true;
+        }
+
+        // 生成URL
+        function generateUrl() {
+            // 收集表单数据
+            const formData = {
+                startDrawNum: document.getElementById('startDrawNumInput').value,
+                eqNum: document.getElementById('eqNum').value,
+                interval: document.getElementById('intervalInput').value,
+                type: document.getElementById('type').value,
+                numbers: Array.from(selectedNumberTags)
+            };
+
+            // 构建查询参数
+            const queryParams = new URLSearchParams();
+            Object.entries(formData).forEach(([key, value]) => {
+                if (Array.isArray(value)) {
+                    value.forEach(v => queryParams.append(key, v));
+                } else {
+                    queryParams.append(key, value);
+                }
+            });
+
+            // 生成完整URL
+            return `/r?${queryParams.toString()}`;
+        }
+
+        // 表单提交事件
+        submitBtn.addEventListener('click', function() {
+            // 验证起始期号
+            if (!validateStartDrawNum()) {
+                startDrawNumInput.focus();
+                return;
+            }
+
+            // 验证间隔期数
+            if (!validateInterval()) {
+                intervalInput.focus();
+                return;
+            }
+
+            const selectedType = document.getElementById('type').value;
+
+            // 验证类型是否选择
+            if (!selectedType) {
+                showError('请选择类型');
+                return;
+            }
+
+            // 验证是否选择了号码
+            if (selectedNumberTags.size === 0) {
+                showError('请选择号码');
+                return;
+            }
+
+            // 生成URL
+            const url = generateUrl();
+
+            // 在新标签页打开URL
+            window.open(url, '_blank');
+
+            // 收集表单数据用于JSON显示
+            const formData = {
+                startDrawNum: document.getElementById('startDrawNumInput').value,
+                eqNum: document.getElementById('eqNum').value,
+                interval: document.getElementById('intervalInput').value,
+                type: document.getElementById('type').value,
+                numbers: Array.from(selectedNumberTags)
+            };
+
+            // 显示结果
+            generatedUrl.value = url;
+            resultData.textContent = JSON.stringify(formData, null, 2);
+            resultArea.classList.remove('hidden');
+
+            // 滚动到结果区域
+            resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // 复制按钮交互
+            copyUrlBtn.textContent = '复制';
+            copyUrlBtn.addEventListener('click', function() {
+                generatedUrl.select();
+                document.execCommand('copy');
+                copyUrlBtn.textContent = '已复制!';
+                setTimeout(() => {
+                    copyUrlBtn.textContent = '复制';
+                }, 2000);
+            });
+        });
+
+        // 使生成的URL可点击
+        generatedUrl.addEventListener('click', function() {
+            window.open(this.value, '_blank');
+        });
+    });
+</script>
+</body>
+</html>

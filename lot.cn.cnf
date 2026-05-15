@@ -1,0 +1,23 @@
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+x509_extensions = v3_req
+distinguished_name = dn
+
+[dn]
+C = CN
+ST = Guangdong
+L = Shenzhen
+O = Local Org
+OU = Development
+CN = lot.cn
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = lot.cn        # 主域名
+DNS.2 = www.lot.cn    # www子域名
+DNS.3 = localhost     # 本地访问
+IP.1 = 127.0.0.1      # IP访问

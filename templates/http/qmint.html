@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>{{.Title}}</title>
+    <!-- 引入刚刚下载的 ECharts 文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .combination-container {
+                @apply max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-md my-8;
+            }
+            .combination-header {
+                @apply text-xl font-bold mb-4 text-neutral-800;
+            }
+            .subitem {
+                @apply px-4 py-2 bg-neutral-50 rounded-md my-2 inline-block mr-2;
+            }
+        }
+    </style>
+</head>
+<body>
+{{template "qmint_duidie_zx" .}}
+
+<div class="combination-container">
+    {{with .}}
+    {{range $key,$el :=.RemainCombs}}
+    <div class="combination-header" onclick="toggleCombination()">
+        组合 {{$key}} -> 还有{{len $el}}个
+        <i class="fa-solid fa-chevron-down chevron-icon"></i>
+    </div>
+    <div class="subitem-container">
+        {{if lt (len $el) 3000 }}
+        {{range $itemEl := $el}}
+        <div class="subitem">{{$itemEl}}</div>
+        {{end}}
+        {{else}}
+        <div class="subitem">太多了，不显示了！</div>
+        {{end}}
+
+    </div>
+
+    {{end}}
+    {{end}}
+</div>
+</body>
+<script>
+    function toggleCombination() {
+        // 获取点击的标题元素
+        const header = event.currentTarget;
+        // 获取下一个兄弟元素（即子项容器）
+        const container = header.nextElementSibling;
+        // 获取图标元素
+        const icon = header.querySelector('.chevron-icon');
+
+        if (container.classList.contains('hidden')) {
+            container.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+        } else {
+            container.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+        }
+    }
+</script>
+</html>

@@ -1,0 +1,220 @@
+package bs
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
+
+	"github.com/before80/lot/cfg"
+	"github.com/before80/lot/contants"
+	"github.com/before80/lot/ext"
+	"github.com/before80/lot/lg"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
+)
+
+type MyBrowser struct {
+	Browser *rod.Browser
+	Ok      bool
+	Index   int
+	Router  *rod.HijackRouter
+}
+
+var MyBrowserSlice []MyBrowser
+
+func init() {
+	var err error
+	// 获取临时目录
+	tempDir := os.TempDir()
+
+	// 构造完整路径
+	forCacheFolderPath := filepath.Join(tempDir, contants.ForChromeTempCacheFolderName, contants.AppName)
+
+	// 删除 forCacheFolderPath 中的缓存
+	err = os.RemoveAll(forCacheFolderPath)
+	if err != nil {
+		panic(fmt.Sprintf("删除浏览器缓存文件夹%s出现错误：%v\n", forCacheFolderPath, err))
+	}
+}
+
+func GetTempFolderPath(folderName, appName, subFolderName string) (string, error) {
+	system := runtime.GOOS
+	// 获取临时目录
+	tempDir := os.TempDir()
+	// 删除
+	_ = os.RemoveAll(filepath.Join(tempDir, folderName, appName))
+	// 构造完整路径
+	targetPath := filepath.Join(tempDir, folderName, appName, subFolderName)
+
+	// 打印当前系统及路径
+	lg.InfoToFile(fmt.Sprintf("操作系统类型: %s\n", system))
+	lg.InfoToFile(fmt.Sprintf("用于缓存的临时目录路径： %s\n", targetPath))
+
+	// 创建文件夹
+	err := os.MkdirAll(targetPath, 0777)
+	return targetPath, err
+}
+
+func GetBrowser(subCacheFolderName string) (browser *rod.Browser, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("在打开浏览器时发生panic：%v\n", r)
+			if browser != nil {
+				_ = browser.Close()
+			}
+		}
+	}()
+
+	folderPath, err := GetTempFolderPath(contants.ForChromeTempCacheFolderName, contants.AppName, subCacheFolderName)
+	if err != nil {
+		err = fmt.Errorf("获取用于临时文件夹路径发生错误：%v\n", err)
+		return nil, err
+	}
+
+	lg.InfoToFile(fmt.Sprintf("已获取临时文件夹路径\n"))
+
+	//var absPathToJsHijackExtension string
+	//absPathToJsHijackExtension, err = ext.CreateJsHijackExtension(folderPath, subCacheFolderName, true)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	var absPathToProxyAuthExtension string
+	if cfg.Default.UseProxy == 1 {
+		lg.InfoToFile(fmt.Sprintf("已0\n"))
+		absPathToProxyAuthExtension, err = ext.CreateProxyAuthExtension(folderPath, subCacheFolderName, true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	lg.InfoToFile(fmt.Sprintf("已1\n"))
+
+	var l *launcher.Launcher
+	var extensionStr string
+	//if cfg.Default.UseProxy == 1 {
+	//	extensionStr = fmt.Sprintf("%s,%s", absPathToJsHijackExtension, absPathToProxyAuthExtension)
+	//} else {
+	//	extensionStr = absPathToJsHijackExtension
+	//}
+
+	if cfg.Default.UseProxy == 1 {
+		extensionStr = fmt.Sprintf("%s", absPathToProxyAuthExtension)
+	}
+	lg.InfoToFile(fmt.Sprintf("已2\n"))
+	// spChromePath := fmt.Sprintf(`%s\\chrome.exe`, cfg.Default.SpecialVersionChromiumPath)
+	//spChromePath := `G:\chrome-win\chrome.exe`
+	spChromePath := cfg.Default.ChromePath
+	l = launcher.New().Bin(spChromePath).
+		Set("window-size", fmt.Sprintf("%d,%d", cfg.Default.BrowserWidth, cfg.Default.BrowserHeight)).
+		Set("user-data-dir", folderPath).
+		Set("extensions-on-chrome-urls", "true"). // 允许在 chrome:// 页面运行
+		Set("disable-extensions", "false").
+		Set("disable-component-update", "true").
+		Set("load-extension", extensionStr).
+		Set("disable-extensions-except", extensionStr).
+		Set("disable-extensions-http-throttling", "false").
+		Set("allow-insecure-localhost", "1").
+		Set("profile.default_content_setting_values.insecure_content", "1").
+		//Set("auto-open-devtools-for-tabs", "true").
+		//Set("disable-features", "ExtensionsNetworkBlocking"). // 禁用扩展网络限制)
+		Set("disable-features", "ExtensionsNetworkBlocking,ManifestV3Only").
+		Set("no-first-run", "true").             // 避免首次运行提示
+		Set("no-default-browser-check", "true"). // 跳过默认浏览器检查
+
+		Set("noerrdialogs", "").
+		Set("safebrowsing-disable-auto-update", "1").
+		Set("disable-background-networking", "1").
+		Set("disable-renderer-backgrounding", "1").
+		Set("disable-background-timer-throttling", "1").
+		Set("disable-client-side-phishing-detection", "1").
+		Set("disable-sync", "1").
+		Set("metrics-recording-only", "1").
+		Set("disable-default-apps", "1").
+		Set("disable-popup-blocking", "1").
+		Set("disable-extensions-file-access-check", "1"). // ⚠️ 防止 Chrome 文件访问插件安全检查
+		Set("disable-hang-monitor", "1").
+		Set("disable-prompt-on-repost", "1")
+	lg.InfoToFile(fmt.Sprintf("已3\n"))
+	//if path, exists := launcher.LookPath(); exists {
+	//	lg.InfoToFile(fmt.Sprintf("当前使用的浏览器所在路径是：%s\n", path))
+	//
+	//	l = launcher.New().Bin(path).
+	//		Set("window-size", fmt.Sprintf("%d,%d", cfg.Default.BrowserWidth, cfg.Default.BrowserHeight)).
+	//		Set("user-data-dir", folderPath).
+	//		Set("extensions-on-chrome-urls", "true"). // 允许在 chrome:// 页面运行
+	//		Set("disable-extensions", "false").
+	//		Set("disable-component-update", "true").
+	//		Set("load-extension", extensionStr).
+	//		Set("disable-extensions-except", extensionStr).
+	//		Set("disable-extensions-http-throttling", "false").
+	//		Set("allow-insecure-localhost", "1").
+	//		Set("profile.default_content_setting_values.insecure_content", "1").
+	//		//Set("auto-open-devtools-for-tabs", "true").
+	//		//Set("disable-features", "ExtensionsNetworkBlocking"). // 禁用扩展网络限制)
+	//		Set("disable-features", "ExtensionsNetworkBlocking,ManifestV3Only").
+	//		Set("no-first-run", "true").             // 避免首次运行提示
+	//		Set("no-default-browser-check", "true"). // 跳过默认浏览器检查
+	//
+	//		Set("noerrdialogs", "").
+	//		Set("safebrowsing-disable-auto-update", "1").
+	//		Set("disable-background-networking", "1").
+	//		Set("disable-renderer-backgrounding", "1").
+	//		Set("disable-background-timer-throttling", "1").
+	//		Set("disable-client-side-phishing-detection", "1").
+	//		Set("disable-sync", "1").
+	//		Set("metrics-recording-only", "1").
+	//		Set("disable-default-apps", "1").
+	//		Set("disable-popup-blocking", "1").
+	//		Set("disable-extensions-file-access-check", "1"). // ⚠️ 防止 Chrome 文件访问插件安全检查
+	//		Set("disable-hang-monitor", "1").
+	//		Set("disable-prompt-on-repost", "1")
+	//
+	//	//Set("no-sandbox"). // 禁用沙盒
+	//} else {
+	//	lg.InfoToFile(fmt.Sprintf("当前使用的是临时下载的浏览器\n"))
+	//	l = launcher.New().
+	//		Set("window-size", fmt.Sprintf("%d,%d", cfg.Default.BrowserWidth, cfg.Default.BrowserHeight)).
+	//		Set("user-data-dir", folderPath).
+	//		Set("extensions-on-chrome-urls", "true"). // 允许在 chrome:// 页面运行
+	//		Set("disable-extensions", "false").
+	//		Set("disable-component-update", "true").
+	//		Set("load-extension", extensionStr).
+	//		Set("disable-extensions-except", extensionStr).
+	//		Set("disable-extensions-http-throttling", "false").
+	//		Set("allow-insecure-localhost", "1").
+	//		Set("profile.default_content_setting_values.insecure_content", "1").
+	//		//Set("auto-open-devtools-for-tabs", "true").
+	//		//Set("disable-features", "ExtensionsNetworkBlocking"). // 禁用扩展网络限制)
+	//		Set("disable-features", "ExtensionsNetworkBlocking,ManifestV3Only").
+	//		Set("no-first-run", "true").             // 避免首次运行提示
+	//		Set("no-default-browser-check", "true"). // 跳过默认浏览器检查
+	//
+	//		Set("noerrdialogs", "").
+	//		Set("safebrowsing-disable-auto-update", "1").
+	//		Set("disable-background-networking", "1").
+	//		Set("disable-renderer-backgrounding", "1").
+	//		Set("disable-background-timer-throttling", "1").
+	//		Set("disable-client-side-phishing-detection", "1").
+	//		Set("disable-sync", "1").
+	//		Set("metrics-recording-only", "1").
+	//		Set("disable-default-apps", "1").
+	//		Set("disable-popup-blocking", "1").
+	//		Set("disable-extensions-file-access-check", "1"). // ⚠️ 防止 Chrome 文件访问插件安全检查
+	//		Set("disable-hang-monitor", "1").
+	//		Set("disable-prompt-on-repost", "1")
+	//	//Set("no-sandbox"). // 禁用沙盒
+	//}
+
+	//defaults.Show = false
+
+	u := l.MustLaunch()
+	lg.InfoToFile(fmt.Sprintf("已4\n"))
+	browser = rod.New().ControlURL(u).SlowMotion(200 * time.Millisecond).MustConnect()
+	// TODO 待验证会不会启动太多 goroutines
+	lg.InfoToFile(fmt.Sprintf("已打开浏览器\n"))
+	// 打开一个空白页，防止关闭浏览器
+	_ = browser.MustPage("about:blank")
+	return browser, err
+}

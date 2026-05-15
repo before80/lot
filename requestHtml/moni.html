@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大乐透选号系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .result-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e9f7ef;
+            border-radius: 4px;
+        }
+        button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .progress-bar {
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .status {
+            margin: 10px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<h1>大乐透选号系统</h1>
+
+<div class="controls">
+    <div>
+        <label>注数：</label>
+        <input type="number" id="zhuShu" value="10" min="1" max="1000">
+    </div>
+    <div style="margin-top: 10px;">
+        <label>使用Worker数量：</label>
+        <input type="number" id="workerCount" value="4" min="1" max="16">
+        <small>（建议CPU核心数：<span id="cpuCores">4</span>）</small>
+    </div>
+    <button id="startBtn" onclick="startSelection()">开始选号</button>
+    <button id="stopBtn" onclick="stopSelection()" style="background: #dc3545; margin-left: 10px;" disabled>停止</button>
+</div>
+
+<div class="progress-bar" style="display: none;" id="progressContainer">
+    <div class="progress" id="progress"></div>
+</div>
+
+<div class="status" id="status">准备就绪</div>
+
+<h3>选号结果（<span id="resultCount">0</span> 注）：</h3>
+<div id="results"></div>
+
+<script>
+    const curT2MoniABCDEs = {
+    {{range $typeKey, $typeData := .T2MoniABCDEs}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": [{{range $numbers}}"{{.}}",{{end}}],
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const allHistoricalData = [{{range $dlt := .Dlts}}{F1: "{{$dlt.F1}}", F2: "{{$dlt.F2}}", F3: "{{$dlt.F3}}", F4: "{{$dlt.F4}}", F5: "{{$dlt.F5}}", B1: "{{$dlt.B1}}", B2: "{{$dlt.B2}}"},{{end}}];
+
+
+
+    // 配置参数
+    const xuHaoSt = {
+        HzMin: 50,
+        HzMax: 150,
+        FrontDanMaHms: ["02", "03"],
+        FrontIncludeHms: [],
+        FrontExcludeHms: [],
+        QzhSlice: [],
+        Tx: [],
+        BackIncludeHms: [],
+        BackExcludeHms: [],
+        BackIncludeCombs: [],
+        BackExcludeCombs: [],
+        RemoveHis: 0,
+        Oes: [],
+        Ch4MustGetCount: 0
+    };
+
+    // 获取CPU核心数
+    const cpuCores = navigator.hardwareConcurrency || 2;
+    document.getElementById('cpuCores').textContent = cpuCores;
+
+    // 全局变量
+    let workerManager = null;
+    let isProcessing = false;
+
+    // 定义独立的函数（不是对象的方法）
+    function getCombinations(arr, k) {
+        const result = [];
+
+        function combine(start, current) {
+            if (current.length === k) {
+                result.push([...current]);
+                return;
+            }
+
+            for (let i = start; i < arr.length; i++) {
+                current.push(arr[i]);
+                combine(i + 1, current);
+                current.pop();
+            }
+        }
+
+        combine(0, []);
+        return result;
+    }
+
+    // 计算和值
+    function calDltHz(numbers) {
+        return numbers.reduce((sum, num) => sum + parseInt(num), 0);
+    }
+
+    function crossComb(front, back, frontCount, backCount) {
+        const result = [];
+
+        const frontCombs = getCombinations(front, frontCount);
+        const backCombs = getCombinations(back, backCount);
+
+        for (const f of frontCombs) {
+            for (const b of backCombs) {
+                result.push([...f, ...b].sort().join(','));
+            }
+        }
+
+        return result;
+    }
+
+    function shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    // Worker管理器
+    class DltWorkerManager {
+        constructor(workerCount) {
+            this.workerCount = Math.min(workerCount, cpuCores);
+            this.workers = [];
+            this.workerPromises = new Map();
+            this.nextWorkerId = 0;
+            this.taskQueue = [];
+            this.isProcessingQueue = false;
+
+            // 创建Worker
+            this.createWorkers();
+        }
+
+        createWorkers() {
+            // Worker代码 - 使用独立的函数定义
+            const workerCode = `
+                    // 在Worker中重新定义函数（简化版）
+                    function getCombinations(arr, k) {
+                        const result = [];
+                        function combine(start, current) {
+                            if (current.length === k) {
+                                result.push([...current]);
+                                return;
+                            }
+                            for (let i = start; i < arr.length; i++) {
+                                current.push(arr[i]);
+                                combine(i + 1, current);
+                                current.pop();
+                            }
+                        }
+                        combine(0, []);
+                        return result;
+                    }
+
+                    function calDltHz(numbers) {
+                        return numbers.reduce((sum, num) => sum + parseInt(num), 0);
+                    }
+
+                    function crossComb(front, back, frontCount, backCount) {
+                        const result = [];
+                        const frontCombs = getCombinations(front, frontCount);
+                        const backCombs = getCombinations(back, backCount);
+                        for (const f of frontCombs) {
+                            for (const b of backCombs) {
+                                result.push([...f, ...b].sort().join(','));
+                            }
+                        }
+                        return result;
+                    }
+
+                    function shuffleArray(array) {
+                        const shuffled = [...array];
+                        for (let i = shuffled.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                        }
+                        return shuffled;
+                    }
+
+                    // 构建4重号映射
+                    function buildC4Map(historicalData) {
+                        const c4ms = new Map();
+
+                        for (const dlt of historicalData) {
+                            const front = [dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5];
+                            const back = [dlt.B1, dlt.B2];
+
+                            // 生成所有4个号码的组合
+                            const combinations = [];
+
+                            // 前区4个 + 后区0个
+                            const front4 = getCombinations(front, 4);
+                            front4.forEach(comb => combinations.push(comb.sort().join(',')));
+
+                            // 前区3个 + 后区1个
+                            const front3 = getCombinations(front, 3);
+                            const back1 = getCombinations(back, 1);
+                            front3.forEach(f => {
+                                back1.forEach(b => {
+                                    combinations.push([...f, ...b].sort().join(','));
+                                });
+                            });
+
+                            // 添加到映射
+                            const fullStr = front.join(',') + '|' + back.join(',');
+                            combinations.forEach(comb => {
+                                if (!c4ms.has(comb)) {
+                                    c4ms.set(comb, []);
+                                }
+                                c4ms.get(comb).push(fullStr);
+                            });
+                        }
+
+                        return c4ms;
+                    }
+
+                    // 生成历史号码字符串数组
+                    function buildHistoryStrings(historicalData) {
+                        return historicalData.map(dlt =>
+                            dlt.F1 + ',' + dlt.F2 + ',' + dlt.F3 + ',' + dlt.F4 + ',' + dlt.F5 + '|' + dlt.B1 + ',' + dlt.B2
+                        );
+                    }
+
+                    // 判断前区是否满足所有条件
+                    function checkFrontConditions(front, xuHaoSt, t2MoniABCDEs) {
+                        const frontHz = calDltHz(front);
+
+                        // 1. 和值检查
+                        if (frontHz < (xuHaoSt.HzMin - 23)) {
+                            return false;
+                        }
+
+                        // 2. 胆码检查
+                        const danMaLen = xuHaoSt.FrontDanMaHms?.length || 0;
+                        if (danMaLen > 0) {
+                            const intersection = getIntersection(front, xuHaoSt.FrontDanMaHms);
+                            if (intersection.length !== danMaLen) {
+                                return false;
+                            }
+                        }
+
+                        // 3. 必须包含号码检查
+                        if (xuHaoSt.FrontIncludeHms?.length > 0) {
+                            const hasInclude = xuHaoSt.FrontIncludeHms.some(item =>
+                                front.includes(item)
+                            );
+                            if (!hasInclude) {
+                                return false;
+                            }
+                        }
+
+                        // 4. 必须排除号码检查
+                        if (xuHaoSt.FrontExcludeHms?.length > 0) {
+                            const hasExclude = xuHaoSt.FrontExcludeHms.some(item =>
+                                front.includes(item)
+                            );
+                            if (hasExclude) {
+                                return false;
+                            }
+                        }
+
+                        // 5. 前区前中后检查（需要实现calDltQzh函数）
+                        if (xuHaoSt.QzhSlice?.length > 0) {
+                            const qzh = calDltQzh(front); // 需要实现这个函数
+                            if (!xuHaoSt.QzhSlice.includes(qzh)) {
+                                return false;
+                            }
+                        }
+
+                        // 6. 类型检查（最复杂的部分）
+                        if (!checkTypeConditions(front, xuHaoSt, t2MoniABCDEs)) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+
+                    // 类型条件检查
+                    function checkTypeConditions(front, xuHaoSt, t2MoniABCDEs) {
+                        const selectedTypes = xuHaoSt.Tx || [];
+
+                        // 如果没有选择任何类型，直接通过
+                        if (selectedTypes.length === 0) {
+                            return true;
+                        }
+
+                        // 检查是否包含OtherT
+                        const hasOtherT = selectedTypes.includes("OtherT");
+
+                        if (hasOtherT) {
+                            let isOtherT = true;
+                            let isExistSelected1Dao17T = false;
+
+                            // 先检查是否在选中的非OtherT类型中
+                            for (const tx of selectedTypes) {
+                                if (tx !== "OtherT" && t2MoniABCDEs[tx]) {
+                                    const moni = t2MoniABCDEs[tx];
+                                    if (checkTypeMatch(front, moni)) {
+                                        isExistSelected1Dao17T = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // 如果不在选中的非OtherT类型中，检查是否在其他17种类型中
+                            if (!isExistSelected1Dao17T) {
+                                let isAnyT = false;
+
+                                // 检查所有17种类型
+                                for (let i = 1; i <= 17; i++) {
+                                    const tx = "T" + i;
+                                    if (t2MoniABCDEs[tx] && checkTypeMatch(front, t2MoniABCDEs[tx])) {
+                                        isAnyT = true;
+                                        break;
+                                    }
+                                }
+
+                                // 如果不在任何17种类型中，则是OtherT
+                                isOtherT = !isAnyT;
+                            }
+
+                            // 根据选中的类型判断
+                            for (const tx of selectedTypes) {
+                                switch (tx) {
+                                    case "OtherT":
+                                        if (isOtherT && !isExistSelected1Dao17T) {
+                                            return true;
+                                        }
+                                        break;
+                                    default:
+                                        // 对于T1-T17，如果在选中类型中匹配成功，直接返回true
+                                        if (isExistSelected1Dao17T) {
+                                            return true;
+                                        }
+                                }
+                            }
+
+                            return false;
+                        } else {
+                            // 选择的组合不包含OtherT的情况
+                            for (const tx of selectedTypes) {
+                                if (t2MoniABCDEs[tx] && checkTypeMatch(front, t2MoniABCDEs[tx])) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+
+                    // 检查单个类型是否匹配
+                    function checkTypeMatch(front, moni) {
+                        return (
+                            moni.A.includes(front[0]) &&
+                            moni.B.includes(front[1]) &&
+                            moni.C.includes(front[2]) &&
+                            moni.D.includes(front[3]) &&
+                            moni.E.includes(front[4])
+                        );
+                    }
+
+                    // 计算交集
+                    function getIntersection(arr1, arr2) {
+                        if (!arr1 || !arr2) return [];
+                        return arr1.filter(item => arr2.includes(item));
+                    }
+
+                    // 计算前区前中后值（需要根据实际逻辑实现）
+                    function calDltQzh(front) {
+                        let qNum = 0; // 前区（小于18的号码个数）
+                        let zNum = 0; // 中区（等于18的号码个数）
+                        let hNum = 0; // 后区（大于18的号码个数）
+
+                        // 遍历前区的5个号码
+                        for (let i = 0; i < Math.min(front.length, 5); i++) {
+                            const num = parseInt(front[i]);
+
+                            if (num < 18) {
+                                qNum++;
+                            } else if (num === 18) {
+                                zNum++;
+                            } else { // num > 18
+                                hNum++;
+                            }
+                        }
+
+                        // 返回格式为 "qNumzNumhNum"，例如 "311" 表示3个前区，1个中区，1个后区
+                        return "" + qNum + "" + zNum + "" + hNum;
+                    }
+
+                    // 检查条件
+                    function checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms) {
+                        const frontStr = front.join(',');
+                        const backStr = back.join(',');
+                        const fullStr = frontStr + '|' + backStr;
+
+                        // 移除历史检查
+                        if (xuHaoSt.RemoveHis === 1 && hisFullHmStrSlice.includes(fullStr)) {
+                            return false;
+                        }
+
+                        // 4重号检查
+                        if (xuHaoSt.Ch4MustGetCount > 0) {
+                            const ic4s = crossComb(front, back, 4, 0)
+                                .concat(crossComb(front, back, 3, 1))
+                                .concat(crossComb(front, back, 2, 2));
+
+                            let addCh4Count = 0;
+                            for (const ic4 of ic4s) {
+                                const n = c4ms.get(ic4)?.length || 0;
+                                if (n === 1) {
+                                    addCh4Count += 2;
+                                } else if (n >= 2) {
+                                    addCh4Count += 1;
+                                }
+                            }
+
+                            if (addCh4Count < xuHaoSt.Ch4MustGetCount) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+
+                    // 主处理函数
+                    function processTask(taskData) {
+                        const { xuHaoSt, rangeA, historicalData, finalCombMaxCount, t2MoniABCDEs } = taskData;
+
+                        // 准备数据
+                        const c4ms = buildC4Map(historicalData);
+                        const hisFullHmStrSlice = buildHistoryStrings(historicalData);
+
+                        // 乱序号码
+                        const allDltFrontHms = shuffleArray(
+                            Array.from({length: 35}, (_, i) => (i + 1).toString().padStart(2, '0'))
+                        );
+
+                        const allDltBackHms = shuffleArray(
+                            Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'))
+                        );
+
+                        const finalCombForRandSlice = [];
+                        let finalCombCount = 0;
+
+                        const { start: aStart, end: aEnd } = rangeA;
+
+                        // 限制处理的组合数量，避免浏览器卡死
+                        const maxCombinationsPerWorker = 5000;
+                        let processedCount = 0;
+
+                        for (let a = aStart; a <= aEnd && processedCount < maxCombinationsPerWorker; a++) {
+                            for (let b = a + 1; b <= 31 && processedCount < maxCombinationsPerWorker; b++) {
+                                for (let c = b + 1; c <= 32 && processedCount < maxCombinationsPerWorker; c++) {
+                                    for (let d = c + 1; d <= 33 && processedCount < maxCombinationsPerWorker; d++) {
+                                        for (let e = d + 1; e <= 34 && processedCount < maxCombinationsPerWorker; e++) {
+                                            const front = [
+                                                allDltFrontHms[a],
+                                                allDltFrontHms[b],
+                                                allDltFrontHms[c],
+                                                allDltFrontHms[d],
+                                                allDltFrontHms[e]
+                                            ].sort();
+
+                                            if (!checkFrontConditions(front, xuHaoSt, t2MoniABCDEs)) {
+                                                continue;
+                                            }
+
+                                            // 后区组合
+                                            for (let x = 0; x <= 10 && processedCount < maxCombinationsPerWorker; x++) {
+                                                for (let y = x + 1; y <= 11 && processedCount < maxCombinationsPerWorker; y++) {
+                                                    const back = [
+                                                        allDltBackHms[x],
+                                                        allDltBackHms[y]
+                                                    ].sort();
+
+                                                    // 检查条件
+                                                    if (checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms)) {
+                                                        const fullStr = front.join(',') + '|' + back.join(',');
+
+                                                        if (finalCombCount < finalCombMaxCount) {
+                                                            finalCombForRandSlice.push(fullStr);
+                                                        } else {
+                                                            // 随机替换
+                                                            const randomIndex = Math.floor(Math.random() * finalCombMaxCount);
+                                                            finalCombForRandSlice[randomIndex] = fullStr;
+                                                        }
+                                                        finalCombCount++;
+                                                    }
+
+                                                    processedCount++;
+                                                    if (processedCount % 1000 === 0) {
+                                                        // 定期让出控制权，避免阻塞
+                                                        if (typeof self !== 'undefined' && self.postMessage) {
+                                                            self.postMessage({ type: 'progress', count: processedCount });
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        return finalCombForRandSlice;
+                    }
+
+                    // Worker消息处理
+                    self.onmessage = (event) => {
+                        const { taskId, ...taskData } = event.data;
+
+                        try {
+                            const result = processTask(taskData);
+
+                            self.postMessage({
+                                taskId,
+                                result
+                            });
+                        } catch (error) {
+                            self.postMessage({
+                                taskId,
+                                error: error.message
+                            });
+                        }
+                    };
+                `;
+
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(blob);
+
+            for (let i = 0; i < this.workerCount; i++) {
+                const worker = new Worker(workerUrl);
+                const id = this.nextWorkerId++;
+
+                worker.id = id;
+                worker.busy = false;
+
+                worker.onmessage = (event) => {
+                    const { taskId, result, error } = event.data;
+                    worker.busy = false;
+
+                    const promise = this.workerPromises.get(taskId);
+                    if (promise) {
+                        if (error) {
+                            promise.reject(new Error(error));
+                        } else {
+                            promise.resolve(result);
+                        }
+                        this.workerPromises.delete(taskId);
+                    }
+
+                    this.processQueue();
+                };
+
+                worker.onerror = (error) => {
+                    console.error(`Worker ${id} error:`, error);
+                    worker.busy = false;
+                    this.processQueue();
+                };
+
+                this.workers.push(worker);
+            }
+
+            // 清理URL
+            setTimeout(() => URL.revokeObjectURL(workerUrl), 1000);
+        }
+
+        assignTask(task) {
+            return new Promise((resolve, reject) => {
+                const taskId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+                this.taskQueue.push({
+                    id: taskId,
+                    task,
+                    resolve,
+                    reject
+                });
+
+                this.processQueue();
+            });
+        }
+
+        processQueue() {
+            if (this.isProcessingQueue) return;
+            this.isProcessingQueue = true;
+
+            while (this.taskQueue.length > 0) {
+                const availableWorker = this.workers.find(w => !w.busy);
+                if (!availableWorker) break;
+
+                const taskItem = this.taskQueue.shift();
+                availableWorker.busy = true;
+
+                this.workerPromises.set(taskItem.id, {
+                    resolve: taskItem.resolve,
+                    reject: taskItem.reject
+                });
+
+                availableWorker.postMessage({
+                    taskId: taskItem.id,
+                    ...taskItem.task
+                });
+            }
+
+            this.isProcessingQueue = false;
+        }
+
+        async terminate() {
+            for (const worker of this.workers) {
+                worker.terminate();
+            }
+            this.workers = [];
+            this.workerPromises.clear();
+            this.taskQueue = [];
+        }
+    }
+
+    // 分割任务
+    function splitTasks(xuHaoSt, workerCount) {
+        const tasks = [];
+
+        // 基于前区第一个数字的范围分割任务
+        const ranges = [];
+        const step = Math.ceil(31 / workerCount); // a从0到30
+
+        for (let i = 0; i < 31; i += step) {
+            const start = i;
+            const end = Math.min(i + step - 1, 30);
+            if (start <= end) {
+                ranges.push({ start, end });
+            }
+        }
+
+       const historicalData = allHistoricalData;
+
+        for (const range of ranges) {
+            tasks.push({
+                xuHaoSt,
+                historicalData,
+                rangeA: range,
+                finalCombMaxCount: 1000,
+                t2MoniABCDEs: curT2MoniABCDEs,
+            });
+        }
+
+        return tasks;
+    }
+
+    // 创建模拟历史数据
+    function createMockHistoricalData() {
+        const data = [];
+        for (let i = 0; i < 50; i++) {
+            // 生成随机的大乐透号码
+            const front = [];
+            while (front.length < 5) {
+                const num = Math.floor(Math.random() * 35) + 1;
+                const numStr = num.toString().padStart(2, '0');
+                if (!front.includes(numStr)) {
+                    front.push(numStr);
+                }
+            }
+            front.sort();
+
+            const back = [];
+            while (back.length < 2) {
+                const num = Math.floor(Math.random() * 12) + 1;
+                const numStr = num.toString().padStart(2, '0');
+                if (!back.includes(numStr)) {
+                    back.push(numStr);
+                }
+            }
+            back.sort();
+
+            data.push({
+                F1: front[0],
+                F2: front[1],
+                F3: front[2],
+                F4: front[3],
+                F5: front[4],
+                B1: back[0],
+                B2: back[1]
+            });
+        }
+        return data;
+    }
+
+    // 随机选择组合
+    function selectRandomCombinations(combinations, count) {
+        if (combinations.length <= count) {
+            return [...combinations];
+        }
+
+        const selected = new Set();
+        const result = [];
+
+        while (result.length < count && selected.size < combinations.length) {
+            const randomIndex = Math.floor(Math.random() * combinations.length);
+            if (!selected.has(randomIndex)) {
+                selected.add(randomIndex);
+                result.push(combinations[randomIndex]);
+            }
+        }
+
+        return result;
+    }
+
+    // 更新进度
+    function updateProgress(completed, total) {
+        const progressContainer = document.getElementById('progressContainer');
+        const progress = document.getElementById('progress');
+        const status = document.getElementById('status');
+
+        if (total > 0) {
+            const percentage = Math.round((completed / total) * 100);
+            progress.style.width = percentage + '%';
+            status.textContent = `处理中: ${completed}/${total} 个任务 (${percentage}%)`;
+            progressContainer.style.display = 'block';
+        }
+    }
+
+    // 开始选号
+    async function startSelection() {
+        if (isProcessing) {
+            alert('正在处理中，请稍候...');
+            return;
+        }
+
+        isProcessing = true;
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resultsDiv = document.getElementById('results');
+        const statusDiv = document.getElementById('status');
+        const resultCount = document.getElementById('resultCount');
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        resultsDiv.innerHTML = '';
+        statusDiv.textContent = '正在初始化...';
+        resultCount.textContent = '0';
+
+        const zhuShu = parseInt(document.getElementById('zhuShu').value) || 10;
+        const workerCount = parseInt(document.getElementById('workerCount').value) || Math.min(cpuCores, 4);
+
+        try {
+            console.time('选号总耗时');
+
+            // 创建Worker管理器
+            workerManager = new DltWorkerManager(workerCount);
+
+            // 分割任务
+            const tasks = splitTasks(xuHaoSt, workerManager.workerCount);
+            statusDiv.textContent = `任务已分割为 ${tasks.length} 个子任务`;
+
+            // 并行执行所有任务
+            const workerPromises = tasks.map((task, index) => {
+                updateProgress(index, tasks.length);
+                return workerManager.assignTask(task);
+            });
+
+            // 等待所有Worker完成
+            const results = await Promise.all(workerPromises);
+            updateProgress(tasks.length, tasks.length);
+
+            // 合并所有结果
+            const allCombinations = results.flat();
+
+            // 随机选择指定数量的结果
+            const finalSelections = selectRandomCombinations(allCombinations, zhuShu);
+
+            console.timeEnd('选号总耗时');
+            console.log(`总组合数: ${allCombinations.length}, 最终选择: ${finalSelections.length}`);
+
+            // 显示结果
+            resultsDiv.innerHTML = finalSelections.map((r, i) =>
+                `<div class="result-item">第${i + 1}注: ${r}</div>`
+            ).join('');
+
+            resultCount.textContent = finalSelections.length;
+            statusDiv.textContent = `完成！共生成 ${allCombinations.length} 个组合，最终选择 ${finalSelections.length} 注`;
+
+            // 隐藏进度条
+            document.getElementById('progressContainer').style.display = 'none';
+
+        } catch (error) {
+            console.error('选号失败:', error);
+            statusDiv.textContent = '选号失败: ' + error.message;
+            statusDiv.style.color = 'red';
+        } finally {
+            // 清理Worker
+            if (workerManager) {
+                await workerManager.terminate();
+                workerManager = null;
+            }
+
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            isProcessing = false;
+        }
+    }
+
+    // 停止选号
+    function stopSelection() {
+        if (workerManager) {
+            workerManager.terminate();
+            workerManager = null;
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('status').textContent = '已停止';
+            isProcessing = false;
+        }
+    }
+</script>
+</body>
+</html>

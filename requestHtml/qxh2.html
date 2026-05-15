@@ -1,0 +1,3231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大乐透生成随机号码</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/nouislider@15.7.1/dist/nouislider.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .form-input-focus {
+                @apply ring-2 ring-primary/30 border-primary;
+            }
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .dropdown-active {
+                @apply border-primary ring-2 ring-primary/30;
+            }
+            .number-input {
+                @apply appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200;
+            }
+            .checkbox-grid {
+                @apply grid grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-3;
+            }
+            .checkbox-item {
+                @apply relative border-2 border-gray-300 rounded-lg transition-all duration-200 cursor-pointer;
+            }
+            .checkbox-item:hover {
+                @apply border-primary/50 bg-primary/5;
+            }
+            .checkbox-item.selected {
+                @apply border-primary bg-primary/20 shadow-md;
+            }
+            .checkbox-input {
+                @apply absolute opacity-0 w-full h-full cursor-pointer;
+            }
+            .checkbox-label {
+                @apply block w-full h-full p-3 text-center text-sm font-semibold text-gray-700 select-none cursor-pointer;
+            }
+            .checkbox-item.selected .checkbox-label {
+                @apply text-primary;
+            }
+            .checkbox-item input:checked + .checkbox-label {
+                @apply text-primary;
+            }
+            .slider-container {
+                @apply mt-4 p-4 bg-gray-50 rounded-lg;
+            }
+            .section-title {
+                @apply text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200;
+            }
+            .section-subtitle {
+                @apply text-sm font-medium text-gray-700 mb-2;
+            }
+            .section-description {
+                @apply text-xs text-gray-500 mt-1;
+            }
+            .limit-badge {
+                @apply inline-block px-3 py-1 text-xs font-medium rounded-full ml-2;
+            }
+            .limit-badge-info {
+                @apply bg-blue-100 text-blue-800;
+            }
+            .limit-badge-warning {
+                @apply bg-yellow-100 text-yellow-800;
+            }
+            .noUi-connect {
+                @apply bg-primary;
+            }
+            .noUi-handle {
+                @apply border-2 border-primary bg-white shadow-md;
+            }
+            .noUi-handle:after, .noUi-handle:before {
+                @apply bg-primary/70;
+            }
+            .noUi-target {
+                @apply border-gray-300 shadow-sm;
+            }
+            .radio-group {
+                @apply flex flex-wrap gap-4;
+            }
+            .radio-item {
+                @apply flex items-center space-x-2;
+            }
+            .radio-item {
+                border: 1px dashed #007bff;
+                padding: 2px;
+            }
+            .radio-input {
+                @apply h-4 w-4 text-primary border-gray-300;
+            }
+            .radio-label {
+                @apply text-sm text-gray-700 cursor-pointer;
+            }
+            .quick-set-btn {
+                @apply px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200;
+            }
+            .quick-set-btn.active {
+                @apply bg-primary text-white border-primary hover:bg-primary/90;
+            }
+            .number-display {
+                @apply font-mono text-sm bg-gray-50 p-3 rounded-lg border border-gray-200;
+            }
+            .loading-overlay {
+                @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden;
+            }
+            .loading-spinner {
+                @apply w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin;
+            }
+            .section-header {
+                @apply flex items-center justify-between mb-4 pb-2 border-b border-gray-200;
+            }
+            .combination-item {
+                @apply relative border-2 border-gray-300 rounded-lg transition-all duration-200 cursor-pointer p-2;
+            }
+            .combination-item:hover {
+                @apply border-blue-300 bg-blue-50;
+            }
+            .combination-item.selected {
+                @apply border-blue-500 bg-blue-100 shadow-sm;
+            }
+            .combination-label {
+                @apply block w-full text-center text-xs font-medium text-gray-700 select-none cursor-pointer p-1;
+            }
+            .combination-item.selected .combination-label {
+                @apply text-blue-700 font-semibold;
+            }
+            .qzh-item {
+                @apply relative border-2 border-gray-300 rounded-lg transition-all duration-200 cursor-pointer;
+            }
+            .qzh-item:hover {
+                @apply border-blue-400 bg-purple-50;
+            }
+            .qzh-item.selected {
+                @apply border-blue-600 bg-blue-100 shadow-md;
+            }
+            .qzh-label {
+                @apply block w-full h-full p-3 text-center text-sm font-semibold text-gray-700 select-none cursor-pointer;
+            }
+            .qzh-item.selected .qzh-label {
+                @apply text-blue-800 font-semibold;
+            }
+            /* 添加计时器样式 */
+            #loadingTimer {
+                @apply text-xl font-bold text-primary;
+                font-family: 'Courier New', monospace;
+            }
+
+            /* 添加提示框样式 */
+            #genTips {
+                @apply border-l-4 border-blue-400;
+            }
+
+            /* 取消按钮样式 */
+            #cancelGen {
+                @apply transition-all duration-200 hover:scale-105 active:scale-95;
+            }
+
+            .combination-badge {
+                @apply absolute -top-2 left-1/2 transform -translate-x-1/2 px-2 py-0.5 text-xs font-bold rounded-full shadow-sm z-10;
+                min-width: 1.5rem;
+                text-align: center;
+            }
+            .badge-gray {
+                @apply bg-gray-200 text-gray-700;
+            }
+            .badge-green {
+                @apply bg-green-100 text-green-800;
+            }
+            .badge-orange {
+                @apply bg-orange-100 text-orange-800;
+            }
+            .badge-red {
+                @apply bg-red-100 text-red-800;
+            }
+            .badge-purple {
+                @apply bg-purple-100 text-purple-800;
+            }
+            /* 调整组合项容器为相对定位，以便绝对定位标签 */
+            .checkbox-item {
+                @apply relative border-2 border-gray-300 rounded-lg transition-all duration-200 cursor-pointer;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen">
+<!-- 加载遮罩层 -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center min-w-80">
+        <div class="loading-spinner mb-4"></div>
+        <p class="text-gray-700 font-medium">使用<span id="showCpu"></span>个处理器</p>
+        <p class="text-gray-700 font-medium">正在生成随机号码...</p>
+        <div id="loadingTimer" class="text-primary font-mono font-bold text-lg my-2">
+            <span id="loadingMinutes">00</span>:<span id="loadingSeconds">00</span>
+        </div>
+        <div class="text-gray-500 text-sm mt-1">
+            <p id="loadingTips">正在处理数据，请稍候...</p>
+            <p class="text-xs mt-2 opacity-75" id="processingInfo"></p>
+        </div>
+        <button id="cancelGen" class="mt-4 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition duration-200">
+            <i class="fa fa-times mr-1"></i> 取消生成
+        </button>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- 表单卡片 -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">大乐透生成随机号码</h1>
+            <p class="opacity-80 mt-1">请设置生成参数再开始生成</p>
+        </div>
+
+        <!-- 下载分析表格按钮 -->
+        <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-end">
+            <button type="button" id="downloadExcelBtn"
+                    class="px-5 py-2.5 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition duration-200 flex items-center shadow-md hover:shadow-lg">
+                <i class="fa fa-file-excel mr-2"></i> 下载最新{{.LastDrawTime}}分析文件
+            </button>
+        </div>
+
+        <form id="analysisForm" class="p-6 space-y-8" method="POST">
+            <!-- 0. 随机注数 -->
+            <div class="space-y-4">
+                <h3 class="section-title">1. 随机注数</h3>
+                <div class="radio-group">
+                    <!-- 选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择要生成的随机号码注数
+                </div>
+            </div>
+
+            <!-- 2. 组合 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">2. 组合选择</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllCombs"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllCombs"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="combsCount" class="limit-badge limit-badge-info">18/18</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatCombsGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="combsGroup" class="checkbox-grid">
+                    <!-- 组合选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择要分析的组合类型，默认全选
+                </div>
+            </div>
+
+            <!-- 3. 奇偶 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">3. 奇偶比例</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllParity"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllParity"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="parityCount" class="limit-badge limit-badge-info">8/8</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatParityGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="parityGroup" class="checkbox-grid">
+                    <!-- 奇偶选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择奇偶比例，例如"52"表示5个奇数2个偶数
+                </div>
+            </div>
+
+            <!-- 4. 前区前中后 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">13. 前区前中后分布比例</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectQzh"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectQzh"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="qzhCount" class="limit-badge limit-badge-info" >0/8</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatQzhGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="qzhGroup" class="checkbox-grid">
+                    <!-- 前区前中后选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择前区号码在前、中、后区的分布比例（前(01~17);中(18);后(19~35), 例如: "203"表示在0~17中选2个号码,在19~35中选择3个号码）
+                </div>
+            </div>
+
+            <!-- 5. 是否移除历史 -->
+            <div class="space-y-4">
+                <h3 class="section-title">5. 是否移除历史数据</h3>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" id="removeHistoryYes" name="removeHistory" value="1" checked class="radio-input">
+                        <label for="removeHistoryYes" class="radio-label">移除历史数据</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="removeHistoryNo" name="removeHistory" value="2" class="radio-input">
+                        <label for="removeHistoryNo" class="radio-label">不移除历史数据</label>
+                    </div>
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择是否在分析中排除历史数据
+                </div>
+            </div>
+
+            <!-- 6. 和值范围 -->
+            <div class="space-y-4">
+                <h3 class="section-title">4. 和值范围</h3>
+                <div class="slider-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">最小值</label>
+                                <input type="number" id="hzMin" name="hzMin" min="18" max="188" value="90"
+                                       class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus">
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">最大值</label>
+                                <input type="number" id="hzMax" name="hzMax" min="18" max="188" value="116"
+                                       class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus">
+                            </div>
+                        </div>
+                        <div class="text-lg font-bold text-primary" id="hzValueDisplay">90 - 116</div>
+                    </div>
+                    <div id="hzSlider" class="mt-4"></div>
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 拖动滑块或输入数字设置和值范围，最小18，最大188
+                </div>
+            </div>
+
+            <!-- 7. 胆码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">6. 胆码选择</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="clearDanMa"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="danMaCount" class="limit-badge limit-badge-info">已选 0/4</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatDanMaGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="danMaGroup" class="checkbox-grid">
+                    <!-- 胆码选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 最多选择4个胆码号码（01-35）
+                </div>
+            </div>
+
+            <!-- 8. 前区必须包括的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">7. 前区必须包括的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllFrontInclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllFrontInclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="frontIncludeCount" class="limit-badge limit-badge-info">0/35</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatFrontIncludeGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="frontIncludeGroup" class="checkbox-grid">
+                    <!-- 前区必须包括的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 9. 前区必须排除的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">8. 前区必须排除的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllFrontExclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllFrontExclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="frontExcludeCount" class="limit-badge limit-badge-info">0/35</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatFrontExcludeGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="frontExcludeGroup" class="checkbox-grid">
+                    <!-- 前区必须排除的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 10. 后区必须包括的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">9. 后区必须包括的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllBackInclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllBackInclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="backIncludeCount" class="limit-badge limit-badge-info">0/12</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatBackIncludeGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="backIncludeGroup" class="checkbox-grid">
+                    <!-- 后区必须包括的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 11. 后区必须排除的号码 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">10. 后区必须排除的号码</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllBackExclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllBackExclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="backExcludeCount" class="limit-badge limit-badge-info">0/12</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatBackExcludeGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="backExcludeGroup" class="checkbox-grid">
+                    <!-- 后区必须排除的号码选项会动态生成 -->
+                </div>
+            </div>
+
+            <!-- 12. 后续必须包含的组合 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">11. 后区必须包含的组合</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllCombsInclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllCombsInclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="backCombIncludeCount" class="limit-badge limit-badge-info">0/66</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">包含上期后区号码<i style="font-weight: bold;color: orangered">{{.LastBackComb}}</i>的趋势:</span>
+                        <div class="flex flex-wrap gap-2" id="bh-backCombIncludeGroup">
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatBackCombIncludeGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="backCombIncludeGroup" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    <!-- 后续必须包含的组合选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择后区必须包含的号码组合
+                </div>
+            </div>
+
+            <!-- 13. 后区必须排除的组合 -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">12. 后区必须排除的组合</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllCombsExclude"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectAllCombsExclude"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="backCombExcludeCount" class="limit-badge limit-badge-info">0/66</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">排除上期后区号码<i style="font-weight: bold;color: orangered">{{.LastBackComb}}</i>的趋势:</span>
+                        <div class="flex flex-wrap gap-2" id="pc-backCombExcludeGroup">
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatBackCombExcludeGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="backCombExcludeGroup" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    <!-- 后区必须排除的组合选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择后区必须排除的号码组合
+                </div>
+            </div>
+
+            <!-- 14. 新4重号数必须大于等于 -->
+            <div class="space-y-4">
+                <h3 class="section-title">14. 新4重号数必须大于等于</h3>
+                <div class="flex flex-col space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <input type="number" id="newFourRepeat" name="newFourRepeat" min="0" max="300" value="15"
+                               class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:form-input-focus transition duration-200">
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-700 mb-2">快速设置:</div>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" data-value="0" class="quick-set-btn">设为0</button>
+                                <button type="button" data-value="10" class="quick-set-btn">设为10</button>
+                                <button type="button" data-value="15" class="quick-set-btn active">设为15</button>
+                                <button type="button" data-value="20" class="quick-set-btn">设为20</button>
+                                <button type="button" data-value="25" class="quick-set-btn">设为25</button>
+                                <button type="button" data-value="28" class="quick-set-btn">设为28</button>
+                                <button type="button" data-value="30" class="quick-set-btn">设为30</button>
+                                <button type="button" data-value="40" class="quick-set-btn">设为40</button>
+                                <button type="button" data-value="50" class="quick-set-btn">设为50</button>
+                                <button type="button" data-value="300" class="quick-set-btn">设为300</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 输入0-300之间的数字，表示新4重号数的最小值
+                </div>
+            </div>
+
+            <!-- 错误提示 -->
+            <div id="errorMessage" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-200">
+                <i class="fa fa-exclamation-circle mr-1"></i> <span></span>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="pt-4">
+                <!-- 添加提示信息 -->
+                <div id="genTips" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fa fa-info-circle text-blue-500 mt-1 mr-3 text-lg"></i>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-blue-700 mb-2">生成速度提示</h4>
+                            <ul class="space-y-1 text-sm text-blue-600">
+                                <li class="flex items-center">
+                                    <i class="fa fa-arrow-up text-red-500 mr-2 w-5 text-center"></i>
+                                    <span><strong>减慢生成速度的因素：</strong></span>
+                                </li>
+                                <li class="ml-7" style="color:orangered;font-size: 1.3rem;">若要选择 OtherT, 请保证胆码个数 >= 2, 否则请改用电脑, 千万别用手机! 若执意用手机, 发烫在所难免!! 切记切记!!!</li>
+                                <li class="ml-7">1. 选择过多组合类型，特别是包含 OtherT(主要因素)</li>
+                                <li class="ml-7">2. 选择过多前区前中后分布比例</li>
+                                <li class="ml-7">3. 选择过多奇偶比例</li>
+                                <li class="flex items-center mt-2">
+                                    <i class="fa fa-arrow-down text-green-500 mr-2 w-5 text-center"></i>
+                                    <span><strong>加快生成速度的因素：</strong></span>
+                                </li>
+                                <li class="ml-7">• 多选择胆码（最多4个）(主要因素)</li>
+                                <li class="ml-7">• 多选择前区必须包含号码(主要因素)</li>
+                                <li class="ml-7">• 设置合理的和值范围</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="submitBtn"
+                        class="w-full py-3 px-6 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl">
+                    <i class="fa fa-random mr-2"></i> 开始生成随机号码
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 生成的号码展示区域 -->
+    <div id="resultArea" class="mt-8 bg-white rounded-xl shadow-lg p-6 hidden fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-800">生成的随机号码 -> <span id="all_comb"></span></h2>
+            <button type="button" id="copyAllNumbersBtn"
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 flex items-center">
+                <i class="fa fa-copy mr-2"></i> 复制所有号码
+            </button>
+        </div>
+
+        <div id="numbersDisplay" class="space-y-4">
+            <!-- 号码会动态显示在这里 -->
+        </div>
+    </div>
+
+    <footer class="mt-12 py-6 bg-gray-100 border-t border-gray-300">
+        <div class="container mx-auto px-4">
+            <div class="text-center text-gray-600 text-sm">
+                <p class="mb-2">© 2026 随机生成号码 </p>
+                <p>网站备案号：<span class="font-medium">闽ICP备2026002101号-1</span>
+                    | <img src="/static/beiantubiao.png" style="display:inline;width: 16px;"><a href="https://beian.mps.gov.cn/#/query/webSearch?code=35021102002456" rel="noreferrer" target="_blank">闽公网安备35021102002456号</a></p>
+                <p class="mt-2 text-xs text-gray-500">健康购彩，理性投注</p>
+            </div>
+        </div>
+    </footer>
+
+</div>
+
+<script src="https://unpkg.com/nouislider@15.7.1/dist/nouislider.min.js"></script>
+
+<script>
+    const curT2MoniABCDEs = {
+    {{range $typeKey, $typeData := .T2MoniABCDEs}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": [{{range $numbers}}"{{.}}",{{end}}],
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const allHistoricalData = [{{range $dlt := .Dlts}}{F1: "{{$dlt.F1}}", F2: "{{$dlt.F2}}", F3: "{{$dlt.F3}}", F4: "{{$dlt.F4}}", F5: "{{$dlt.F5}}", B1: "{{$dlt.B1}}", B2: "{{$dlt.B2}}"},{{end}}];
+
+    const txHis = {
+    {{range $typeKey, $typeData := .TxHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const oeHis = {
+    {{range $typeKey, $typeData := .OeHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const qzhHis = {
+    {{range $typeKey, $typeData := .QzhHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const frontDhHis = {
+    {{range $typeKey, $typeData := .FrontDhHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const backDhHis = {
+    {{range $typeKey, $typeData := .BackDhHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const backCombHis = {
+    {{range $typeKey, $typeData := .BackCombHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const quShi2St = {
+    {{range $typeKey, $typeData := .QuShi2St}}
+    "{{$typeKey}}": {{$typeData}},
+    {{end}}
+    }
+
+    // 默认选中的最近几期
+    const defaultLastQiShuObj = {
+        "combs": "20",
+        "parity": "100",
+        "qzh": "100",
+        "danMa": "100",
+        "frontInclude": "100",
+        "frontExclude": "100",
+        "backInclude": "100",
+        "backExclude": "100",
+        "backCombInclude": "100",
+        "backCombExclude": "100",
+    }
+
+
+    // 可选组合选项
+    const combs = [
+        'OtherT', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8',
+        'T9', 'T10', 'T11', 'T12', 'T13', 'T14', 'T15', 'T16', 'T17'
+    ];
+
+    // 所有奇偶可能选项
+    const parityOptions = ['07', '16', '25', '34', '43', '52', '61', '70'];
+
+    // 前区前中后选项
+    const qzhOptions = ['500', '410', '401', '311', '302', '212', '203', '113', '104', '014', '005'];
+
+    // 随机注数选项
+    const randomCountOptions = [1,2,3,4,5,6,7,8,9,10,15,20,25,30,40,50,100];
+
+    // 热度选项
+    // const heatOptions = [10,20,30,50,100,200,300,500,1000,1500,2000,2500,3500]
+    const heatOptions = [
+    {{range .LastHisSlice}}
+    {{.}},
+    {{end}}
+    ]
+
+    // 配置参数
+    let xuHaoSt = {
+        HzMin: 70,
+        HzMax: 148,
+        FrontDanMaHms: [],
+        FrontIncludeHms: [],
+        FrontExcludeHms: [],
+        QzhSlice: [],
+        Tx: [],
+        BackIncludeHms: [],
+        BackExcludeHms: [],
+        BackIncludeCombs: [],
+        BackExcludeCombs: [],
+        RemoveHis: 1,
+        Oes: [],
+        Ch4MustGetCount: 15
+    };
+
+    // 随机生成的号码
+    let curNumbers = []
+
+    // 获取CPU核心数
+    // const cpuCores = Math.min(navigator.hardwareConcurrency || 2, 3);
+    const cpuCores = navigator.hardwareConcurrency || 2;
+
+    // 全局变量
+    let workerManager = null;
+    let isProcessing = false;
+
+    // Worker管理器
+    class DltWorkerManager {
+        constructor(workerCount) {
+            this.workerCount = Math.min(workerCount, cpuCores);
+            this.workers = [];
+            this.workerPromises = new Map();
+            this.nextWorkerId = 0;
+            this.taskQueue = [];
+            this.isProcessingQueue = false;
+
+            // 创建Worker
+            this.createWorkers();
+        }
+
+        createWorkers() {
+            // Worker代码 - 使用独立的函数定义
+            const workerCode = `
+                    // 在Worker中重新定义函数（简化版）
+                    function getCombs(arr, k) {
+                        const result = [];
+                        function combine(start, current) {
+                            if (current.length === k) {
+                                result.push([...current]);
+                                return;
+                            }
+                            for (let i = start; i < arr.length; i++) {
+                                current.push(arr[i]);
+                                combine(i + 1, current);
+                                current.pop();
+                            }
+                        }
+                        combine(0, []);
+                        return result;
+                    }
+
+                    function calDltHz(numbers) {
+                        return numbers.reduce((sum, num) => sum + parseInt(num), 0);
+                    }
+
+                    function crossComb(front, back, frontCount, backCount) {
+                        const result = [];
+                        const frontCombs = getCombs(front, frontCount);
+                        const backCombs = getCombs(back, backCount);
+                        for (const f of frontCombs) {
+                            for (const b of backCombs) {
+                                result.push([...f, ...b].sort().join(','));
+                            }
+                        }
+                        return result;
+                    }
+
+                    function shuffleArray(array) {
+                        const shuffled = [...array];
+                        for (let i = shuffled.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                        }
+                        return shuffled;
+                    }
+
+                    // 构建4重号映射
+                    function buildC4Map(historicalData) {
+                        const c4ms = new Map();
+
+                        for (const dlt of historicalData) {
+                            const front = [dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5];
+                            const back = [dlt.B1, dlt.B2];
+
+                            // 生成所有4个号码的组合
+                            const combinations = [];
+
+                            // 前区4个 + 后区0个
+                            const front4 = getCombs(front, 4);
+                            front4.forEach(comb => combinations.push(comb.sort().join(',')));
+
+                            // 前区3个 + 后区1个
+                            const front3 = getCombs(front, 3);
+                            const back1 = getCombs(back, 1);
+                            front3.forEach(f => {
+                                back1.forEach(b => {
+                                    combinations.push([...f, ...b].sort().join(','));
+                                });
+                            });
+
+                            // 添加到映射
+                            const fullStr = front.join(',') + '|' + back.join(',');
+                            combinations.forEach(comb => {
+                                if (!c4ms.has(comb)) {
+                                    c4ms.set(comb, []);
+                                }
+                                c4ms.get(comb).push(fullStr);
+                            });
+                        }
+
+                        return c4ms;
+                    }
+
+                    // 生成历史号码字符串数组
+                    function buildHistoryStrings(historicalData) {
+                        return historicalData.map(dlt =>
+                            dlt.F1 + ',' + dlt.F2 + ',' + dlt.F3 + ',' + dlt.F4 + ',' + dlt.F5 + '|' + dlt.B1 + ',' + dlt.B2
+                        );
+                    }
+
+                    // 判断前区是否满足所有条件
+                    function checkFrontConditions(front, xuHaoSt, t2MoniABCDEs) {
+                        const frontHz = calDltHz(front);
+
+                        // 1. 和值检查
+                        if (frontHz < (xuHaoSt.HzMin - 23)) {
+                            return false;
+                        }
+
+                        // 2. 胆码检查
+                        const danMaLen = xuHaoSt.FrontDanMaHms?.length || 0;
+                        if (danMaLen > 0) {
+                            const intersection = getIntersection(front, xuHaoSt.FrontDanMaHms);
+                            if (intersection.length !== danMaLen) {
+                                return false;
+                            }
+                        }
+
+                        // 3. 必须包含号码检查
+                        if (xuHaoSt.FrontIncludeHms?.length > 0) {
+                            const hasInclude = xuHaoSt.FrontIncludeHms.some(item =>
+                                front.includes(item)
+                            );
+                            if (!hasInclude) {
+                                return false;
+                            }
+                        }
+
+                        // 4. 必须排除号码检查
+                        if (xuHaoSt.FrontExcludeHms?.length > 0) {
+                            const hasExclude = xuHaoSt.FrontExcludeHms.some(item =>
+                                front.includes(item)
+                            );
+                            if (hasExclude) {
+                                return false;
+                            }
+                        }
+
+                        // 5. 前区前中后检查
+                        if (xuHaoSt.QzhSlice?.length > 0) {
+                            const qzh = calDltQzh(front);
+                            if (!xuHaoSt.QzhSlice.includes(qzh)) {
+                                return false;
+                            }
+                        }
+
+                        // 6. 类型检查（最复杂的部分）
+                        if (!checkTypeConditions(front, xuHaoSt, t2MoniABCDEs)) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+
+                    // 类型条件检查
+                    function checkTypeConditions(front, xuHaoSt, t2MoniABCDEs) {
+                        const selectedTypes = xuHaoSt.Tx || [];
+
+                        // 如果没有选择任何类型，直接通过
+                        if (selectedTypes.length === 0) {
+                            return true;
+                        }
+
+                        // 检查是否包含OtherT
+                        const hasOtherT = selectedTypes.includes("OtherT");
+
+                        if (hasOtherT) {
+                            let isOtherT = true;
+                            let isExistSelected1Dao17T = false;
+
+                            // 先检查是否在选中的非OtherT类型中
+                            for (const tx of selectedTypes) {
+                                if (tx !== "OtherT" && t2MoniABCDEs[tx]) {
+                                    const moni = t2MoniABCDEs[tx];
+                                    if (checkTypeMatch(front, moni)) {
+                                        isExistSelected1Dao17T = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // 如果不在选中的非OtherT类型中，检查是否在其他17种类型中
+                            if (!isExistSelected1Dao17T) {
+                                let isAnyT = false;
+
+                                // 检查所有17种类型
+                                for (let i = 1; i <= 17; i++) {
+                                    const tx = "T" + i;
+                                    if (t2MoniABCDEs[tx] && checkTypeMatch(front, t2MoniABCDEs[tx])) {
+                                        isAnyT = true;
+                                        break;
+                                    }
+                                }
+
+                                // 如果不在任何17种类型中，则是OtherT
+                                isOtherT = !isAnyT;
+                            }
+
+                            // 根据选中的类型判断
+                            for (const tx of selectedTypes) {
+                                switch (tx) {
+                                    case "OtherT":
+                                        if (isOtherT && !isExistSelected1Dao17T) {
+                                            return true;
+                                        }
+                                        break;
+                                    default:
+                                        // 对于T1-T17，如果在选中类型中匹配成功，直接返回true
+                                        if (isExistSelected1Dao17T) {
+                                            return true;
+                                        }
+                                }
+                            }
+
+                            return false;
+                        } else {
+                            // 选择的组合不包含OtherT的情况
+                            for (const tx of selectedTypes) {
+                                if (t2MoniABCDEs[tx] && checkTypeMatch(front, t2MoniABCDEs[tx])) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+
+                    function checkElementsFromDifferentArraysOptimized(sourceArray, targetArrays) {
+                      const targetSets = targetArrays.map(arr => new Set(arr));
+                      const usedArrays = new Array(5).fill(false); // 使用布尔数组代替Set，性能更好
+
+                      for (const element of sourceArray) {
+                        let found = false;
+
+                        // 为每个元素寻找匹配的未使用数组
+                        for (let i = 0; i < 5; i++) {
+                          if (!usedArrays[i] && targetSets[i].has(element)) {
+                            usedArrays[i] = true;
+                            found = true;
+                            break;
+                          }
+                        }
+
+                        // 如果当前元素无法匹配任何未使用的数组，直接返回false
+                        if (!found) return false;
+                      }
+
+                      // 验证所有数组都被使用
+                      return usedArrays.every(used => used);
+                    }
+
+                    function canMatchOneToOne(target, sourceArrays) {
+                      const used = new Set(); // 记录已使用的来源数组索引
+
+                      return target.every(item => {
+                        for (let i = 0; i < sourceArrays.length; i++) {
+                          if (!used.has(i) && sourceArrays[i].includes(item)) {
+                            used.add(i);
+                            return true;
+                          }
+                        }
+                        return false;
+                      });
+                    }
+
+                    // 检查单个类型是否匹配
+                    function checkTypeMatch(front, moni) {
+                        return checkElementsFromDifferentArraysOptimized(front, [moni.A, moni.B, moni.C, moni.D, moni.E]);
+                    }
+
+                    // 计算交集
+                    function getIntersection(arr1, arr2) {
+                        if (!arr1 || !arr2) return [];
+                        return arr1.filter(item => arr2.includes(item));
+                    }
+
+                    // 计算前区前中后值（需要根据实际逻辑实现）
+                    function calDltQzh(front) {
+                        let qNum = 0; // 前区（小于18的号码个数）
+                        let zNum = 0; // 中区（等于18的号码个数）
+                        let hNum = 0; // 后区（大于18的号码个数）
+
+                        // 遍历前区的5个号码
+                        for (let i = 0; i < Math.min(front.length, 5); i++) {
+                            const num = parseInt(front[i]);
+
+                            if (num < 18) {
+                                qNum++;
+                            } else if (num === 18) {
+                                zNum++;
+                            } else { // num > 18
+                                hNum++;
+                            }
+                        }
+
+                        // 返回格式为 "qNumzNumhNum"，例如 "311" 表示3个前区，1个中区，1个后区
+                        return "" + qNum + "" + zNum + "" + hNum;
+                    }
+
+                    // 计算奇偶
+                    function calDltOe(full) {
+                        let oNum = 0; // 奇数个数
+                        let eNum = 0; // 偶数个数
+                        for (const hm of full) {
+                           const num = parseInt(hm);
+                           if (num % 2 == 0) {
+                              eNum++
+                           } else {
+                             oNum++
+                           }
+                        }
+                        return "" + oNum + "" + eNum;
+                    }
+
+                    // 检查条件
+                    function checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms) {
+                        const frontStr = front.join(',');
+                        const backStr = back.join(',');
+                        const fullStr = frontStr + '|' + backStr;
+
+                        // 移除历史检查
+                        if (xuHaoSt.RemoveHis === 1 && hisFullHmStrSlice.includes(fullStr)) {
+                            return false;
+                        }
+
+                        // 判断后区必须包含的号码
+                        if (xuHaoSt.BackIncludeHms.length !=0 && getIntersection(xuHaoSt.BackIncludeHms,back).length == 0) {
+                            return false;
+                        }
+
+                        // 判断后区必须排除的号码
+                        if (xuHaoSt.BackExcludeHms.length !=0 && getIntersection(xuHaoSt.BackExcludeHms,back).length != 0) {
+                            return false;
+                        }
+
+                        // 判断后区必须包含的组合
+                        if (xuHaoSt.BackIncludeCombs.length !=0 && !xuHaoSt.BackIncludeCombs.includes(backStr)) {
+                            return false;
+                        }
+
+                        // 判断后区必须排除的组合
+                        if (xuHaoSt.BackExcludeCombs.length !=0 && xuHaoSt.BackExcludeCombs.includes(backStr)) {
+                            return false;
+                        }
+
+                        // 4重号检查
+                        if (xuHaoSt.Ch4MustGetCount > 0) {
+                            const ic4s = crossComb(front, back, 4, 0)
+                                .concat(crossComb(front, back, 3, 1))
+                                .concat(crossComb(front, back, 2, 2));
+
+                            let addCh4Count = 0;
+                            for (const ic4 of ic4s) {
+                                const n = c4ms.get(ic4)?.length || 0;
+                                if (n === 1) {
+                                    addCh4Count += 2;
+                                } else if (n >= 2) {
+                                    addCh4Count += 1;
+                                }
+                            }
+
+                            if (addCh4Count < xuHaoSt.Ch4MustGetCount) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+
+                    // 主处理函数
+                    function processTask(taskData) {
+                        const { xuHaoSt, rangeA, historicalData, finalCombMaxCount, t2MoniABCDEs } = taskData;
+
+                        // 准备数据
+                        const c4ms = buildC4Map(historicalData);
+                        const hisFullHmStrSlice = buildHistoryStrings(historicalData);
+
+                        // // 乱序号码
+                        // const allDltFrontHms = shuffleArray(
+                        //     Array.from({length: 35}, (_, i) => (i + 1).toString().padStart(2, '0'))
+                        // );
+                        //
+                        // const allDltBackHms = shuffleArray(
+                        //     Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'))
+                        // );
+
+                        const allDltFrontHms = Array.from({length: 35}, (_, i) => (i + 1).toString().padStart(2, '0'));  // 移除shuffleArray
+
+                        const allDltBackHms = Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'));  // 移除shuffleArray
+
+                        const finalCombForRandSlice = [];
+                        let finalCombCount = 0;
+                        let tempNum1 = 0;
+                        let tempNum2 = 0;
+
+                        const { start: aStart, end: aEnd } = rangeA;
+
+                        // 限制处理的组合数量，避免浏览器卡死
+                        const maxCombsPerWorker = 5000;
+                        let processedCount = 0;
+                        //  && processedCount < maxCombsPerWorker
+                        for (let a = aStart; a <= aEnd; a++) {
+                            for (let b = a + 1; b <= 31; b++) {
+                                for (let c = b + 1; c <= 32; c++) {
+                                    for (let d = c + 1; d <= 33; d++) {
+                                        for (let e = d + 1; e <= 34; e++) {
+                                            tempNum1++
+                                            const front = [
+                                                allDltFrontHms[a],
+                                                allDltFrontHms[b],
+                                                allDltFrontHms[c],
+                                                allDltFrontHms[d],
+                                                allDltFrontHms[e]
+                                            ].sort();
+
+                                            if (!checkFrontConditions(front, xuHaoSt, t2MoniABCDEs)) {
+                                                continue;
+                                            }
+
+                                            // 后区组合
+                                            //  && processedCount < maxCombsPerWorker
+                                            //  && processedCount < maxCombsPerWorker
+                                            for (let x = 0; x <= 10; x++) {
+                                                for (let y = x + 1; y <= 11; y++) {
+                                                    tempNum2++
+                                                    const back = [
+                                                        allDltBackHms[x],
+                                                        allDltBackHms[y]
+                                                    ].sort();
+
+                                                    const full = front.concat(back);
+                                                    // 检查奇偶
+                                                    let curOe = calDltOe(full);
+                                                    if (xuHaoSt.Oes.length != 0 && !xuHaoSt.Oes.includes(curOe)) {
+                                                        continue;
+                                                    }
+
+                                                    // 检查条件
+                                                    if (checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms)) {
+                                                        const fullStr = front.join(',') + '|' + back.join(',');
+                                                        finalCombForRandSlice.push(fullStr);
+                                                        // if (finalCombCount < finalCombMaxCount) {
+                                                        //     finalCombForRandSlice.push(fullStr);
+                                                        // } else {
+                                                        //     // 随机替换
+                                                        //     const randomIndex = Math.floor(Math.random() * finalCombMaxCount);
+                                                        //     finalCombForRandSlice[randomIndex] = fullStr;
+                                                        // }
+                                                        finalCombCount++;
+                                                    }
+
+                                                    processedCount++;
+                                                    if (processedCount % 1000 === 0) {
+                                                        // 定期让出控制权，避免阻塞
+                                                        if (typeof self !== 'undefined' && self.postMessage) {
+                                                            self.postMessage({ type: 'progress', count: processedCount });
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        //console.log("rangeA=",rangeA,"finalCombCount=",finalCombCount,"tempNum1=", tempNum1,"tempNum2=",tempNum2)
+                        return finalCombForRandSlice;
+                    }
+
+                    // Worker消息处理
+                    self.onmessage = (event) => {
+                        const { taskId, ...taskData } = event.data;
+
+                        try {
+                            const result = processTask(taskData);
+
+                            self.postMessage({
+                                taskId,
+                                result
+                            });
+                        } catch (error) {
+                            self.postMessage({
+                                taskId,
+                                error: error.message
+                            });
+                        }
+                    };
+                `;
+
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(blob);
+
+            for (let i = 0; i < this.workerCount; i++) {
+                const worker = new Worker(workerUrl);
+                const id = this.nextWorkerId++;
+
+                worker.id = id;
+                worker.busy = false;
+
+                worker.onmessage = (event) => {
+                    const { taskId, result, error } = event.data;
+                    worker.busy = false;
+
+                    const promise = this.workerPromises.get(taskId);
+                    if (promise) {
+                        if (error) {
+                            promise.reject(new Error(error));
+                        } else {
+                            promise.resolve(result);
+                        }
+                        this.workerPromises.delete(taskId);
+                    }
+
+                    this.processQueue();
+                };
+
+                worker.onerror = (error) => {
+                    console.error(`Worker ${id} error:`, error);
+                    worker.busy = false;
+                    this.processQueue();
+                };
+
+                this.workers.push(worker);
+            }
+
+            // 清理URL
+            setTimeout(() => URL.revokeObjectURL(workerUrl), 1000);
+        }
+
+        assignTask(task) {
+            return new Promise((resolve, reject) => {
+                const taskId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+
+                this.taskQueue.push({
+                    id: taskId,
+                    task,
+                    resolve,
+                    reject
+                });
+
+                this.processQueue();
+            });
+        }
+
+        processQueue() {
+            if (this.isProcessingQueue) return;
+            this.isProcessingQueue = true;
+
+            while (this.taskQueue.length > 0) {
+                const availableWorker = this.workers.find(w => !w.busy);
+                if (!availableWorker) break;
+
+                const taskItem = this.taskQueue.shift();
+                availableWorker.busy = true;
+
+                this.workerPromises.set(taskItem.id, {
+                    resolve: taskItem.resolve,
+                    reject: taskItem.reject
+                });
+
+                availableWorker.postMessage({
+                    taskId: taskItem.id,
+                    ...taskItem.task
+                });
+            }
+
+            this.isProcessingQueue = false;
+        }
+
+        async terminate() {
+            for (const worker of this.workers) {
+                worker.terminate();
+            }
+            this.workers = [];
+            this.workerPromises.clear();
+            this.taskQueue = [];
+        }
+    }
+
+    // 分割任务
+    function splitTasks(xuHaoSt, workerCount) {
+        const tasks = [];
+
+        // 基于前区第一个数字的范围分割任务
+        const ranges = [];
+        const step = Math.ceil(31 / workerCount); // a从0到30
+
+        for (let i = 0; i < 31; i += step) {
+            const start = i;
+            const end = Math.min(i + step - 1, 30);
+            if (start <= end) {
+                ranges.push({ start, end });
+            }
+        }
+
+        const historicalData = allHistoricalData;
+
+        for (const range of ranges) {
+            tasks.push({
+                xuHaoSt,
+                historicalData,
+                rangeA: range,
+                finalCombMaxCount: 10000,
+                t2MoniABCDEs: curT2MoniABCDEs,
+            });
+        }
+
+        return tasks;
+    }
+
+    // 乱序处理数组
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]]
+        }
+        return arr
+    }
+
+    // 随机选择组合
+    function selectRandomCombs(arr, count) {
+        if (arr.length <= count) {
+            return [...arr];
+        }
+
+        const selected = new Set();
+        const result = [];
+
+        arr = shuffle(arr)
+
+        while (result.length < count && selected.size < arr.length) {
+            const randomIndex = Math.floor(Math.random() * arr.length);
+            if (!selected.has(randomIndex)) {
+                selected.add(randomIndex);
+                result.push(arr[randomIndex]);
+            }
+        }
+
+        return result;
+    }
+
+    // 开始选号
+    async function startSelection() {
+        if (isProcessing) {
+            // alert('正在处理中，请稍候...');
+            return;
+        }
+
+        if (isGenCancelled) {
+            return;
+        }
+
+        isProcessing = true;
+
+        const zhuShu = xuHaoSt.RandomCount || 5;
+        // const workerCount = Math.min(cpuCores, 4);
+        const workerCount = cpuCores;
+
+        try {
+            console.time('选号总耗时');
+
+            // 创建Worker管理器
+            workerManager = new DltWorkerManager(workerCount);
+
+            // 分割任务
+            const tasks = splitTasks(xuHaoSt, workerManager.workerCount);
+
+            // 并行执行所有任务
+            const workerPromises = tasks.map((task, index) => {
+                return workerManager.assignTask(task);
+            });
+
+            // 等待所有Worker完成
+            const results = await Promise.all(workerPromises);
+
+            // 检查是否取消
+            if (isGenCancelled) {
+                throw new Error("GENERATION_CANCELLED");
+            }
+
+            // 处理结果，只使用成功的
+            const successfulResults = [];
+            for (const result of results) {
+                if (result.status === 'fulfilled') {
+                    successfulResults.push(result.value);
+                }
+            }
+
+            // 如果所有任务都被取消，返回空数组
+            if (successfulResults.length === 0 && isGenCancelled) {
+                curNumbers = [];
+                return;
+            }
+
+            // 合并所有结果
+            const allCombs = results.flat();
+
+            // 随机选择指定数量的结果
+            const finalSelections = selectRandomCombs(allCombs, zhuShu);
+            curNumbers = finalSelections
+
+            console.timeEnd('选号总耗时');
+            console.log(`总组合数: ${allCombs.length}, 最终选择: ${finalSelections.length}`);
+            document.getElementById("all_comb").innerHTML = "当前所有可能有: <span class='text-blue'>" + allCombs.length +"注</span>"
+        } catch (error) {
+            // 如果是取消错误，不抛出
+            if (error.message === "GENERATION_CANCELLED") {
+                console.log('生成已被取消');
+                curNumbers = [];
+            } else {
+                console.error('选号失败:', error);
+                throw error;
+            }
+        } finally {
+            // 清理Worker
+            if (workerManager) {
+                try {
+                    await workerManager.terminate();
+                } catch (e) {
+                    console.warn('终止Worker时出错:', e);
+                }
+                workerManager = null;
+            }
+
+            isProcessing = false;
+        }
+    }
+</script>
+</body>
+</html>
+
+<script>
+    let genTimer = null;
+    let genStartTime = null;
+    let isGenCancelled = false;
+
+    function capitalizeFirst(str = "") {
+        if (!str) return "";
+        return str[0].toUpperCase() + str.slice(1);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 页面加载完成后初始化统计数据
+        // window.addEventListener('load', async function() {
+        //     // 初始化组合统计数据
+        //     const initialRange = getSelectedHistoryRange();
+        //     try {
+        //         const statsData = await fetchStats(initialRange);
+        //         updateStatsLabel(statsData);
+        //     } catch (error) {
+        //         console.error('初始化统计数据失败:', error);
+        //     }
+        // });
+
+        // 生成热度选择单选框
+        function generateHeatOptions(containerId) {
+            const typ = containerId.replace("Group","")
+            const qiShu = defaultLastQiShuObj[typ] || "100"
+            const uFcId = capitalizeFirst(containerId)
+            const heatOptionsGroup = document.getElementById("heat" + uFcId);
+            heatOptionsGroup.innerHTML = '';
+
+            heatOptions.forEach(heat => {
+                const radioItem = document.createElement('div');
+                radioItem.className = 'radio-item';
+
+                const radioInput = document.createElement('input');
+                radioInput.type = 'radio';
+                radioInput.id = `heat_${uFcId}_${heat}`;
+                radioInput.name = 'heat'+uFcId+'Options';
+                radioInput.value = ""+heat;
+                radioInput.className = 'radio-input';
+                radioInput.setAttribute('data-typ', typ);
+                radioInput.setAttribute('data-zy-id', containerId);
+                if (heat == qiShu) radioInput.checked = true; // 默认选中
+
+                const radioLabel = document.createElement('label');
+                radioLabel.htmlFor = `heat_${uFcId}_${heat}`;
+                radioLabel.className = 'radio-label';
+                radioLabel.textContent = ""+heat;
+
+                radioItem.appendChild(radioInput);
+                radioItem.appendChild(radioLabel);
+                heatOptionsGroup.appendChild(radioItem);
+            });
+        }
+
+        // 更新组合统计标签
+        function updateStatsLabel(containerId, statsData) {
+            if (!statsData) return;
+
+            Object.keys(statsData).forEach(option => {
+                const badge = document.getElementById(`stat_${option}`);
+                if (badge) {
+                    const value = statsData[option];
+                    badge.textContent = value;
+
+                    // 根据值设置颜色
+                    badge.className = 'combination-badge ';
+                    if (value === 0) {
+                        badge.classList.add('badge-gray');
+                    } else if (value >= 1 && value <= 19) {
+                        badge.classList.add('badge-green');
+                    } else if (value >= 20 && value <= 50) {
+                        badge.classList.add('badge-orange');
+                    } else if (value >= 51 && value <= 80) {
+                        badge.classList.add('badge-red');
+                    } else {
+                        badge.classList.add('badge-purple');
+                    }
+                }
+            });
+        }
+
+        // 设置取消按钮的函数
+        function setupCancelButton() {
+            // 使用事件委托来处理动态出现的按钮
+            document.body.addEventListener('click', function(event) {
+                const cancelBtn = event.target.closest('#cancelGen');
+                if (cancelBtn) {
+                    console.log('检测到取消按钮点击');
+                    cancelGenProcess();
+                    return false; // 阻止默认行为和冒泡
+                }
+            });
+        }
+
+        // 取消生成的核心函数
+        function cancelGenProcess() {
+            console.log('开始取消生成过程...');
+
+            // 设置取消标志
+            isGenCancelled = true;
+
+            // 立即停止计时器
+            if (genTimer) {
+                clearInterval(genTimer);
+                genTimer = null;
+                console.log('计时器已停止');
+            }
+
+            // 停止所有Worker
+            if (workerManager) {
+                console.log('正在停止Worker...');
+                workerManager.terminate();
+                workerManager = null;
+            }
+
+            // 重置处理状态
+            isProcessing = false;
+
+            // 隐藏加载遮罩层
+            hideLoading();
+
+            // 显示取消提示
+            setTimeout(() => {
+                showError('生成已取消');
+            }, 300);
+
+            // 恢复提交按钮
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa fa-random mr-2"></i> 开始生成随机号码';
+            }
+
+            console.log('取消生成过程完成');
+        }
+
+        // 初始化取消按钮点击事件
+        setupCancelButton();
+
+        // 元素引用
+        const form = document.getElementById('analysisForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultArea = document.getElementById('resultArea');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const copyAllNumbersBtn = document.getElementById('copyAllNumbersBtn');
+        const numbersDisplay = document.getElementById('numbersDisplay');
+        const hzSlider = document.getElementById('hzSlider');
+        const hzMinInput = document.getElementById('hzMin');
+        const hzMaxInput = document.getElementById('hzMax');
+        const hzValueDisplay = document.getElementById('hzValueDisplay');
+        const newFourRepeatInput = document.getElementById('newFourRepeat');
+        const quickSetButtons = document.querySelectorAll('.quick-set-btn');
+
+        // 生成组合对（01,02 到 11,12）
+        const generateBackCombPairs = () => {
+            const pairs = [];
+            for (let i = 1; i <= 12; i++) {
+                for (let j = i + 1; j <= 12; j++) {
+                    pairs.push(`${i.toString().padStart(2, '0')},${j.toString().padStart(2, '0')}`);
+                }
+            }
+            return pairs;
+        };
+        const backCombPairs = generateBackCombPairs();
+
+        // 初始化滑块（默认值70-148）
+        let hzSliderInstance = null;
+        function initHzSlider() {
+            if (hzSliderInstance) {
+                hzSliderInstance.destroy();
+            }
+
+            hzSliderInstance = noUiSlider.create(hzSlider, {
+                start: [70, 148], // 默认值70-148
+                connect: true,
+                range: {
+                    'min': 18,
+                    'max': 188
+                },
+                step: 1,
+                format: {
+                    to: function(value) {
+                        return Math.round(value);
+                    },
+                    from: function(value) {
+                        return Number(value);
+                    }
+                }
+            });
+
+            // 滑块更新事件
+            hzSliderInstance.on('update', function(values) {
+                const min = Math.round(values[0]);
+                const max = Math.round(values[1]);
+
+                hzMinInput.value = min;
+                hzMaxInput.value = max;
+                hzValueDisplay.textContent = `${min} - ${max}`;
+            });
+
+            // 输入框更新事件
+            hzMinInput.addEventListener('change', function() {
+                let value = parseInt(this.value);
+                if (isNaN(value) || value < 18) value = 18;
+                if (value > 188) value = 188;
+                this.value = value;
+
+                const currentValues = hzSliderInstance.get();
+                if (value > currentValues[1]) {
+                    hzSliderInstance.set([currentValues[1] - 1, currentValues[1]]);
+                } else {
+                    hzSliderInstance.set([value, null]);
+                }
+            });
+
+            hzMaxInput.addEventListener('change', function() {
+                let value = parseInt(this.value);
+                if (isNaN(value) || value > 188) value = 188;
+                if (value < 18) value = 18;
+                this.value = value;
+
+                const currentValues = hzSliderInstance.get();
+                if (value < currentValues[0]) {
+                    hzSliderInstance.set([currentValues[0], currentValues[0] + 1]);
+                } else {
+                    hzSliderInstance.set([null, value]);
+                }
+            });
+        }
+
+        // 生成复选框组
+        // typ 的类型在 fetchStats 中
+        function generateCheckboxGroup(containerId, options, defaultChecked = true) {
+            const container = document.getElementById(containerId);
+            const typ = containerId.replace("Group","")
+            const qiShu = defaultLastQiShuObj[typ] || "100"
+            container.innerHTML = '';
+
+            // 统计数据
+            const statsData = fetchStats(qiShu, typ);
+
+            options.forEach(option => {
+                const newOption = option.replace(/[,\.-]/g, "").replace(/\s+/g, "");
+                const newContainerId = containerId.replace('Group', '')
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                if (defaultChecked) {
+                    div.classList.add('selected');
+                }
+
+                const badgeValue = statsData[option] || 0
+                // 创建统计标签
+                const badge = document.createElement('div');
+                badge.className = 'combination-badge';
+                badge.id = `stat_${newContainerId}_${newOption}`;
+                badge.textContent = "" + badgeValue;
+
+                if (badgeValue === 0) {
+                    badge.classList.add('badge-gray');
+                } else if (badgeValue >= 1 && badgeValue <= 19) {
+                    badge.classList.add('badge-green');
+                } else if (badgeValue >= 20 && badgeValue <= 50) {
+                    badge.classList.add('badge-orange');
+                } else if (badgeValue >= 51 && badgeValue <= 80) {
+                    badge.classList.add('badge-red');
+                } else {
+                    badge.classList.add('badge-purple');
+                }
+
+                div.appendChild(badge);
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = newContainerId;
+                checkbox.value = option;
+                checkbox.id = `${newContainerId}_${option}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = defaultChecked;
+                checkbox.dataset.group = containerId;
+
+                const label = document.createElement('label');
+                label.htmlFor = `${newContainerId}_${option}`;
+                label.className = 'checkbox-label';
+                label.textContent = option;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox && e.target !== badge) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateCount(this.dataset.group);
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            // 初始化计数
+            updateCount(containerId);
+        }
+
+
+
+        // 模拟统计数据
+        function getMockStatsData(options) {
+            const stats = {};
+            options.forEach(option => {
+                // 模拟不同范围的数据
+                stats[option] = Math.floor(Math.random() * 100);
+            });
+            return stats;
+        }
+
+
+        // 模拟根据历史期数获取统计数据（实际需要从后端API获取）
+        function fetchStats(qiShu, typ) {
+            const stats = {};
+            // 组合
+            if (typ === "combs") {
+                combs.forEach(option => {
+                    stats[option] = txHis[option][qiShu]
+                })
+            }
+
+            // 奇偶比例
+            if (typ === "parity") {
+                parityOptions.forEach(option => {
+                    stats[option] = oeHis[option][qiShu]
+                })
+            }
+
+            // 前中后
+            if (typ === "qzh") {
+                qzhOptions.forEach(option => {
+                    stats[option] = qzhHis[option][qiShu]
+                })
+            }
+
+            if (typ === "danMa" || typ === "frontInclude" || typ === "frontExclude") {
+                for (let i = 1; i <= 35; i++) {
+                    const option = i.toString().padStart(2, '0');
+                    stats[option] = frontDhHis[option][qiShu]
+                }
+            }
+
+            if (typ === "backInclude" || typ === "backExclude") {
+                for (let i = 1; i <= 12; i++) {
+                    const option = i.toString().padStart(2, '0');
+                    stats[option] = backDhHis[option][qiShu]
+                }
+            }
+
+            if (typ === "backCombInclude" || typ === "backCombExclude") {
+                backCombPairs.forEach(pair => {
+                    const option = pair;
+                    stats[option] = backCombHis[option][qiShu]
+                })
+            }
+            return stats
+        }
+
+
+        // 生成用于选择的随机注数单选按钮
+        function generateRandomCountRadio() {
+            const radioGroup = document.querySelector('.radio-group');
+            radioGroup.innerHTML = '';
+
+            randomCountOptions.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'radio-item';
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.id = `randomCount_${num}`;
+                radio.name = 'randomCount';
+                radio.value = ""+num;
+                radio.className = 'radio-input';
+                if (num === 5) radio.checked = true;
+
+                const label = document.createElement('label');
+                label.htmlFor = `randomCount_${num}`;
+                label.className = 'radio-label';
+                label.textContent = `${num}注`;
+
+                div.appendChild(radio);
+                div.appendChild(label);
+                radioGroup.appendChild(div);
+            });
+        }
+
+        // 更新计数显示
+        function updateCount(groupId) {
+            const checkboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]`);
+            const checkedCount = document.querySelectorAll(`#${groupId} input[type="checkbox"]:checked`).length;
+            const totalCount = checkboxes.length;
+
+            let countElement = null;
+            switch(groupId) {
+                case 'combsGroup':
+                    countElement = document.getElementById('combsCount');
+                    break;
+                case 'parityGroup':
+                    countElement = document.getElementById('parityCount');
+                    break;
+                case 'frontIncludeGroup':
+                    countElement = document.getElementById('frontIncludeCount');
+                    break;
+                case 'backIncludeGroup':
+                    countElement = document.getElementById('backIncludeCount');
+                    break;
+                case 'backCombIncludeGroup':
+                    countElement = document.getElementById('backCombIncludeCount');
+                    break;
+                case 'frontExcludeGroup':
+                    countElement = document.getElementById('frontExcludeCount');
+                    break;
+                case 'backExcludeGroup':
+                    countElement = document.getElementById('backExcludeCount');
+                    break;
+                case 'backCombExcludeGroup':
+                    countElement = document.getElementById('backCombExcludeCount');
+                    break;
+                case 'qzhGroup':
+                    countElement = document.getElementById('qzhCount');
+                    break;
+                case 'danMaGroup':
+                    countElement = document.getElementById('danMaCount');
+                    countElement.textContent = `已选 ${checkedCount}/4`;
+                    return;
+            }
+
+            if (countElement) {
+                countElement.textContent = `${checkedCount}/${totalCount}`;
+                if (checkedCount === totalCount) {
+                    countElement.classList.remove('limit-badge-warning');
+                    countElement.classList.add('limit-badge-info');
+                } else if (checkedCount === 0) {
+                    countElement.classList.remove('limit-badge-warning');
+                    countElement.classList.add('limit-badge-info');
+                } else {
+                    countElement.classList.remove('limit-badge-info');
+                    countElement.classList.add('limit-badge-warning');
+                }
+            }
+        }
+
+        // 更新胆码计数
+        function updateDanMaCount() {
+            const checkboxes = document.querySelectorAll('#danMaGroup input[type="checkbox"]:checked');
+            const count = checkboxes.length;
+            const danMaCount = document.getElementById('danMaCount');
+            danMaCount.textContent = `已选 ${count}/4`;
+
+            // 如果超过4个，禁用其他复选框
+            if (count >= 4) {
+                document.querySelectorAll('#danMaGroup input[type="checkbox"]:not(:checked)').forEach(cb => {
+                    cb.disabled = true;
+                    cb.parentElement.classList.add('opacity-50');
+                });
+                danMaCount.classList.remove('limit-badge-info');
+                danMaCount.classList.add('limit-badge-warning');
+            } else {
+                document.querySelectorAll('#danMaGroup input[type="checkbox"]').forEach(cb => {
+                    cb.disabled = false;
+                    cb.parentElement.classList.remove('opacity-50');
+                });
+                danMaCount.classList.remove('limit-badge-warning');
+                danMaCount.classList.add('limit-badge-info');
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.querySelector('span').textContent = message;
+            errorMessage.classList.remove('hidden');
+
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        function showLoading() {
+            // 重置计时器和状态
+            isGenCancelled = false;
+            genStartTime = Date.now();
+
+            // 更新提示信息
+            const combsCount = getCheckboxValues('combsGroup').length;
+            const danMaCount = getCheckboxValues('danMaGroup').length;
+            const hasOtherT = getCheckboxValues('combsGroup').includes('OtherT');
+
+            let tips = "正在处理数据，请稍候...";
+            if (hasOtherT && combsCount < 2) {
+                tips = "包含OtherT，生成时间可能较长...";
+            } else if (hasOtherT && combsCount >= 2) {
+                tips = "包含OtherT且选择较多组合，生成时间可能较长...";
+            } else if (danMaCount > 0) {
+                tips = `已选择${danMaCount}个胆码，生成速度较快...`;
+            }
+            document.getElementById('showCpu').textContent = cpuCores;
+            document.getElementById('loadingTips').textContent = tips;
+
+            // 显示遮罩层
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.style.opacity = '0';
+
+            // 使用requestAnimationFrame确保动画平滑
+            requestAnimationFrame(() => {
+                loadingOverlay.style.opacity = '1';
+                loadingOverlay.style.transition = 'opacity 0.3s ease';
+            });
+
+            // 开始计时器
+            startGenTimer();
+
+            // 启用取消按钮
+            document.getElementById('cancelGen').style.display = 'block';
+        }
+
+        function hideLoading() {
+            // 先停止计时器
+            stopGenTimer();
+
+            // 隐藏遮罩层
+            if (loadingOverlay) {
+                loadingOverlay.style.opacity = '0';
+                loadingOverlay.style.transition = 'opacity 0.3s ease';
+
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        // 计时器函数
+        function startGenTimer() {
+            // 清空之前的计时器
+            if (genTimer) {
+                clearInterval(genTimer);
+            }
+
+            // 重置显示
+            document.getElementById('loadingMinutes').textContent = '00';
+            document.getElementById('loadingSeconds').textContent = '00';
+
+            // 开始新的计时器
+            genTimer = setInterval(updateGenTimer, 1000);
+        }
+
+        function stopGenTimer() {
+            if (genTimer) {
+                clearInterval(genTimer);
+                genTimer = null;
+            }
+        }
+
+        function updateGenTimer() {
+            if (!genStartTime) return;
+
+            const elapsedMs = Date.now() - genStartTime;
+            const elapsedSeconds = Math.floor(elapsedMs / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60);
+            const seconds = elapsedSeconds % 60;
+
+            // 更新显示
+            document.getElementById('loadingMinutes').textContent =
+                minutes.toString().padStart(2, '0');
+            document.getElementById('loadingSeconds').textContent =
+                seconds.toString().padStart(2, '0');
+
+            // 每5秒更新一次提示信息
+            if (elapsedSeconds % 5 === 0) {
+                updateLoadingTips(elapsedSeconds);
+            }
+        }
+
+        function updateLoadingTips(elapsedSeconds) {
+            const tipsElement = document.getElementById('loadingTips');
+            const infoElement = document.getElementById('processingInfo');
+
+            let tips = "";
+            let info = "";
+
+            if (elapsedSeconds < 10) {
+                tips = "正在初始化数据...";
+                info = "正在准备号码组合...";
+            } else if (elapsedSeconds < 30) {
+                tips = "正在遍历符合条件的组合...";
+                info = "正在过滤和验证号码...";
+            } else if (elapsedSeconds < 60) {
+                tips = "正在进行复杂计算...";
+                info = "已处理大量数据，请耐心等待...";
+            } else {
+                tips = "仍在处理中，生成可能较慢...";
+                info = `已处理 ${Math.floor(elapsedSeconds / 10) * 1000} 多个组合`;
+            }
+
+            tipsElement.textContent = tips;
+            infoElement.textContent = info;
+        }
+
+        // 互斥管理函数
+        function updateMutuallyExclusiveGroups() {
+            // 1. 前区必须包括 vs 前区必须排除
+            updateNumberMutualExclusion('frontIncludeGroup', 'frontExcludeGroup');
+            updateNumberMutualExclusion('frontExcludeGroup', 'frontIncludeGroup');
+
+            // 2. 后区必须包括 vs 后区必须排除
+            updateNumberMutualExclusion('backIncludeGroup', 'backExcludeGroup');
+            updateNumberMutualExclusion('backExcludeGroup', 'backIncludeGroup');
+
+            // 3. 后区必须包含的组合 vs 后区必须排除的组合
+            updateCombMutualExclusion('backCombIncludeGroup', 'backCombExcludeGroup');
+            updateCombMutualExclusion('backCombExcludeGroup', 'backCombIncludeGroup');
+        }
+
+        // 更新数字类型的互斥逻辑
+        function updateNumberMutualExclusion(sourceGroupId, targetGroupId) {
+            const sourceCheckboxes = document.querySelectorAll(`#${sourceGroupId} input[type="checkbox"]:checked`);
+            const sourceValues = Array.from(sourceCheckboxes).map(cb => cb.value);
+
+            // 获取目标组的所有复选框
+            const targetCheckboxes = document.querySelectorAll(`#${targetGroupId} input[type="checkbox"]`);
+
+            targetCheckboxes.forEach(cb => {
+                const container = cb.closest('.checkbox-item');
+                if (sourceValues.includes(cb.value)) {
+                    // 如果源组选中了这个号码，目标组对应号码应禁用且取消选中
+                    cb.disabled = true;
+                    container.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    if (cb.checked) {
+                        cb.checked = false;
+                        container.classList.remove('selected');
+                        // 触发change事件更新计数
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                } else {
+                    // 否则启用
+                    cb.disabled = false;
+                    container.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        // 更新组合类型的互斥逻辑
+        function updateCombMutualExclusion(sourceGroupId, targetGroupId) {
+            const sourceCheckboxes = document.querySelectorAll(`#${sourceGroupId} input[type="checkbox"]:checked`);
+            const sourceValues = Array.from(sourceCheckboxes).map(cb => cb.value);
+
+            // 获取目标组的所有复选框
+            const targetCheckboxes = document.querySelectorAll(`#${targetGroupId} input[type="checkbox"]`);
+
+            targetCheckboxes.forEach(cb => {
+                const container = cb.closest('.combination-item');
+                if (sourceValues.includes(cb.value)) {
+                    // 如果源组选中了这个组合，目标组对应组合应禁用且取消选中
+                    cb.disabled = true;
+                    container.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    if (cb.checked) {
+                        cb.checked = false;
+                        container.classList.remove('selected');
+                        // 触发change事件更新计数
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                } else {
+                    // 否则启用
+                    cb.disabled = false;
+                    container.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        // 全选按钮的逻辑，考虑互斥关系
+        function setupSelectionButtonsWithExclusion(selectBtnId, deselectBtnId, groupId) {
+            const selectBtn = document.getElementById(selectBtnId);
+            const deselectBtn = document.getElementById(deselectBtnId);
+
+            selectBtn.addEventListener('click', function() {
+                // 先获取所有可以选中的复选框（没有被其他组禁用的）
+                const availableCheckboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]:not(:disabled)`);
+
+                availableCheckboxes.forEach(cb => {
+                    const container = cb.closest('.checkbox-item, .combination-item, .qzh-item');
+                    if (container) {
+                        cb.checked = true;
+                        container.classList.add('selected');
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                // 更新互斥状态
+                updateMutuallyExclusiveGroups();
+
+                // 更新计数
+                if (groupId === 'danMaGroup') {
+                    updateDanMaCount();
+                } else {
+                    updateCount(groupId);
+                }
+            });
+
+            deselectBtn.addEventListener('click', function() {
+                document.querySelectorAll(`#${groupId} input[type="checkbox"]`).forEach(cb => {
+                    const container = cb.closest('.checkbox-item, .combination-item, .qzh-item');
+                    if (container) {
+                        cb.checked = false;
+                        container.classList.remove('selected');
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                // 更新互斥状态（因为取消了选中，可能需要重新启用其他组的对应项）
+                updateMutuallyExclusiveGroups();
+
+                // 更新计数
+                if (groupId === 'danMaGroup') {
+                    updateDanMaCount();
+                } else {
+                    updateCount(groupId);
+                }
+
+                // 包含
+                if (groupId.includes("Include")) {
+                    console.log("1111")
+                    const newGroupId = `bh-${groupId}`
+                    document.querySelectorAll(`#${newGroupId} input[type="checkbox"]`).forEach(cb => {
+                        const container = cb.closest('.combination-item');
+                        if (container) {
+                            cb.checked = false;
+                            container.classList.remove('selected');
+                            cb.dispatchEvent(new Event('change'));
+                        }
+                    });
+                }
+
+                // 排除
+                if (groupId.includes("Exclude")) {
+                    console.log("222")
+                    const newGroupId = `pc-${groupId}`
+                    document.querySelectorAll(`#${newGroupId} input[type="checkbox"]`).forEach(cb => {
+                        const container = cb.closest('.combination-item');
+                        if (container) {
+                            cb.checked = false;
+                            container.classList.remove('selected');
+                            cb.dispatchEvent(new Event('change'));
+                        }
+                    });
+                }
+
+            });
+        }
+
+        // 数字复选框组的初始化函数，添加互斥支持
+        function generateNumberCheckboxGroupWithExclusion(containerId, min, max, defaultChecked = false) {
+            const typ = containerId.replace("Group","")
+            const qiShu = defaultChecked[typ] || "100"
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const newContainerId = containerId.replace('Group', '')
+            const statsData = fetchStats(qiShu, typ);
+
+            for (let i = min; i <= max; i++) {
+                const numberStr = i.toString().padStart(2, '0');
+                const newOption = numberStr;
+                const badgeValue = statsData[newOption] || 0
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                if (defaultChecked) {
+                    div.classList.add('selected');
+                }
+
+                // 创建统计标签
+                const badge = document.createElement('div');
+                badge.className = 'combination-badge';
+                badge.id = `stat_${newContainerId}_${newOption}`;
+                badge.textContent = "" + badgeValue;
+
+                if (badgeValue === 0) {
+                    badge.classList.add('badge-gray');
+                } else if (badgeValue >= 1 && badgeValue <= 19) {
+                    badge.classList.add('badge-green');
+                } else if (badgeValue >= 20 && badgeValue <= 50) {
+                    badge.classList.add('badge-orange');
+                } else if (badgeValue >= 51 && badgeValue <= 80) {
+                    badge.classList.add('badge-red');
+                } else {
+                    badge.classList.add('badge-purple');
+                }
+
+                div.appendChild(badge);
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = numberStr;
+                checkbox.id = `${containerId}_${numberStr}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = defaultChecked;
+                checkbox.dataset.group = containerId;
+
+                // 添加互斥事件
+                checkbox.addEventListener('change', function() {
+                    const container = this.closest('.checkbox-item');
+                    if (this.checked) {
+                        if (container) container.classList.add('selected');
+                    } else {
+                        if (container) container.classList.remove('selected');
+                    }
+
+                    // 更新互斥状态
+                    updateMutuallyExclusiveGroups();
+
+                    // 更新计数
+                    if (containerId === 'danMaGroup') {
+                        updateDanMaCount();
+                    } else {
+                        updateCount(containerId);
+                    }
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${numberStr}`;
+                label.className = 'checkbox-label';
+                label.textContent = numberStr;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            }
+
+            // 初始化计数
+            updateCount(containerId);
+        }
+
+        // 复选框组的初始化函数，添加互斥支持
+        function generateCombCheckboxGroupWithExclusion(containerId, pairs, defaultChecked = false) {
+            const typ = containerId.replace("Group","")
+            const qiShu = defaultChecked[typ] || "100"
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const newContainerId = containerId.replace('Group', '')
+            const statsData = fetchStats(qiShu, typ);
+
+            pairs.forEach(pair => {
+                const badgeValue = statsData[pair] || 0
+                const newOption = pair.replace(",","");
+                const div = document.createElement('div');
+                div.className = 'combination-item';
+                if (defaultChecked) {
+                    div.classList.add('selected');
+                }
+
+                // 创建统计标签
+                const badge = document.createElement('div');
+                badge.className = 'combination-badge';
+                badge.id = `stat_${newContainerId}_${newOption}`;
+                badge.textContent = "" + badgeValue;
+
+                if (badgeValue === 0) {
+                    badge.classList.add('badge-gray');
+                } else if (badgeValue >= 1 && badgeValue <= 19) {
+                    badge.classList.add('badge-green');
+                } else if (badgeValue >= 20 && badgeValue <= 50) {
+                    badge.classList.add('badge-orange');
+                } else if (badgeValue >= 51 && badgeValue <= 80) {
+                    badge.classList.add('badge-red');
+                } else {
+                    badge.classList.add('badge-purple');
+                }
+
+                div.appendChild(badge);
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = pair;
+                checkbox.id = `${containerId}_${pair.replace(',', '_')}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = defaultChecked;
+                checkbox.dataset.group = containerId;
+
+                // 添加互斥事件
+                checkbox.addEventListener('change', function() {
+                    const container = this.closest('.combination-item');
+                    if (this.checked) {
+                        if (container) container.classList.add('selected');
+                    } else {
+                        if (container) container.classList.remove('selected');
+                    }
+
+                    // 更新互斥状态
+                    updateMutuallyExclusiveGroups();
+
+                    // 更新计数
+                    updateCount(containerId);
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${pair.replace(',', '_')}`;
+                label.className = 'combination-label';
+                label.textContent = pair;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            // 初始化计数
+            updateCount(containerId);
+        }
+
+        // 用于包含的复选框组的初始化函数，添加互斥支持
+        function generateBhCombCheckboxGroupWithExclusion(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for(const qs of Object.keys(quShi2St)) {
+                const div = document.createElement('div');
+                div.className = 'combination-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = qs;
+                checkbox.id = `${containerId}_${qs}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = containerId;
+
+                // 获取该趋势应该包含哪些组合
+                const hadNotExistCombs = quShi2St[qs]["HadExistCombs"] || []
+
+                // 添加互斥事件
+                checkbox.addEventListener('change', function() {
+                    const container = this.closest('.combination-item');
+                    if (this.checked) {
+                        if (container) container.classList.add('selected');
+                        hadNotExistCombs.forEach(comb => {
+                            const id1 = `backCombIncludeGroup_${comb.replace(',', '_')}`;
+                            const id2 = `backCombExcludeGroup_${comb.replace(',', '_')}`;
+                            if (document.getElementById(id2).checked === false) {
+                                document.getElementById(id1).checked = true
+                                document.getElementById(id1).closest('.combination-item').classList.add('selected');
+                            }
+                        })
+                    } else {
+                        if (container) container.classList.remove('selected');
+                        hadNotExistCombs.forEach(comb => {
+                            const id1 = `backCombIncludeGroup_${comb.replace(',', '_')}`;
+                            if (document.getElementById(id1).checked === true) {
+                                document.getElementById(id1).checked = false
+                                document.getElementById(id1).closest('.combination-item').classList.remove('selected');
+                            }
+                        })
+                    }
+
+                    // 更新互斥状态
+                    updateMutuallyExclusiveGroups();
+
+                    // 更新计数
+                    updateCount(containerId.replace("bh-",""));
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${qs}`;
+                label.className = 'combination-label';
+                label.textContent = qs;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            }
+
+            // 初始化计数
+            updateCount(containerId.replace("bh-"));
+        }
+
+        // 用于排除的复选框组的初始化函数，添加互斥支持
+        function generatePcCombCheckboxGroupWithExclusion(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for(const qs of Object.keys(quShi2St)) {
+                const div = document.createElement('div');
+                div.className = 'combination-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = containerId.replace('Group', '');
+                checkbox.value = qs;
+                checkbox.id = `${containerId}_${qs}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = containerId;
+
+                // 获取该趋势应该排除哪些组合
+                const hadNotExistCombs = quShi2St[qs]["HadNotExistCombs"] || []
+
+                // 添加互斥事件
+                checkbox.addEventListener('change', function() {
+                    const container = this.closest('.combination-item');
+                    if (this.checked) {
+                        if (container) container.classList.add('selected');
+                        hadNotExistCombs.forEach(comb => {
+                            const id1 = `backCombIncludeGroup_${comb.replace(',', '_')}`;
+                            const id2 = `backCombExcludeGroup_${comb.replace(',', '_')}`;
+                            if (document.getElementById(id1).checked === false) {
+                                document.getElementById(id2).checked = true
+                                document.getElementById(id2).closest('.combination-item').classList.add('selected');
+                            }
+                        })
+                    } else {
+                        if (container) container.classList.remove('selected');
+                        hadNotExistCombs.forEach(comb => {
+                            const id2 = `backCombExcludeGroup_${comb.replace(',', '_')}`;
+                            if (document.getElementById(id2).checked === true) {
+                                document.getElementById(id2).checked = false
+                                document.getElementById(id2).closest('.combination-item').classList.remove('selected');
+                            }
+                        })
+                    }
+
+                    // 更新互斥状态
+                    updateMutuallyExclusiveGroups();
+
+                    // 更新计数
+                    updateCount(containerId.replace("pc-",""));
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = `${containerId}_${qs}`;
+                label.className = 'combination-label';
+                label.textContent = qs;
+
+                // 点击整个区域都可以选中
+                div.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    // 触发change事件
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            }
+
+            // 初始化计数
+            updateCount(containerId.replace("pc-",""));
+        }
+
+        // 获取复选框选中值的函数，只获取可用的值
+        function getCheckboxValues(groupId) {
+            const values = [];
+            document.querySelectorAll(`#${groupId} input[type="checkbox"]:checked:not(:disabled)`).forEach(cb => {
+                values.push(cb.value);
+            });
+            return values;
+        }
+
+        // 初始化所有复选框组的函数
+        function initAllCheckboxGroups() {
+            // 1. 组合
+            generateHeatOptions('combsGroup')
+            generateCheckboxGroup('combsGroup', combs, true);
+            setupSelectionButtonsWithExclusion('selectAllCombs', 'deselectAllCombs', 'combsGroup');
+
+
+            // 2. 奇偶
+            generateHeatOptions('parityGroup')
+            generateCheckboxGroup('parityGroup', parityOptions, true);
+            setupSelectionButtonsWithExclusion('selectAllParity', 'deselectAllParity', 'parityGroup');
+
+            // 3. 前区前中后（新增）
+            generateHeatOptions('qzhGroup')
+            generateCheckboxGroup('qzhGroup', qzhOptions, true);
+            setupSelectionButtonsWithExclusion('selectQzh', 'deselectQzh', 'qzhGroup');
+
+            // 4. 胆码
+            generateHeatOptions('danMaGroup')
+            generateNumberCheckboxGroupWithExclusion('danMaGroup', 1, 35, false);
+            updateDanMaCount();
+
+            // 5. 前区必须包括的号码
+            generateHeatOptions('frontIncludeGroup')
+            generateNumberCheckboxGroupWithExclusion('frontIncludeGroup', 1, 35, false);
+            setupSelectionButtonsWithExclusion('selectAllFrontInclude', 'deselectAllFrontInclude', 'frontIncludeGroup');
+
+            // 6. 前区必须排除的号码
+            generateHeatOptions('frontExcludeGroup')
+            generateNumberCheckboxGroupWithExclusion('frontExcludeGroup', 1, 35, false);
+            setupSelectionButtonsWithExclusion('selectAllFrontExclude', 'deselectAllFrontExclude', 'frontExcludeGroup');
+
+            // 7. 后区必须包括的号码
+            generateHeatOptions('backIncludeGroup')
+            generateNumberCheckboxGroupWithExclusion('backIncludeGroup', 1, 12, false);
+            setupSelectionButtonsWithExclusion('selectAllBackInclude', 'deselectAllBackInclude', 'backIncludeGroup');
+
+            // 8. 后区必须排除的号码
+            generateHeatOptions('backExcludeGroup')
+            generateNumberCheckboxGroupWithExclusion('backExcludeGroup', 1, 12, false);
+            setupSelectionButtonsWithExclusion('selectAllBackExclude', 'deselectAllBackExclude', 'backExcludeGroup');
+
+            // 9. 后续必须包含的组合
+            generateHeatOptions('backCombIncludeGroup')
+            generateCombCheckboxGroupWithExclusion('backCombIncludeGroup', backCombPairs, false);
+            setupSelectionButtonsWithExclusion('selectAllCombsInclude', 'deselectAllCombsInclude', 'backCombIncludeGroup');
+
+            // 10. 后区必须排除的组合
+            generateHeatOptions('backCombExcludeGroup')
+            generateCombCheckboxGroupWithExclusion('backCombExcludeGroup', backCombPairs, false);
+            setupSelectionButtonsWithExclusion('selectAllCombsExclude', 'deselectAllCombsExclude', 'backCombExcludeGroup');
+
+            // 11
+            generateBhCombCheckboxGroupWithExclusion('bh-backCombIncludeGroup');
+            // 12
+            generatePcCombCheckboxGroupWithExclusion('pc-backCombExcludeGroup');
+
+        }
+
+        // 验证表单
+        function validateForm() {
+            // 验证和值范围
+            const hzMin = parseInt(hzMinInput.value) || 18;
+            const hzMax =  parseInt(hzMaxInput.value) || 188;
+
+            console.log("hzMin=",hzMin)
+            console.log("hzMax=",hzMax)
+
+            if (isNaN(hzMin) || hzMin < 18 || hzMin > 188) {
+                showError('和值最小值必须在18-188之间');
+                hzMinInput.focus();
+                return false;
+            }
+
+            if (isNaN(hzMax) || hzMax < 18 || hzMax > 188) {
+                showError('和值最大值必须在18-188之间');
+                hzMaxInput.focus();
+                return false;
+            }
+
+            if (hzMin > hzMax) {
+                showError('和值最小值不能大于最大值');
+                hzMinInput.focus();
+                return false;
+            }
+
+            // 验证胆码数量
+            const danMaCount = getCheckboxValues('danMaGroup').length;
+            if (danMaCount > 4) {
+                showError('胆码最多只能选择4个');
+                return false;
+            }
+
+            // 验证新4重号数
+            const fourRepeat = parseInt(newFourRepeatInput.value);
+            if (isNaN(fourRepeat) || fourRepeat < 0 || fourRepeat > 300) {
+                showError('新4重号数必须在0-300之间');
+                newFourRepeatInput.focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        // 生成表单数据
+        function getFormData() {
+            return {
+                randomCount: parseInt(document.querySelector('input[name="randomCount"]:checked').value),
+                combs: getCheckboxValues('combsGroup'),
+                parity: getCheckboxValues('parityGroup'),
+                hzMin: parseInt(hzMinInput.value),
+                hzMax: parseInt(hzMaxInput.value),
+                removeHistory: parseInt(document.querySelector('input[name="removeHistory"]:checked').value),
+                danMa: getCheckboxValues('danMaGroup'),
+                frontInclude: getCheckboxValues('frontIncludeGroup'),
+                backInclude: getCheckboxValues('backIncludeGroup'),
+                backCombInclude: getCheckboxValues('backCombIncludeGroup'),
+                frontExclude: getCheckboxValues('frontExcludeGroup'),
+                backExclude: getCheckboxValues('backExcludeGroup'),
+                backCombExclude: getCheckboxValues('backCombExcludeGroup'),
+                qzh: getCheckboxValues('qzhGroup'), // 新增字段
+                newFourRepeat: parseInt(newFourRepeatInput.value)
+            };
+        }
+
+        // 显示生成的号码
+        function displayGeneratedNumbers(numbers) {
+            numbersDisplay.innerHTML = '';
+
+            if (!numbers || numbers.length === 0) {
+                numbersDisplay.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fa fa-exclamation-circle text-3xl mb-2"></i>
+                        <p class="text-lg font-medium mb-1">未生成任何号码</p>
+                        <p class="text-sm">请调整参数后重试</p>
+                    </div>
+                `;
+                return;
+            }
+
+            numbers.forEach((number, index) => {
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200 shadow-sm';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'flex items-center justify-between mb-2';
+
+                const numberLabel = document.createElement('div');
+                numberLabel.className = 'font-medium text-gray-700 flex items-center';
+                numberLabel.innerHTML = `<span class="w-6 h-6 flex items-center justify-center bg-primary text-white rounded-full text-xs mr-2">${index + 1}</span>第 ${index + 1} 注`;
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'px-3 py-1 text-xs bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition duration-200 flex items-center';
+                copyBtn.innerHTML = '<i class="fa fa-copy mr-1"></i>复制';
+                copyBtn.dataset.number = number;
+
+                copyBtn.addEventListener('click', function() {
+                    navigator.clipboard.writeText(this.dataset.number).then(() => {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fa fa-check mr-1"></i>已复制';
+                        this.classList.remove('bg-primary/10');
+                        this.classList.add('bg-green-100', 'text-green-700');
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.classList.remove('bg-green-100', 'text-green-700');
+                            this.classList.add('bg-primary/10', 'text-primary');
+                        }, 2000);
+                    });
+                });
+
+                headerDiv.appendChild(numberLabel);
+                headerDiv.appendChild(copyBtn);
+
+                const numberContent = document.createElement('div');
+                numberContent.className = 'number-display font-bold text-gray-800 text-center py-3';
+                numberContent.textContent = number;
+
+                numberDiv.appendChild(headerDiv);
+                numberDiv.appendChild(numberContent);
+                numbersDisplay.appendChild(numberDiv);
+            });
+        }
+
+        // 前端的submitForm函数，添加详细日志
+        async function submitForm() {
+            if (!validateForm()) {
+                return null;
+            }
+
+            const formData = getFormData();
+
+            // 详细的调试信息
+            console.log("=== 前端调试信息 ===");
+            console.log("表单数据对象:", formData);
+            console.log("表单数据JSON字符串:", JSON.stringify(formData));
+            console.log("随机注数类型:", typeof formData.randomCount);
+            console.log("组合类型:", typeof formData.combs);
+            console.log("前区前中后类型:", typeof formData.qzh);
+
+            // 检查关键字段
+            if (!formData.combs) {
+                console.error("错误: combinations字段为undefined");
+            }
+            if (!formData.qzh) {
+                console.error("错误: qzh字段为undefined");
+            }
+
+            const combsCount = formData.combs.length;
+            const danMaCount = formData.danMa.length;
+            const hasOtherT = formData.combs.includes('OtherT');
+
+            console.log("=== 生成配置 ===");
+            console.log("组合类型数量:", combsCount, "是否包含OtherT:", hasOtherT);
+            console.log("胆码数量:", danMaCount);
+            console.log("预计生成速度:", danMaCount > 0 ? "较快" : (hasOtherT ? "较慢" : "正常"));
+
+            xuHaoSt = {
+                RandomCount: formData.randomCount,
+                HzMin: formData.hzMin,
+                HzMax: formData.hzMax,
+                FrontDanMaHms: formData.danMa,
+                FrontIncludeHms: formData.frontInclude,
+                FrontExcludeHms: formData.frontExclude,
+                QzhSlice: formData.qzh,
+                Tx: formData.combs,
+                BackIncludeHms: formData.backInclude,
+                BackExcludeHms: formData.backExclude,
+                BackIncludeCombs: formData.backCombInclude,
+                BackExcludeCombs: formData.backCombExclude,
+                RemoveHis: formData.removeHistory,
+                Oes: formData.parity,
+                Ch4MustGetCount: formData.newFourRepeat,
+            }
+
+            // showLoading();
+
+            try {
+                await startSelection()
+                if (isGenCancelled) {
+                    throw new Error("生成被取消");
+                }
+
+                console.log("curNumbers=", curNumbers)
+
+
+                // 生成成功，隐藏加载
+                hideLoading();
+
+            } catch (error) {
+                // 生成失败或取消，隐藏加载
+                hideLoading();
+                // console.error("生成失败详情:", error);
+                // hideLoading();
+                // showError('生成号码失败: ' + error.message);
+                if (error.message !== "生成被取消") {
+                    throw error;
+                }
+            }
+        }
+
+
+        // 初始化
+        generateRandomCountRadio();
+        initHzSlider();
+        initAllCheckboxGroups();
+
+        // 更新标签中的数字和 class
+        function updateLabelValueAndClass(id, value) {
+            const badge = document.getElementById(id)
+            badge.textContent = value
+            badge.className = 'combination-badge';
+            if (value === 0) {
+                badge.classList.add('badge-gray');
+            } else if (value >= 1 && value <= 19) {
+                badge.classList.add('badge-green');
+            } else if (value >= 20 && value <= 50) {
+                badge.classList.add('badge-orange');
+            } else if (value >= 51 && value <= 80) {
+                badge.classList.add('badge-red');
+            } else {
+                badge.classList.add('badge-purple');
+            }
+        }
+
+        document.querySelectorAll('input[name^=heat]').forEach(radio => {
+            radio.addEventListener('change', async function() {
+                // console.log(`radio.attributes`, radio.attributes)
+                // console.log(`radio.attributes["name"].value`, radio.attributes["name"].value)
+                // console.log(`radio.value`, radio.value)
+                // console.log(`data-typ`, radio.getAttribute('data-typ'))
+                const qiShu = radio.value;
+                const typ = radio.getAttribute('data-typ')
+                const zyContainerId = radio.getAttribute('data-zy-id')
+                const newContainerId = zyContainerId.replace("Group","")
+                if (this.checked) {
+                    if (typ === "combs") {
+                        combs.forEach(option => {
+                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, txHis[option][qiShu] || 0)
+                        })
+                    }
+
+                    // 奇偶比例
+                    if (typ === "parity") {
+                        parityOptions.forEach(option => {
+                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, oeHis[option][qiShu] || 0)
+                        })
+                    }
+
+                    // 前中后
+                    if (typ === "qzh") {
+                        qzhOptions.forEach(option => {
+                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, qzhHis[option][qiShu] || 0)
+                        })
+                    }
+
+                    if (typ === "danMa" || typ === "frontInclude" || typ === "frontExclude") {
+                        for (let i = 1; i <= 35; i++) {
+                            const option = i.toString().padStart(2, '0');
+                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, frontDhHis[option][qiShu] || 0)
+                        }
+                    }
+
+                    if (typ === "backInclude" || typ === "backExclude") {
+                        for (let i = 1; i <= 12; i++) {
+                            const option = i.toString().padStart(2, '0');
+                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, backDhHis[option][qiShu] || 0)
+                        }
+                    }
+
+                    if (typ === "backCombInclude" || typ === "backCombExclude") {
+                        backCombPairs.forEach(pair => {
+                            const option = pair.replace(",","");
+                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, backCombHis[pair][qiShu] || 0)
+                        })
+                    }
+
+                }
+            });
+        });
+
+        // 快速设置按钮事件
+        quickSetButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                newFourRepeatInput.value = this.dataset.value;
+                newFourRepeatInput.dispatchEvent(new Event('input'));
+
+                // 更新按钮状态
+                quickSetButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 输入验证
+        newFourRepeatInput.addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value)) value = 0;
+            if (value < 0) value = 0;
+            if (value > 300) value = 300;
+            this.value = value;
+
+            // 更新快速设置按钮状态
+            let found = false;
+            quickSetButtons.forEach(btn => {
+                if (parseInt(btn.dataset.value) === value) {
+                    btn.classList.add('active');
+                    found = true;
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // 如果没有匹配的快速设置按钮，清除所有active状态
+            if (!found) {
+                quickSetButtons.forEach(btn => btn.classList.remove('active'));
+            }
+        });
+
+        // 表单提交
+        submitBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在生成...';
+
+            // 重置取消状态
+            isGenCancelled = false;
+
+            // 先显示加载界面
+            showLoading();
+
+            // 稍等片刻确保UI更新
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            try {
+                await submitForm();
+
+                if (!isGenCancelled && curNumbers !== null) {
+                    displayGeneratedNumbers(curNumbers);
+                    resultArea.classList.remove('hidden');
+                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } catch (error) {
+                if (!isGenCancelled) {
+                    console.error("生成失败详情:", error);
+                    showError('生成号码失败: ' + error.message);
+                }
+            } finally {
+                console.log("originalText=", originalText)
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        });
+
+        // 复制所有号码按钮
+        copyAllNumbersBtn.addEventListener('click', function() {
+            const numberElements = document.querySelectorAll('.number-display');
+            if (numberElements.length === 0) {
+                showError('没有号码可以复制');
+                return;
+            }
+
+            const allNumbers = Array.from(numberElements).map(el => el.textContent).join('\n');
+
+            navigator.clipboard.writeText(allNumbers).then(() => {
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fa fa-check mr-2"></i>已复制所有号码';
+                this.classList.remove('bg-primary');
+                this.classList.add('bg-green-500', 'hover:bg-green-600');
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    this.classList.add('bg-primary', 'hover:bg-primary/90');
+                }, 2000);
+            });
+        });
+
+        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+        if (downloadExcelBtn) {
+            downloadExcelBtn.addEventListener('click', async function() {
+                this.disabled = true;
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在下载...';
+
+                try {
+                    // 创建隐藏的iframe来下载文件，避免页面跳转
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = '/excel/{{.LastDrawTime}}.xlsx'; // 替换为实际的文件路径
+                    document.body.appendChild(iframe);
+
+                    // 设置一个超时来移除iframe
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 5000);
+
+                    // 或者使用fetch API下载
+                    // const response = await fetch('/path/to/your/excel-file.xlsx');
+                    // const blob = await response.blob();
+                    // const url = window.URL.createObjectURL(blob);
+                    // const a = document.createElement('a');
+                    // a.href = url;
+                    // a.download = '大乐透分析表格.xlsx';
+                    // document.body.appendChild(a);
+                    // a.click();
+                    // window.URL.revokeObjectURL(url);
+                    // document.body.removeChild(a);
+
+                } catch (error) {
+                    console.error('下载失败:', error);
+                    showError('下载失败，请稍后重试');
+                } finally {
+                    setTimeout(() => {
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                    }, 1000);
+                }
+            });
+        }
+    });
+</script>
