@@ -606,6 +606,33 @@ func CalUniqueTyp() {
 
 }
 
+type DltStatData struct {
+	Typ string // 类型
+	Cs  int    // 历史总的出现期数
+}
+
+type DltTimesSliNumStr struct {
+	Times  int      // 出现次数
+	Sli    []string // 包括哪些前区单号
+	NumStr []string // 哪些前区单号在该期数中出现
+}
+
+type DltTSN struct {
+	Dlt models.Dlt
+	Tsn []DltTimesSliNumStr
+}
+
+type DltCrossTSN struct {
+	Cross   int // 跨多少期进行统计
+	EqCount int //设备号
+	Tsn     []DltTimesSliNumStr
+}
+
+type DltCoverCrossTSN struct {
+	DrawNum  string
+	CrossTsn []DltCrossTSN
+}
+
 type DltHis struct {
 	Typ      string // 类型
 	Cs       int    // 历史总的出现期数

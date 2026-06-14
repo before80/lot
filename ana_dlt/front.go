@@ -1647,3 +1647,458 @@ func DltFrontOnlyOneHis(wg *sync.WaitGroup) (res []DltHis) {
 
 	return
 }
+
+// DltEqFrontOnlyOneHis 设备的大乐透前区单个号码的历史
+func DltEqFrontOnlyOneHis(wg *sync.WaitGroup, eqNumCount int) (res []DltHis) {
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
+	typ2DltHis := make(map[string]*DltHis)
+
+	// 初始化
+	for k, v := range AllDltOnlyOneFront2Count {
+		typ2DltHis[k] = &DltHis{Typ: k, AllCount: v}
+	}
+
+	lenDltHis := 0
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+		lenDltHis++
+	}
+
+	i := 0
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		frontHms := []string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}
+
+		for _, fHm := range frontHms {
+			typ2DltHis[fHm].Cs = typ2DltHis[fHm].Cs + 1
+			if lenDltHis-i <= 10 {
+				typ2DltHis[fHm].Last10 = typ2DltHis[fHm].Last10 + 1
+			}
+			if lenDltHis-i <= 20 {
+				typ2DltHis[fHm].Last20 = typ2DltHis[fHm].Last20 + 1
+			}
+			if lenDltHis-i <= 30 {
+				typ2DltHis[fHm].Last30 = typ2DltHis[fHm].Last30 + 1
+			}
+			if lenDltHis-i <= 50 {
+				typ2DltHis[fHm].Last50 = typ2DltHis[fHm].Last50 + 1
+			}
+			if lenDltHis-i <= 100 {
+				typ2DltHis[fHm].Last100 = typ2DltHis[fHm].Last100 + 1
+			}
+			if lenDltHis-i <= 200 {
+				typ2DltHis[fHm].Last200 = typ2DltHis[fHm].Last200 + 1
+			}
+			if lenDltHis-i <= 500 {
+				typ2DltHis[fHm].Last500 = typ2DltHis[fHm].Last500 + 1
+			}
+			if lenDltHis-i <= 1000 {
+				typ2DltHis[fHm].Last1000 = typ2DltHis[fHm].Last1000 + 1
+			}
+			if lenDltHis-i <= 1500 {
+				typ2DltHis[fHm].Last1500 = typ2DltHis[fHm].Last1500 + 1
+			}
+			if lenDltHis-i <= 2000 {
+				typ2DltHis[fHm].Last2000 = typ2DltHis[fHm].Last2000 + 1
+			}
+			if lenDltHis-i <= 2500 {
+				typ2DltHis[fHm].Last2500 = typ2DltHis[fHm].Last2500 + 1
+			}
+			if lenDltHis-i <= 3500 {
+				typ2DltHis[fHm].Last3500 = typ2DltHis[fHm].Last3500 + 1
+			}
+		}
+		i++
+
+	}
+
+	kLens := make([]KeyWithLength, 0, len(typ2DltHis))
+
+	for k, dltHis := range typ2DltHis {
+		kLens = append(kLens, KeyWithLength{
+			Key:    k,
+			Length: dltHis.Cs,
+		})
+	}
+	// 对typ2DltHis按照存放的Cs值的大小进行排序
+	sort.Slice(kLens, func(i, j int) bool {
+		if kLens[i].Length == kLens[j].Length {
+			return kLens[i].Key > kLens[j].Key
+		}
+		return kLens[i].Length > kLens[j].Length
+	})
+
+	for _, kvLen := range kLens {
+		typ := kvLen.Key
+		res = append(res, *typ2DltHis[typ])
+	}
+
+	return
+}
+
+// DltFrontCrossDrawNumStat 大乐透前区跨期数统计
+func DltFrontCrossDrawNumStat(crossDrawNum int) (res []DltTSN) {
+	i2Dlt := make(map[int]models.Dlt)
+	for i, dlt := range DxDlts {
+		i2Dlt[i] = dlt
+	}
+	var waitStatDlts []models.Dlt
+	var dltTimesSliNumStrSli []DltTimesSliNumStr
+	//var csSli []int
+	var cs2FrontHmSli = make(map[int][]string)
+	lenDlts := len(DxDlts)
+	for i, dlt := range DxDlts {
+		waitStatDlts = nil
+		startIdx := i + 1
+		endIdx := i + crossDrawNum
+
+		if endIdx > lenDlts-1 {
+			endIdx = lenDlts - 1
+		}
+
+		// 不够 crossDrawNum 个统计数据, 直接 break
+		if startIdx+crossDrawNum-1 > endIdx {
+			break
+		}
+
+		for j := startIdx; j <= endIdx; j++ {
+			waitStatDlts = append(waitStatDlts, i2Dlt[j])
+		}
+
+		curFrontHms := []string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}
+
+		// 统计 waitStatDlts 中的前区数据情况
+		typ2DltStatData := make(map[string]*DltStatData)
+
+		// 初始化
+		for _, v := range gen.AllDltFrontHms {
+			typ2DltStatData[v] = &DltStatData{Typ: v, Cs: 0}
+		}
+		for _, jDlt := range waitStatDlts {
+			frontHms := []string{jDlt.F1, jDlt.F2, jDlt.F3, jDlt.F4, jDlt.F5}
+
+			for _, fHm := range frontHms {
+				typ2DltStatData[fHm].Cs = typ2DltStatData[fHm].Cs + 1
+			}
+		}
+
+		// 次数对应的号码切片, 用于后续处理
+		cs2FrontHmSli = nil
+		cs2FrontHmSli = make(map[int][]string)
+		//csSli = nil
+		for typ, dltStatData := range typ2DltStatData {
+			//if !slices.Contains(csSli, dltStatData.Cs) {
+			//	csSli = append(csSli, dltStatData.Cs)
+			//	cs2FrontHmSli[dltStatData.Cs] = append(cs2FrontHmSli[dltStatData.Cs], typ)
+			//} else {
+			//
+			//}
+			cs2FrontHmSli[dltStatData.Cs] = append(cs2FrontHmSli[dltStatData.Cs], typ)
+		}
+
+		// 次数/号码切片/对应当期的号码切片  的结构体切片, 用于后续处理
+		dltTimesSliNumStrSli = nil
+		for cs, frontHmSli := range cs2FrontHmSli {
+			dltTimesSliNumStrSli = append(dltTimesSliNumStrSli, DltTimesSliNumStr{
+				Times:  cs,
+				Sli:    frontHmSli,
+				NumStr: nil,
+			})
+		}
+
+		for ik, _ := range dltTimesSliNumStrSli {
+			// 重新排序 Sli, 从小到大, 升序
+			sort.Strings(dltTimesSliNumStrSli[ik].Sli)
+			//sort.Slice(dltTimesSliNumStr.Sli, func(i, j int) bool {
+			//	return dltTimesSliNumStr.Sli[i] < dltTimesSliNumStr.Sli[j]
+			//})
+		}
+
+		for _, hm := range curFrontHms {
+			for ik, _ := range dltTimesSliNumStrSli {
+				if slices.Contains(dltTimesSliNumStrSli[ik].Sli, hm) {
+					dltTimesSliNumStrSli[ik].NumStr = append(dltTimesSliNumStrSli[ik].NumStr, hm)
+				}
+			}
+		}
+
+		for ik, _ := range dltTimesSliNumStrSli {
+			sort.Strings(dltTimesSliNumStrSli[ik].NumStr)
+		}
+
+		// 对 dltTimesSliNumStrSli , 先按照 NumStr 的个数进行降序排序, 再按照存放的 Times值的大小进行降序排序
+		sort.Slice(dltTimesSliNumStrSli, func(i, j int) bool {
+			if len(dltTimesSliNumStrSli[i].NumStr) == len(dltTimesSliNumStrSli[j].NumStr) {
+				return dltTimesSliNumStrSli[i].Times > dltTimesSliNumStrSli[j].Times
+			}
+			return len(dltTimesSliNumStrSli[i].NumStr) > len(dltTimesSliNumStrSli[j].NumStr)
+		})
+
+		res = append(res, DltTSN{
+			Dlt: dlt,
+			Tsn: dltTimesSliNumStrSli,
+		})
+	}
+	return
+}
+
+// DltEqFrontCrossDrawNumStat 设备的大乐透前区跨期数统计
+func DltEqFrontCrossDrawNumStat(crossDrawNum int, eqNumCount int) (res []DltTSN) {
+	i2Dlt := make(map[int]models.Dlt)
+	for i, dlt := range DxDlts {
+		i2Dlt[i] = dlt
+	}
+	var waitStatDlts []models.Dlt
+	var dltTimesSliNumStrSli []DltTimesSliNumStr
+	//var csSli []int
+	var cs2FrontHmSli = make(map[int][]string)
+	for _, dlt := range DxDlts {
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		if dlt.EquipmentCount <= 0 {
+			break
+		}
+
+		if len(waitStatDlts) == 0 {
+			waitStatDlts = FindNextCommonEqNumDlt(dlt.DrawNum, eqNumCount, crossDrawNum, false)
+		} else {
+			temp := FindNextCommonEqNumDlt(waitStatDlts[crossDrawNum-1].DrawNum, eqNumCount, 1, false)
+			if temp != nil {
+				waitStatDlts = append([]models.Dlt{}, waitStatDlts[1:]...)
+				waitStatDlts = append(waitStatDlts, temp...)
+			} else {
+				waitStatDlts = append([]models.Dlt{}, waitStatDlts[1:]...)
+			}
+		}
+
+		if len(waitStatDlts) != crossDrawNum {
+			break
+		}
+
+		curFrontHms := []string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}
+
+		// 统计 waitStatDlts 中的前区数据情况
+		typ2DltStatData := make(map[string]*DltStatData)
+
+		// 初始化
+		for _, v := range gen.AllDltFrontHms {
+			typ2DltStatData[v] = &DltStatData{Typ: v, Cs: 0}
+		}
+		for _, jDlt := range waitStatDlts {
+			frontHms := []string{jDlt.F1, jDlt.F2, jDlt.F3, jDlt.F4, jDlt.F5}
+
+			for _, fHm := range frontHms {
+				typ2DltStatData[fHm].Cs = typ2DltStatData[fHm].Cs + 1
+			}
+		}
+
+		// 次数对应的号码切片, 用于后续处理
+		cs2FrontHmSli = nil
+		cs2FrontHmSli = make(map[int][]string)
+		//csSli = nil
+		for typ, dltStatData := range typ2DltStatData {
+			//if !slices.Contains(csSli, dltStatData.Cs) {
+			//	csSli = append(csSli, dltStatData.Cs)
+			//	cs2FrontHmSli[dltStatData.Cs] = append(cs2FrontHmSli[dltStatData.Cs], typ)
+			//} else {
+			//
+			//}
+			cs2FrontHmSli[dltStatData.Cs] = append(cs2FrontHmSli[dltStatData.Cs], typ)
+		}
+
+		// 次数/号码切片/对应当期的号码切片  的结构体切片, 用于后续处理
+		dltTimesSliNumStrSli = nil
+		for cs, frontHmSli := range cs2FrontHmSli {
+			dltTimesSliNumStrSli = append(dltTimesSliNumStrSli, DltTimesSliNumStr{
+				Times:  cs,
+				Sli:    frontHmSli,
+				NumStr: nil,
+			})
+		}
+
+		for ik, _ := range dltTimesSliNumStrSli {
+			// 重新排序 Sli, 从小到大, 升序
+			sort.Strings(dltTimesSliNumStrSli[ik].Sli)
+			//sort.Slice(dltTimesSliNumStr.Sli, func(i, j int) bool {
+			//	return dltTimesSliNumStr.Sli[i] < dltTimesSliNumStr.Sli[j]
+			//})
+		}
+
+		for _, hm := range curFrontHms {
+			for ik, _ := range dltTimesSliNumStrSli {
+				if slices.Contains(dltTimesSliNumStrSli[ik].Sli, hm) {
+					dltTimesSliNumStrSli[ik].NumStr = append(dltTimesSliNumStrSli[ik].NumStr, hm)
+				}
+			}
+		}
+
+		for ik, _ := range dltTimesSliNumStrSli {
+			sort.Strings(dltTimesSliNumStrSli[ik].NumStr)
+		}
+
+		// 对 dltTimesSliNumStrSli , 先按照 NumStr 的个数进行降序排序, 再按照存放的 Times值的大小进行降序排序
+		sort.Slice(dltTimesSliNumStrSli, func(i, j int) bool {
+			//if len(dltTimesSliNumStrSli[i].NumStr) == len(dltTimesSliNumStrSli[j].NumStr) {
+			//	return dltTimesSliNumStrSli[i].Times > dltTimesSliNumStrSli[j].Times
+			//}
+			//return len(dltTimesSliNumStrSli[i].NumStr) > len(dltTimesSliNumStrSli[j].NumStr)
+			return dltTimesSliNumStrSli[i].Times > dltTimesSliNumStrSli[j].Times
+		})
+
+		res = append(res, DltTSN{
+			Dlt: dlt,
+			Tsn: dltTimesSliNumStrSli,
+		})
+	}
+	return
+}
+
+// FindNextCommonEqNumDlt 查找当前期之后的指定设备号的连续多少期的大乐透数据
+// eqNumCount = 0 表示任意设备号都可以
+// lxDrawNum 连续多少期
+func FindNextCommonEqNumDlt(curDrawNum string, eqNumCount int, lxDrawNum int, includeCurDrawNum bool) (nextDlts []models.Dlt) {
+	count := 0
+	for _, dlt := range DxDlts {
+		if includeCurDrawNum {
+			if dlt.DrawNum > curDrawNum {
+				continue
+			}
+		} else {
+			if dlt.DrawNum >= curDrawNum {
+				continue
+			}
+		}
+
+		if eqNumCount != 0 && dlt.EquipmentCount == 0 {
+			break
+		}
+
+		if eqNumCount != 0 && dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		nextDlts = append(nextDlts, dlt)
+		count++
+		if count >= lxDrawNum {
+			break
+		}
+	}
+
+	return
+}
+
+func DltFrontSpDrawNumCrossDrawNumStat(spDrawNum string, crossDrawNumSli []int, isLastest, needDealWithNumStr bool) (res []DltCrossTSN) {
+	i2Dlt := make(map[int]models.Dlt)
+	for i, dlt := range DxDlts {
+		i2Dlt[i] = dlt
+	}
+
+	var curDlt models.Dlt
+	var curFrontHms []string
+	for _, dlt := range DxDlts {
+		if dlt.DrawNum == spDrawNum {
+			curDlt = dlt
+			curFrontHms = []string{curDlt.F1, curDlt.F2, curDlt.F3, curDlt.F4, curDlt.F5}
+			break
+		}
+	}
+
+	var aDlt, eDlt []models.Dlt
+	for _, crossDrawNum := range crossDrawNumSli {
+		aDlt, eDlt = nil, nil
+		if isLastest {
+			aDlt = append([]models.Dlt{}, FindNextCommonEqNumDlt(curDlt.DrawNum, 0, crossDrawNum, isLastest)...)
+			eDlt = append([]models.Dlt{}, FindNextCommonEqNumDlt(curDlt.DrawNum, curDlt.EquipmentCount, crossDrawNum, isLastest)...)
+		} else {
+			aDlt = append([]models.Dlt{}, FindNextCommonEqNumDlt(curDlt.DrawNum, 0, crossDrawNum, isLastest)...)
+			eDlt = append([]models.Dlt{}, FindNextCommonEqNumDlt(curDlt.DrawNum, curDlt.EquipmentCount, crossDrawNum, isLastest)...)
+		}
+
+		aDltTimesSliNumStrSli := dealWaitStatDlt(aDlt, curFrontHms, needDealWithNumStr)
+		res = append(res, DltCrossTSN{
+			Cross:   crossDrawNum,
+			EqCount: 0,
+			Tsn:     aDltTimesSliNumStrSli,
+		})
+
+		eDltTimesSliNumStrSli := dealWaitStatDlt(eDlt, curFrontHms, needDealWithNumStr)
+		res = append(res, DltCrossTSN{
+			Cross:   crossDrawNum,
+			EqCount: curDlt.EquipmentCount,
+			Tsn:     eDltTimesSliNumStrSli,
+		})
+	}
+
+	return
+}
+
+func dealWaitStatDlt(waitStatDlts []models.Dlt, curFrontHms []string, needDealWithNumStr bool) (dltTimesSliNumStrSli []DltTimesSliNumStr) {
+	// 统计 waitStatDlts 中的前区数据情况
+	typ2DltStatData := make(map[string]*DltStatData)
+
+	// 初始化
+	for _, v := range gen.AllDltFrontHms {
+		typ2DltStatData[v] = &DltStatData{Typ: v, Cs: 0}
+	}
+
+	for _, jDlt := range waitStatDlts {
+		frontHms := []string{jDlt.F1, jDlt.F2, jDlt.F3, jDlt.F4, jDlt.F5}
+
+		for _, fHm := range frontHms {
+			typ2DltStatData[fHm].Cs = typ2DltStatData[fHm].Cs + 1
+		}
+	}
+
+	// 次数对应的号码切片, 用于后续处理
+	var cs2FrontHmSli = make(map[int][]string)
+	for typ, dltStatData := range typ2DltStatData {
+		cs2FrontHmSli[dltStatData.Cs] = append(cs2FrontHmSli[dltStatData.Cs], typ)
+	}
+
+	// 次数/号码切片/对应当期的号码切片  的结构体切片, 用于后续处理
+	for cs, frontHmSli := range cs2FrontHmSli {
+		dltTimesSliNumStrSli = append(dltTimesSliNumStrSli, DltTimesSliNumStr{
+			Times:  cs,
+			Sli:    frontHmSli,
+			NumStr: nil,
+		})
+	}
+
+	for ik, _ := range dltTimesSliNumStrSli {
+		// 重新排序 Sli, 从小到大, 升序
+		sort.Strings(dltTimesSliNumStrSli[ik].Sli)
+	}
+
+	if needDealWithNumStr {
+		for _, hm := range curFrontHms {
+			for ik, _ := range dltTimesSliNumStrSli {
+				if slices.Contains(dltTimesSliNumStrSli[ik].Sli, hm) {
+					dltTimesSliNumStrSli[ik].NumStr = append(dltTimesSliNumStrSli[ik].NumStr, hm)
+				}
+			}
+		}
+	}
+
+	// 对 dltTimesSliNumStrSli , 先按照 NumStr 的个数进行降序排序, 再按照存放的 Times值的大小进行降序排序
+	sort.Slice(dltTimesSliNumStrSli, func(i, j int) bool {
+		return dltTimesSliNumStrSli[i].Times > dltTimesSliNumStrSli[j].Times
+	})
+	return
+}

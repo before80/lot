@@ -654,6 +654,98 @@ func DltBackHis(wg *sync.WaitGroup) (res []DltHis) {
 	return
 }
 
+// DltEqBackHis 设备的大乐透后区历史数据(按出现期数的大小,从大到小排序)
+func DltEqBackHis(wg *sync.WaitGroup, eqNumCount int) (res []DltHis) {
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
+
+	typ2DltHis := make(map[string]*DltHis)
+	backCombs := gen.Comb(gen.AllDltBackHms, 2)
+	// 初始化 typ2DltHis
+	for _, backComb := range backCombs {
+		typ2DltHis[backComb] = &DltHis{Typ: backComb, AllCount: 324632}
+	}
+
+	lenDltHis := 0
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+		lenDltHis++
+	}
+
+	i := 0
+
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		curBackComb := dlt.B1 + "," + dlt.B2
+		typ2DltHis[curBackComb].Cs = typ2DltHis[curBackComb].Cs + 1
+		if lenDltHis-i <= 10 {
+			typ2DltHis[curBackComb].Last10 = typ2DltHis[curBackComb].Last10 + 1
+		}
+		if lenDltHis-i <= 20 {
+			typ2DltHis[curBackComb].Last20 = typ2DltHis[curBackComb].Last20 + 1
+		}
+		if lenDltHis-i <= 30 {
+			typ2DltHis[curBackComb].Last30 = typ2DltHis[curBackComb].Last30 + 1
+		}
+		if lenDltHis-i <= 50 {
+			typ2DltHis[curBackComb].Last50 = typ2DltHis[curBackComb].Last50 + 1
+		}
+		if lenDltHis-i <= 100 {
+			typ2DltHis[curBackComb].Last100 = typ2DltHis[curBackComb].Last100 + 1
+		}
+		if lenDltHis-i <= 200 {
+			typ2DltHis[curBackComb].Last200 = typ2DltHis[curBackComb].Last200 + 1
+		}
+		if lenDltHis-i <= 500 {
+			typ2DltHis[curBackComb].Last500 = typ2DltHis[curBackComb].Last500 + 1
+		}
+		if lenDltHis-i <= 1000 {
+			typ2DltHis[curBackComb].Last1000 = typ2DltHis[curBackComb].Last1000 + 1
+		}
+		if lenDltHis-i <= 1500 {
+			typ2DltHis[curBackComb].Last1500 = typ2DltHis[curBackComb].Last1500 + 1
+		}
+		if lenDltHis-i <= 2000 {
+			typ2DltHis[curBackComb].Last2000 = typ2DltHis[curBackComb].Last2000 + 1
+		}
+		if lenDltHis-i <= 2500 {
+			typ2DltHis[curBackComb].Last2500 = typ2DltHis[curBackComb].Last2500 + 1
+		}
+		if lenDltHis-i <= 3500 {
+			typ2DltHis[curBackComb].Last3500 = typ2DltHis[curBackComb].Last3500 + 1
+		}
+		i++
+	}
+
+	kLens := make([]KeyWithLength, 0, len(typ2DltHis))
+	for k, dltHis := range typ2DltHis {
+		kLens = append(kLens, KeyWithLength{Key: k, Length: dltHis.Cs})
+	}
+	// 对typ2DltHis按照存放的Cs值的大小进行排序
+	sort.Slice(kLens, func(i, j int) bool {
+		return kLens[i].Length > kLens[j].Length
+	})
+	for _, kvLen := range kLens {
+		typ := kvLen.Key
+		res = append(res, *typ2DltHis[typ])
+	}
+	return
+}
+
 // DltBackOnlyOneHis 大乐透后区单个号码的历史
 //
 //	@Description:
@@ -717,6 +809,105 @@ func DltBackOnlyOneHis(wg *sync.WaitGroup) (res []DltHis) {
 			}
 		}
 
+	}
+
+	kLens := make([]KeyWithLength, 0, len(typ2DltHis))
+
+	for k, dltHis := range typ2DltHis {
+		kLens = append(kLens, KeyWithLength{
+			Key:    k,
+			Length: dltHis.Cs,
+		})
+	}
+	// 对typ2DltHis按照存放的Cs值的大小进行排序
+	sort.Slice(kLens, func(i, j int) bool {
+		return kLens[i].Length > kLens[j].Length
+	})
+
+	for _, kvLen := range kLens {
+		typ := kvLen.Key
+		res = append(res, *typ2DltHis[typ])
+	}
+
+	return
+}
+
+// DltEqBackOnlyOneHis 设备的大乐透后区单个号码的历史
+func DltEqBackOnlyOneHis(wg *sync.WaitGroup, eqNumCount int) (res []DltHis) {
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
+	typ2DltHis := make(map[string]*DltHis)
+
+	// 初始化
+	for k, v := range AllDltOnlyOneBack2Count {
+		typ2DltHis[k] = &DltHis{Typ: k, AllCount: v}
+	}
+
+	lenDltHis := 0
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+		lenDltHis++
+	}
+
+	i := 0
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		backHms := []string{dlt.B1, dlt.B2}
+
+		for _, bHm := range backHms {
+			typ2DltHis[bHm].Cs = typ2DltHis[bHm].Cs + 1
+			if lenDltHis-i <= 10 {
+				typ2DltHis[bHm].Last10 = typ2DltHis[bHm].Last10 + 1
+			}
+			if lenDltHis-i <= 20 {
+				typ2DltHis[bHm].Last20 = typ2DltHis[bHm].Last20 + 1
+			}
+			if lenDltHis-i <= 30 {
+				typ2DltHis[bHm].Last30 = typ2DltHis[bHm].Last30 + 1
+			}
+			if lenDltHis-i <= 50 {
+				typ2DltHis[bHm].Last50 = typ2DltHis[bHm].Last50 + 1
+			}
+			if lenDltHis-i <= 100 {
+				typ2DltHis[bHm].Last100 = typ2DltHis[bHm].Last100 + 1
+			}
+			if lenDltHis-i <= 200 {
+				typ2DltHis[bHm].Last200 = typ2DltHis[bHm].Last200 + 1
+			}
+			if lenDltHis-i <= 500 {
+				typ2DltHis[bHm].Last500 = typ2DltHis[bHm].Last500 + 1
+			}
+			if lenDltHis-i <= 1000 {
+				typ2DltHis[bHm].Last1000 = typ2DltHis[bHm].Last1000 + 1
+			}
+			if lenDltHis-i <= 1500 {
+				typ2DltHis[bHm].Last1500 = typ2DltHis[bHm].Last1500 + 1
+			}
+			if lenDltHis-i <= 2000 {
+				typ2DltHis[bHm].Last2000 = typ2DltHis[bHm].Last2000 + 1
+			}
+			if lenDltHis-i <= 2500 {
+				typ2DltHis[bHm].Last2500 = typ2DltHis[bHm].Last2500 + 1
+			}
+			if lenDltHis-i <= 3500 {
+				typ2DltHis[bHm].Last3500 = typ2DltHis[bHm].Last3500 + 1
+			}
+		}
+		i++
 	}
 
 	kLens := make([]KeyWithLength, 0, len(typ2DltHis))

@@ -241,6 +241,233 @@ func DltCHongHao() []DltChSt {
 	return dltChs
 }
 
+// DltEqCHongHao 设备的重号分析
+func DltEqCHongHao(eqNumCount int) []DltChSt {
+	c7ms := make(map[string][]models.Dlt)
+	c6ms := make(map[string][]models.Dlt)
+	c5ms := make(map[string][]models.Dlt)
+	c4ms := make(map[string][]models.Dlt)
+	var c7s, c6s, c5s, c4s []string
+
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		var ic7s, ic6s, ic5s, ic4s []string
+		ic7s, ic6s, ic5s, ic4s = nil, nil, nil, nil
+		// 从开奖号码中生成7个组合号码
+		ic7s = gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 5, 2)
+		// 从开奖号码中生成6个组合号码
+		ic6s = gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 5, 1)
+		ic6s = append(ic6s, gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 4, 2)...)
+		// 从开奖号码中生成5个组合号码
+		ic5s = gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 5, 0)
+		ic5s = append(ic5s, gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 4, 1)...)
+		ic5s = append(ic5s, gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 3, 2)...)
+		// 从开奖号码中生成4个组合号码
+		ic4s = gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 4, 0)
+		ic4s = append(ic4s, gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 3, 1)...)
+		ic4s = append(ic4s, gen.CrossComb([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}, []string{dlt.B1, dlt.B2}, 2, 2)...)
+
+		for _, c7 := range ic7s {
+			c7ms[c7] = append(c7ms[c7], dlt)
+		}
+		for _, c6 := range ic6s {
+			c6ms[c6] = append(c6ms[c6], dlt)
+		}
+		for _, c5 := range ic5s {
+			c5ms[c5] = append(c5ms[c5], dlt)
+		}
+		for _, c4 := range ic4s {
+			c4ms[c4] = append(c4ms[c4], dlt)
+		}
+
+		c7s = append(c7s, ic7s...)
+		c6s = append(c6s, ic6s...)
+		c5s = append(c5s, ic5s...)
+		c4s = append(c4s, ic4s...)
+	}
+
+	c7KLens := make([]KeyWithLength, 0, len(c7ms))
+	c6KLens := make([]KeyWithLength, 0, len(c6ms))
+	c5KLens := make([]KeyWithLength, 0, len(c5ms))
+	c4KLens := make([]KeyWithLength, 0, len(c4ms))
+
+	for qhComb, v := range c7ms {
+		c7KLens = append(c7KLens, KeyWithLength{
+			Key:    qhComb,
+			Length: len(v),
+		})
+	}
+
+	for qhComb, v := range c6ms {
+		c6KLens = append(c6KLens, KeyWithLength{
+			Key:    qhComb,
+			Length: len(v),
+		})
+	}
+
+	for qhComb, v := range c5ms {
+		c5KLens = append(c5KLens, KeyWithLength{
+			Key:    qhComb,
+			Length: len(v),
+		})
+	}
+
+	for qhComb, v := range c4ms {
+		c4KLens = append(c4KLens, KeyWithLength{
+			Key:    qhComb,
+			Length: len(v),
+		})
+	}
+
+	sort.Slice(c7KLens, func(i, j int) bool {
+		return c7KLens[i].Length > c7KLens[j].Length
+	})
+	sort.Slice(c6KLens, func(i, j int) bool {
+		return c6KLens[i].Length > c6KLens[j].Length
+	})
+	sort.Slice(c5KLens, func(i, j int) bool {
+		return c5KLens[i].Length > c5KLens[j].Length
+	})
+	sort.Slice(c4KLens, func(i, j int) bool {
+		return c4KLens[i].Length > c4KLens[j].Length
+	})
+
+	var dltChs, dltCh7s, dltCh6s, dltCh5s, dltCh4s []DltChSt
+
+	var c7KHave2DrawNums, c6KHave2DrawNums, c5KHave2DrawNums, c4KHave2DrawNums []string
+	for _, v := range c7KLens {
+		typ := v.Key
+		typ1 := "7重号"
+		typ2 := "5+2"
+		idlts := c7ms[v.Key]
+		if len(idlts) > 1 {
+			sort.Slice(idlts, func(i, j int) bool {
+				return idlts[i].DrawNum > idlts[j].DrawNum
+			})
+			for _, idlt := range idlts {
+				c7KHave2DrawNums = append(c7KHave2DrawNums, idlt.DrawNum)
+			}
+			dltInfos := make([]string, 0, len(idlts))
+			for _, idlt := range idlts {
+				dltInfos = append(dltInfos, fmt.Sprintf("%s->%s,%s,%s,%s,%s|%s,%s", idlt.DrawNum, idlt.F1, idlt.F2, idlt.F3, idlt.F4, idlt.F5, idlt.B1, idlt.B2))
+			}
+			dltCh7s = append(dltCh7s, DltChSt{
+				Typ:      typ,
+				Typ1:     typ1,
+				Typ2:     typ2,
+				Cs:       len(idlts),
+				DltInfos: dltInfos,
+			})
+		}
+	}
+
+	sort.Slice(dltCh7s, func(i, j int) bool { return dltCh7s[i].Cs > dltCh7s[j].Cs })
+	dltChs = append(dltChs, dltCh7s...)
+
+	for _, v := range c6KLens {
+		typ := v.Key
+		typ1 := "6重号"
+		fN, bN := gen.JudgeFrontBackCountFromStr(typ)
+		typ2 := fmt.Sprintf("%d+%d", fN, bN)
+
+		idlts := c6ms[v.Key]
+		if len(idlts) > 1 {
+			//fmt.Printf("--> %v\n", idlts)
+			sort.Slice(idlts, func(i, j int) bool {
+				return idlts[i].DrawNum > idlts[j].DrawNum
+			})
+			for _, idlt := range idlts {
+				if !slices.Contains(c7KHave2DrawNums, idlt.DrawNum) {
+					c6KHave2DrawNums = append(c6KHave2DrawNums, idlt.DrawNum)
+				}
+			}
+			dltInfos := make([]string, 0, len(idlts))
+			for _, idlt := range idlts {
+				dltInfos = append(dltInfos, fmt.Sprintf("%s->%s,%s,%s,%s,%s|%s,%s", idlt.DrawNum, idlt.F1, idlt.F2, idlt.F3, idlt.F4, idlt.F5, idlt.B1, idlt.B2))
+			}
+			dltCh6s = append(dltCh6s, DltChSt{
+				Typ:      typ,
+				Typ1:     typ1,
+				Typ2:     typ2,
+				Cs:       len(idlts),
+				DltInfos: dltInfos,
+			})
+		}
+	}
+	sort.Slice(dltCh6s, func(i, j int) bool { return dltCh6s[i].Cs > dltCh6s[j].Cs })
+	dltChs = append(dltChs, dltCh6s...)
+
+	for _, v := range c5KLens {
+		typ := v.Key
+		typ1 := "5重号"
+		fN, bN := gen.JudgeFrontBackCountFromStr(typ)
+		typ2 := fmt.Sprintf("%d+%d", fN, bN)
+		idlts := c5ms[v.Key]
+		if len(idlts) > 1 {
+			sort.Slice(idlts, func(i, j int) bool {
+				return idlts[i].DrawNum > idlts[j].DrawNum
+			})
+			for _, idlt := range idlts {
+				if !slices.Contains(c6KHave2DrawNums, idlt.DrawNum) && !slices.Contains(c7KHave2DrawNums, idlt.DrawNum) {
+					c5KHave2DrawNums = append(c5KHave2DrawNums, idlt.DrawNum)
+				}
+			}
+			dltInfos := make([]string, 0, len(idlts))
+			for _, idlt := range idlts {
+				dltInfos = append(dltInfos, fmt.Sprintf("%s->%s,%s,%s,%s,%s|%s,%s", idlt.DrawNum, idlt.F1, idlt.F2, idlt.F3, idlt.F4, idlt.F5, idlt.B1, idlt.B2))
+			}
+			dltCh5s = append(dltCh5s, DltChSt{
+				Typ:      typ,
+				Typ1:     typ1,
+				Typ2:     typ2,
+				Cs:       len(idlts),
+				DltInfos: dltInfos,
+			})
+		}
+	}
+
+	sort.Slice(dltCh5s, func(i, j int) bool { return dltCh5s[i].Cs > dltCh5s[j].Cs })
+	dltChs = append(dltChs, dltCh5s...)
+	for _, v := range c4KLens {
+		typ := v.Key
+		typ1 := "4重号"
+		fN, bN := gen.JudgeFrontBackCountFromStr(typ)
+		typ2 := fmt.Sprintf("%d+%d", fN, bN)
+		idlts := c4ms[v.Key]
+
+		if len(idlts) > 1 {
+			sort.Slice(idlts, func(i, j int) bool {
+				return idlts[i].DrawNum > idlts[j].DrawNum
+			})
+			for _, idlt := range idlts {
+				if !slices.Contains(c5KHave2DrawNums, idlt.DrawNum) && !slices.Contains(c6KHave2DrawNums, idlt.DrawNum) && !slices.Contains(c7KHave2DrawNums, idlt.DrawNum) {
+					c4KHave2DrawNums = append(c4KHave2DrawNums, idlt.DrawNum)
+				}
+			}
+			dltInfos := make([]string, 0, len(idlts))
+			for _, idlt := range idlts {
+				dltInfos = append(dltInfos, fmt.Sprintf("%s->%s,%s,%s,%s,%s|%s,%s", idlt.DrawNum, idlt.F1, idlt.F2, idlt.F3, idlt.F4, idlt.F5, idlt.B1, idlt.B2))
+			}
+			dltCh4s = append(dltCh4s, DltChSt{
+				Typ:      typ,
+				Typ1:     typ1,
+				Typ2:     typ2,
+				Cs:       len(idlts),
+				DltInfos: dltInfos,
+			})
+		}
+	}
+	sort.Slice(dltCh4s, func(i, j int) bool { return dltCh4s[i].Cs > dltCh4s[j].Cs })
+	dltChs = append(dltChs, dltCh4s...)
+	return dltChs
+}
+
 func CHongHaoForPDF(pdf *gofpdf.Fpdf, fontName string, chapterFontSize float64, chapter string, level int, limitLen65432 [5]int, autoFilterMore bool) {
 	pdf.SetFont(fontName, "B", chapterFontSize)
 	pdf.Cell(0, opdf.CellHeight(chapterFontSize), chapter)

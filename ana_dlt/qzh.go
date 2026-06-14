@@ -69,7 +69,7 @@ func DltQzhQuShi() []KeyWithLength {
 	return kLens
 }
 
-// DltQzhHis
+// DltQzhHis 大乐透前中后历史数据(按出现期数的大小,从大到小排序)
 //
 //	@Description:
 //	@param wg
@@ -129,6 +129,103 @@ func DltQzhHis(wg *sync.WaitGroup) (res []DltHis) {
 		if lenDltHis-i <= 3500 {
 			typ2DltHis[qzhStr].Last3500 = typ2DltHis[qzhStr].Last3500 + 1
 		}
+	}
+
+	kLens := make([]KeyWithLength, 0, len(typ2DltHis))
+
+	for k, dltHis := range typ2DltHis {
+		kLens = append(kLens, KeyWithLength{
+			Key:    k,
+			Length: dltHis.Cs,
+		})
+	}
+	// 对typ2DltHis按照存放的Cs值的大小进行排序
+	sort.Slice(kLens, func(i, j int) bool {
+		return kLens[i].Length > kLens[j].Length
+	})
+
+	for _, kvLen := range kLens {
+		typ := kvLen.Key
+		res = append(res, *typ2DltHis[typ])
+	}
+	return
+}
+
+// DltEqQzhHis 设备的大乐透前中后历史数据(按出现期数的大小,从大到小排序)
+func DltEqQzhHis(wg *sync.WaitGroup, eqNumCount int) (res []DltHis) {
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
+	typ2DltHis := make(map[string]*DltHis)
+
+	// 初始化
+	for k, v := range AllDltQzh2Count {
+		typ2DltHis[k] = &DltHis{Typ: k, AllCount: v}
+	}
+
+	lenDltHis := 0
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+		lenDltHis++
+	}
+
+	i := 0
+
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		qzhStr := dlt.Qzh
+
+		typ2DltHis[qzhStr].Cs = typ2DltHis[qzhStr].Cs + 1
+		if lenDltHis-i <= 10 {
+			typ2DltHis[qzhStr].Last10 = typ2DltHis[qzhStr].Last10 + 1
+		}
+		if lenDltHis-i <= 20 {
+			typ2DltHis[qzhStr].Last20 = typ2DltHis[qzhStr].Last20 + 1
+		}
+		if lenDltHis-i <= 30 {
+			typ2DltHis[qzhStr].Last30 = typ2DltHis[qzhStr].Last30 + 1
+		}
+		if lenDltHis-i <= 50 {
+			typ2DltHis[qzhStr].Last50 = typ2DltHis[qzhStr].Last50 + 1
+		}
+		if lenDltHis-i <= 100 {
+			typ2DltHis[qzhStr].Last100 = typ2DltHis[qzhStr].Last100 + 1
+		}
+		if lenDltHis-i <= 200 {
+			typ2DltHis[qzhStr].Last200 = typ2DltHis[qzhStr].Last200 + 1
+		}
+		if lenDltHis-i <= 500 {
+			typ2DltHis[qzhStr].Last500 = typ2DltHis[qzhStr].Last500 + 1
+		}
+		if lenDltHis-i <= 1000 {
+			typ2DltHis[qzhStr].Last1000 = typ2DltHis[qzhStr].Last1000 + 1
+		}
+		if lenDltHis-i <= 1500 {
+			typ2DltHis[qzhStr].Last1500 = typ2DltHis[qzhStr].Last1500 + 1
+		}
+		if lenDltHis-i <= 2000 {
+			typ2DltHis[qzhStr].Last2000 = typ2DltHis[qzhStr].Last2000 + 1
+		}
+		if lenDltHis-i <= 2500 {
+			typ2DltHis[qzhStr].Last2500 = typ2DltHis[qzhStr].Last2500 + 1
+		}
+		if lenDltHis-i <= 3500 {
+			typ2DltHis[qzhStr].Last3500 = typ2DltHis[qzhStr].Last3500 + 1
+		}
+		i++
 	}
 
 	kLens := make([]KeyWithLength, 0, len(typ2DltHis))

@@ -172,3 +172,99 @@ func DltOeHis(wg *sync.WaitGroup) (res []DltHis) {
 	}
 	return
 }
+
+func DltEqOeHis(wg *sync.WaitGroup, eqNumCount int) (res []DltHis) {
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
+	typ2DltHis := make(map[string]*DltHis)
+	// 初始化
+	for k, v := range AllDltOe2Count {
+		typ2DltHis[k] = &DltHis{Typ: k, AllCount: v}
+	}
+
+	lenDltHis := 0
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+		lenDltHis++
+	}
+
+	i := 0
+
+	for _, dlt := range ZxDlts {
+		if dlt.DrawNum < "11001" {
+			continue
+		}
+		if dlt.EquipmentCount != eqNumCount {
+			continue
+		}
+
+		oe := dlt.Oe
+		typ2DltHis[oe].Cs = typ2DltHis[oe].Cs + 1
+		if lenDltHis-i <= 10 {
+			typ2DltHis[oe].Last10 = typ2DltHis[oe].Last10 + 1
+		}
+		if lenDltHis-i <= 20 {
+			typ2DltHis[oe].Last20 = typ2DltHis[oe].Last20 + 1
+		}
+		if lenDltHis-i <= 30 {
+			typ2DltHis[oe].Last30 = typ2DltHis[oe].Last30 + 1
+		}
+		if lenDltHis-i <= 50 {
+			typ2DltHis[oe].Last50 = typ2DltHis[oe].Last50 + 1
+		}
+		if lenDltHis-i <= 100 {
+			typ2DltHis[oe].Last100 = typ2DltHis[oe].Last100 + 1
+		}
+		if lenDltHis-i <= 200 {
+			typ2DltHis[oe].Last200 = typ2DltHis[oe].Last200 + 1
+		}
+		if lenDltHis-i <= 500 {
+			typ2DltHis[oe].Last500 = typ2DltHis[oe].Last500 + 1
+		}
+		if lenDltHis-i <= 1000 {
+			typ2DltHis[oe].Last1000 = typ2DltHis[oe].Last1000 + 1
+		}
+		if lenDltHis-i <= 1500 {
+			typ2DltHis[oe].Last1500 = typ2DltHis[oe].Last1500 + 1
+		}
+		if lenDltHis-i <= 2000 {
+			typ2DltHis[oe].Last2000 = typ2DltHis[oe].Last2000 + 1
+		}
+		if lenDltHis-i <= 2500 {
+			typ2DltHis[oe].Last2500 = typ2DltHis[oe].Last2500 + 1
+		}
+		if lenDltHis-i <= 3500 {
+			typ2DltHis[oe].Last3500 = typ2DltHis[oe].Last3500 + 1
+		}
+		i++
+	}
+
+	kLens := make([]KeyWithLength, 0, len(typ2DltHis))
+
+	for k, dltHis := range typ2DltHis {
+		kLens = append(kLens, KeyWithLength{
+			Key:    k,
+			Length: dltHis.Cs,
+		})
+	}
+	// 对typ2DltHis按照存放的Cs值的大小进行排序
+	sort.Slice(kLens, func(i, j int) bool {
+		if kLens[i].Length == kLens[j].Length {
+			return kLens[i].Key > kLens[j].Key
+		}
+		return kLens[i].Length > kLens[j].Length
+	})
+	for _, kvLen := range kLens {
+		typ := kvLen.Key
+		res = append(res, *typ2DltHis[typ])
+	}
+	return
+}

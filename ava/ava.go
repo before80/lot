@@ -6,8 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/before80/lot/ana_dlt"
 )
 
 func main() {
@@ -21,10 +19,36 @@ func main() {
 	// | ------ 以上只能在本地电脑执行, 服务器不能使用go-rod打开浏览器-----------|
 
 	// 不预先执行模拟,再整理大乐透相关数据到Excel表中
-	ana_dlt.DltDataToExcel(false)
+	//ana_dlt.DltDataToExcel(false)
 
 	// 预先执行模拟,再整理大乐透相关数据到Excel表中
-	//ana_dlt.DltDataToExcel(true)
+	// ana_dlt.DltDataToExcel(true)
+
+	// 不预先执行模拟,再整理大乐透更多的相关数据到Excel表中
+	//ana_dlt.DltMoreDataToExcel(false)
+
+	// 预先执行模拟,再整理大乐透更多的相关数据到Excel表中
+	//ana_dlt.DltMoreDataToExcel(true)
+
+	// 前区跨期数统计
+	//ana_dlt.DltFrontStatDataToExcel([]int{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}, "2_30", 0)
+	//ana_dlt.DltFrontStatDataToExcel([]int{10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100}, "10_100", 0)
+	//
+	//// 某个设备的前区跨期数统计
+	//ana_dlt.DltFrontStatDataToExcel([]int{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}, "2_30", 1)
+	//ana_dlt.DltFrontStatDataToExcel([]int{10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100}, "10_100", 1)
+	//
+	//ana_dlt.DltFrontStatDataToExcel([]int{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}, "2_30", 2)
+	//ana_dlt.DltFrontStatDataToExcel([]int{10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100}, "10_100", 2)
+	//
+	//ana_dlt.DltFrontStatDataToExcel([]int{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}, "2_30", 3)
+	//ana_dlt.DltFrontStatDataToExcel([]int{10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100}, "10_100", 3)
+	//
+	//ana_dlt.DltNextFrontStatDataToExcel([]int{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+	//	21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+	//	41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+	//	61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80,
+	//	81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100})
 
 	//ana_dlt.UpdateMonisTable()
 	//ana_dlt.GenAllDltsInfoForGoCode()
