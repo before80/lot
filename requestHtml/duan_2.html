@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大乐透 · 跨期表达式选号</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .form-input-focus {
+                @apply ring-2 ring-primary/30 border-primary;
+            }
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .checkbox-grid {
+                @apply grid grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-3;
+            }
+            .checkbox-item {
+                @apply relative border-2 border-gray-300 rounded-lg transition-all duration-200 cursor-pointer;
+            }
+            .checkbox-item:hover {
+                @apply border-primary/50 bg-primary/5;
+            }
+            .checkbox-item.selected {
+                @apply border-primary bg-primary/20 shadow-md;
+            }
+            .checkbox-input {
+                @apply absolute opacity-0 w-full h-full cursor-pointer;
+            }
+            .checkbox-label {
+                @apply block w-full h-full p-3 text-center text-sm font-semibold text-gray-700 select-none cursor-pointer;
+            }
+            .checkbox-item.selected .checkbox-label {
+                @apply text-primary;
+            }
+            .section-title {
+                @apply text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200;
+            }
+            .section-description {
+                @apply text-xs text-gray-500 mt-1;
+            }
+            .limit-badge {
+                @apply inline-block px-3 py-1 text-xs font-medium rounded-full ml-2;
+            }
+            .limit-badge-info {
+                @apply bg-blue-100 text-blue-800;
+            }
+            .limit-badge-warning {
+                @apply bg-yellow-100 text-yellow-800;
+            }
+            .radio-group {
+                @apply flex flex-wrap gap-4;
+            }
+            .radio-item {
+                @apply flex items-center space-x-2;
+                border: 1px dashed #007bff;
+                padding: 2px;
+            }
+            .radio-input {
+                @apply h-4 w-4 text-primary border-gray-300;
+            }
+            .radio-label {
+                @apply text-sm text-gray-700 cursor-pointer;
+            }
+            .number-display {
+                @apply font-mono text-sm bg-gray-50 p-3 rounded-lg border border-gray-200;
+            }
+            .loading-overlay {
+                @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden;
+            }
+            .loading-spinner {
+                @apply w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin;
+            }
+            .section-header {
+                @apply flex items-center justify-between mb-4 pb-2 border-b border-gray-200;
+            }
+            #loadingTimer {
+                @apply text-xl font-bold text-primary;
+                font-family: 'Courier New', monospace;
+            }
+            #cancelGen {
+                @apply transition-all duration-200 hover:scale-105 active:scale-95;
+            }
+
+            /* 20. 跨期表达式 */
+            .cross-period-block {
+                @apply p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3;
+            }
+            .cross-period-expr-row {
+                @apply flex gap-3 items-stretch;
+            }
+            .cross-period-textarea {
+                @apply flex-1 w-full min-h-[7.5rem] px-3 py-2 text-sm border border-gray-300 rounded-lg
+                focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary
+                font-mono leading-relaxed whitespace-pre bg-white resize-y;
+            }
+            .cross-period-actions {
+                @apply flex flex-col gap-2 shrink-0;
+            }
+            .cross-period-relations {
+                @apply space-y-3;
+            }
+            .cross-period-relation-card {
+                @apply p-3 bg-white rounded-lg border border-dashed border-primary/40;
+            }
+
+            .filter-stats-panel {
+                @apply mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm;
+            }
+            .filter-stats-panel table {
+                @apply min-w-full text-sm;
+            }
+            .filter-step-drop {
+                @apply text-red-600 font-semibold;
+            }
+            .filter-step-keep {
+                @apply text-green-700 font-semibold;
+            }
+            .filter-step-idle {
+                @apply text-gray-400;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen">
+<!-- 加载遮罩层 -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center min-w-80">
+        <div class="loading-spinner mb-4"></div>
+        <p class="text-gray-700 font-medium">使用<span id="showCpu"></span>个处理器</p>
+        <p class="text-gray-700 font-medium">正在生成随机号码...</p>
+        <div id="loadingTimer" class="text-primary font-mono font-bold text-lg my-2">
+            <span id="loadingMinutes">00</span>:<span id="loadingSeconds">00</span>
+        </div>
+        <div class="text-gray-500 text-sm mt-1">
+            <p id="loadingTips">正在处理数据，请稍候...</p>
+            <p class="text-xs mt-2 opacity-75" id="processingInfo"></p>
+        </div>
+        <button id="cancelGen" class="mt-4 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition duration-200">
+            <i class="fa fa-times mr-1"></i> 取消生成
+        </button>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">大乐透 · 跨期表达式选号</h1>
+            <p class="opacity-80 mt-1">仅按「跨期表达式」生成前区 5 码，再随机抽取（不含后区）</p>
+        </div>
+
+        <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-end">
+            <button type="button" id="downloadExcelBtn"
+                    class="px-5 py-2.5 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition duration-200 flex items-center shadow-md hover:shadow-lg">
+                <i class="fa fa-file-excel mr-2"></i> 下载最新{{.LastDrawTime}}分析文件
+            </button>
+        </div>
+
+        <form id="analysisForm" class="p-6 space-y-8" method="POST">
+            <!-- 1. 随机注数（非过滤步骤，仅决定抽取数量） -->
+            <div class="space-y-4">
+                <h3 class="section-title">1. 随机注数</h3>
+                <div class="radio-group">
+                    <!-- 选项会动态生成 -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i> 选择要生成的随机号码注数
+                </div>
+            </div>
+
+            <!-- 20. 跨期表达式（唯一过滤规则） -->
+            <div class="space-y-4" id="crossPeriodSection">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">20. 跨期表达式</h3>
+                </div>
+
+                <div id="crossPeriodBlocks" class="space-y-4">
+                    <!-- 表达式块由 JS 动态生成 -->
+                </div>
+
+                <div id="crossPeriodRelations" class="cross-period-relations">
+                    <!-- 相邻表达式之间的交集/并集关系 -->
+                </div>
+
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    每个表达式块含：多行跨期文本（粘贴保留换行）、右侧「新增」、下方取号类型（2111 / 221 / 311 / 32 / 41 / 5 / 11111）。<br>
+                    每行形如 <code>次数*[号1 号2 …]=&gt;[…]</code>，只取「*」后<strong>第一个 []</strong> 作为一段；按勾选类型从不同段中取号拼成前区 5 码（多类型取并集）。<br>
+                    多个表达式时共用一组「交集 / 并集」关系。表达式为空或格式不符则该块不参与。
+                </div>
+            </div>
+
+            <div id="errorMessage" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-200">
+                <i class="fa fa-exclamation-circle mr-1"></i> <span></span>
+            </div>
+
+            <div class="pt-4">
+                <button type="button" id="submitBtn"
+                        class="w-full py-3 px-6 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl">
+                    <i class="fa fa-random mr-2"></i> 开始生成随机号码
+                </button>
+
+                <div id="filterStepStats" class="filter-stats-panel hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-gray-800">
+                            <i class="fa fa-filter text-primary mr-1"></i>
+                            过滤步骤注数统计
+                            <span id="filterStepStatsTitle" class="ml-2 text-xs font-normal text-gray-500"></span>
+                        </h4>
+                    </div>
+                    <div id="filterStepStatsBody" class="overflow-x-auto">
+                        <!-- 由 JS 填充 -->
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="resultArea" class="mt-8 bg-white rounded-xl shadow-lg p-6 hidden fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-800">生成的随机号码 -> <span id="all_comb"></span></h2>
+            <button type="button" id="copyAllNumbersBtn"
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 flex items-center">
+                <i class="fa fa-copy mr-2"></i> 复制所有号码
+            </button>
+        </div>
+        <div id="numbersDisplay" class="space-y-4"></div>
+    </div>
+
+    <footer class="mt-12 py-6 bg-gray-100 border-t border-gray-300">
+        <div class="container mx-auto px-4">
+            <div class="text-center text-gray-600 text-sm">
+                <p class="mb-2">© 2026 随机生成号码 </p>
+                <p>网站备案号：<span class="font-medium">闽ICP备2026002101号-1</span>
+                    | <img src="/static/beiantubiao.png" style="display:inline;width: 16px;"><a href="https://beian.mps.gov.cn/#/query/webSearch?code=35021102002456" rel="noreferrer" target="_blank">闽公网安备35021102002456号</a></p>
+                <p class="mt-2 text-xs text-gray-500">健康购彩，理性投注</p>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script>
+    /**
+     * duan.html — 仅保留「20. 跨期表达式」过滤的大乐透选号页。
+     * 流程：解析跨期 → 允许前区集合 → 随机抽取前区 5 码（不含后区）。
+     */
+
+    const TOTAL_FRONT_COMBS = 324632; // C(35,5)
+
+    const crossPeriodTypeOptions = [
+        { key: '2111', label: '2111' },
+        { key: '221', label: '221' },
+        { key: '311', label: '311' },
+        { key: '32', label: '32' },
+        { key: '41', label: '41' },
+        { key: '5', label: '5' },
+        { key: '11111', label: '11111' },
+    ];
+    const CROSS_PERIOD_MAX_BLOCKS = 10;
+    const randomCountOptions = [1,2,3,4,5,6,7,8,9,10,15,20,25,30,40,50,100,200,300,500,1000,2000,3000];
+
+    let selectConfig = {
+        RandomCount: 5,
+        CrossPeriodBlocks: [],
+        CrossPeriodRelations: [],
+    };
+    let xuHaoSt = selectConfig;
+    let curNumbers = [];
+    const cpuCores = navigator.hardwareConcurrency || 2;
+    let isProcessing = false;
+    let isGenCancelled = false;
+    let lastFilterStepStats = [];
+
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function selectRandomCombs(arr, count) {
+        if (arr.length <= count) return [...arr];
+        return shuffle([...arr]).slice(0, count);
+    }
+
+    function combinationsOf(arr, k) {
+        const res = [];
+        if (k <= 0 || k > arr.length) return res;
+        const path = [];
+        function dfs(start) {
+            if (path.length === k) {
+                res.push(path.slice());
+                return;
+            }
+            for (let i = start; i < arr.length; i++) {
+                path.push(arr[i]);
+                dfs(i + 1);
+                path.pop();
+            }
+        }
+        dfs(0);
+        return res;
+    }
+
+    function parseCrossPeriodTypeParts(typeKey) {
+        const s = String(typeKey || '');
+        if (!/^[1-5]+$/.test(s)) return null;
+        const parts = s.split('').map(ch => parseInt(ch, 10));
+        const sum = parts.reduce((a, b) => a + b, 0);
+        if (sum !== 5) return null;
+        return parts;
+    }
+
+    function parseCrossPeriodSegments(text) {
+        const raw = String(text || '');
+        if (!raw.trim()) return null;
+
+        const segments = [];
+        const lines = raw.split(/\r?\n/);
+        const lineRe = /^\s*\d+\s*\*\s*\[([^\]]*)\]\s*=>\s*\[[^\]]*\]\s*$/;
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            const m = trimmed.match(lineRe);
+            if (!m) return null;
+            const nums = (m[1].match(/\d{1,2}/g) || [])
+                .map(n => parseInt(n, 10))
+                .filter(n => !isNaN(n) && n >= 1 && n <= 35)
+                .map(n => n.toString().padStart(2, '0'));
+            if (nums.length === 0) continue;
+            const uniq = [...new Set(nums)].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+            segments.push(uniq);
+        }
+        if (segments.length === 0) return null;
+        return segments;
+    }
+
+    function generateFrontsByTypeParts(segments, parts) {
+        const out = new Set();
+        if (!segments || !parts || parts.length === 0) return out;
+
+        function dfs(partIdx, usedSeg, picked) {
+            if (partIdx >= parts.length) {
+                if (picked.length === 5) {
+                    const front = picked.slice().sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+                    out.add(front.join(','));
+                }
+                return;
+            }
+            const need = parts[partIdx];
+            for (let si = 0; si < segments.length; si++) {
+                if (usedSeg.has(si)) continue;
+                const seg = segments[si];
+                if (seg.length < need) continue;
+                const combos = combinationsOf(seg, need);
+                usedSeg.add(si);
+                for (const combo of combos) {
+                    if (combo.some(n => picked.includes(n))) continue;
+                    dfs(partIdx + 1, usedSeg, picked.concat(combo));
+                }
+                usedSeg.delete(si);
+            }
+        }
+        dfs(0, new Set(), []);
+        return out;
+    }
+
+    function expandCrossPeriodBlock(block) {
+        const text = (block && block.text) || '';
+        const segments = parseCrossPeriodSegments(text);
+        if (!segments) return null;
+        const types = (block.types || []).filter(Boolean);
+        if (types.length === 0) return null;
+        const out = new Set();
+        for (const typeKey of types) {
+            const parts = parseCrossPeriodTypeParts(typeKey);
+            if (!parts) continue;
+            const fronts = generateFrontsByTypeParts(segments, parts);
+            for (const f of fronts) out.add(f);
+        }
+        return out;
+    }
+
+    function setIntersect(a, b) {
+        const out = new Set();
+        for (const x of a) {
+            if (b.has(x)) out.add(x);
+        }
+        return out;
+    }
+
+    function setUnion(a, b) {
+        const out = new Set(a);
+        for (const x of b) out.add(x);
+        return out;
+    }
+
+    function combineCrossPeriodBlocks(blocks, relations) {
+        const list = blocks || [];
+        const op = (Array.isArray(relations) ? relations[0] : relations) || 'intersect';
+        let acc = null;
+        for (let i = 0; i < list.length; i++) {
+            const setI = expandCrossPeriodBlock(list[i]);
+            if (setI == null) continue;
+            if (acc == null) {
+                acc = setI;
+                continue;
+            }
+            acc = op === 'union' ? setUnion(acc, setI) : setIntersect(acc, setI);
+        }
+        return acc;
+    }
+
+    async function startSelection() {
+        if (isProcessing || isGenCancelled) return;
+
+        isProcessing = true;
+        const zhuShu = selectConfig.RandomCount || 5;
+        lastFilterStepStats = [];
+
+        try {
+            const start = Date.now();
+            console.time('选号总耗时');
+
+            const allowed = combineCrossPeriodBlocks(
+                selectConfig.CrossPeriodBlocks,
+                selectConfig.CrossPeriodRelations
+            );
+            if (!allowed || allowed.size === 0) {
+                throw new Error('跨期表达式无效或未产生任何前区组合，请检查表达式与类型勾选');
+            }
+
+            if (isGenCancelled) {
+                throw new Error('GENERATION_CANCELLED');
+            }
+
+            // 仅前区 5 码，格式：F1,F2,F3,F4,F5（不含后区）
+            const fronts = [...allowed];
+            lastFilterStepStats = [{
+                id: 'crossPeriod',
+                name: '20. 跨期表达式',
+                active: true,
+                before: TOTAL_FRONT_COMBS,
+                after: fronts.length,
+            }];
+
+            const finalSelections = selectRandomCombs(fronts, zhuShu);
+            curNumbers = finalSelections;
+
+            console.timeEnd('选号总耗时');
+            const seconds = ((Date.now() - start) / 1000).toFixed(3);
+            console.log(`允许前区 ${fronts.length}，抽取 ${finalSelections.length}`);
+            document.getElementById('all_comb').innerHTML =
+                `当前所有可能有: <span class='text-blue'>${fronts.length} 组前区 <- 用时 ${seconds} 秒</span>` +
+                ` <span class="text-gray-500 text-sm">（仅前区 5 码，不含后区）</span>`;
+        } catch (error) {
+            if (error.message === 'GENERATION_CANCELLED') {
+                console.log('生成已被取消');
+                curNumbers = [];
+                lastFilterStepStats = [];
+            } else {
+                console.error('选号失败:', error);
+                throw error;
+            }
+        } finally {
+            isProcessing = false;
+        }
+    }
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let genTimer = null;
+        let genStartTime = null;
+
+        function setupCancelButton() {
+            document.body.addEventListener('click', function(event) {
+                const cancelBtn = event.target.closest('#cancelGen');
+                if (cancelBtn) {
+                    cancelGenProcess();
+                    return false;
+                }
+            });
+        }
+
+        function cancelGenProcess() {
+            isGenCancelled = true;
+            if (genTimer) {
+                clearInterval(genTimer);
+                genTimer = null;
+            }
+            isProcessing = false;
+            hideLoading();
+            setTimeout(() => showError('生成已取消'), 300);
+            const submitBtnEl = document.getElementById('submitBtn');
+            if (submitBtnEl) {
+                submitBtnEl.disabled = false;
+                submitBtnEl.innerHTML = '<i class="fa fa-random mr-2"></i> 开始生成随机号码';
+            }
+        }
+
+        setupCancelButton();
+
+        const errorMessage = document.getElementById('errorMessage');
+        const resultArea = document.getElementById('resultArea');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const copyAllNumbersBtn = document.getElementById('copyAllNumbersBtn');
+        const numbersDisplay = document.getElementById('numbersDisplay');
+
+        function generateRandomCountRadio() {
+            const radioGroup = document.querySelector('.radio-group');
+            radioGroup.innerHTML = '';
+            randomCountOptions.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'radio-item';
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.id = `randomCount_${num}`;
+                radio.name = 'randomCount';
+                radio.value = '' + num;
+                radio.className = 'radio-input';
+                if (num === 5) radio.checked = true;
+                const label = document.createElement('label');
+                label.htmlFor = `randomCount_${num}`;
+                label.className = 'radio-label';
+                label.textContent = `${num}注`;
+                div.appendChild(radio);
+                div.appendChild(label);
+                radioGroup.appendChild(div);
+            });
+        }
+
+        function showError(message) {
+            errorMessage.querySelector('span').textContent = message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => errorMessage.classList.add('hidden'), 5000);
+        }
+
+        function showLoading() {
+            isGenCancelled = false;
+            genStartTime = Date.now();
+            document.getElementById('showCpu').textContent = cpuCores;
+            document.getElementById('loadingTips').textContent = '正在按跨期表达式生成候选注...';
+            document.getElementById('processingInfo').textContent = '';
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.style.opacity = '0';
+            requestAnimationFrame(() => {
+                loadingOverlay.style.opacity = '1';
+                loadingOverlay.style.transition = 'opacity 0.3s ease';
+            });
+            startGenTimer();
+            document.getElementById('cancelGen').style.display = 'block';
+        }
+
+        function hideLoading() {
+            stopGenTimer();
+            if (loadingOverlay) {
+                loadingOverlay.style.opacity = '0';
+                loadingOverlay.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => { loadingOverlay.style.display = 'none'; }, 300);
+            }
+        }
+
+        function startGenTimer() {
+            if (genTimer) clearInterval(genTimer);
+            document.getElementById('loadingMinutes').textContent = '00';
+            document.getElementById('loadingSeconds').textContent = '00';
+            genTimer = setInterval(updateGenTimer, 1000);
+        }
+
+        function stopGenTimer() {
+            if (genTimer) {
+                clearInterval(genTimer);
+                genTimer = null;
+            }
+        }
+
+        function updateGenTimer() {
+            if (!genStartTime) return;
+            const elapsedSeconds = Math.floor((Date.now() - genStartTime) / 1000);
+            document.getElementById('loadingMinutes').textContent =
+                Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            document.getElementById('loadingSeconds').textContent =
+                (elapsedSeconds % 60).toString().padStart(2, '0');
+            if (elapsedSeconds % 5 === 0) {
+                const tips = document.getElementById('loadingTips');
+                const info = document.getElementById('processingInfo');
+                if (elapsedSeconds < 10) {
+                    tips.textContent = '正在解析跨期表达式...';
+                    info.textContent = '生成允许的前区 5 码';
+                } else if (elapsedSeconds < 30) {
+                    tips.textContent = '正在整理前区组合...';
+                    info.textContent = '请稍候';
+                } else {
+                    tips.textContent = '仍在处理中...';
+                    info.textContent = `已用时 ${elapsedSeconds} 秒`;
+                }
+            }
+        }
+
+        /* ---- 20. 跨期表达式 UI ---- */
+        function crossPeriodLetter(index) {
+            return String.fromCharCode(65 + index);
+        }
+
+        function updateCrossPeriodTypeCount(blockEl) {
+            const badge = blockEl.querySelector('.cross-period-type-count');
+            if (!badge) return;
+            const total = crossPeriodTypeOptions.length;
+            const checked = blockEl.querySelectorAll('.cross-period-types input[type="checkbox"]:checked').length;
+            badge.textContent = `${checked}/${total}`;
+            if (checked > 0 && checked < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
+        function buildCrossPeriodTypeCheckboxes(container, blockIndex) {
+            container.innerHTML = '';
+            crossPeriodTypeOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox-input';
+                checkbox.value = item.key;
+                checkbox.checked = true;
+                checkbox.id = `crossPeriodType_${blockIndex}_${item.key}`;
+                checkbox.name = `crossPeriodTypes_${blockIndex}`;
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) div.classList.add('selected');
+                    else div.classList.remove('selected');
+                    updateCrossPeriodTypeCount(container.closest('.cross-period-block'));
+                });
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox) return;
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+
+        function createCrossPeriodBlock(index) {
+            const letter = crossPeriodLetter(index);
+            const block = document.createElement('div');
+            block.className = 'cross-period-block';
+            block.dataset.index = String(index);
+            block.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold text-gray-800">表达式${letter}</h4>
+                    <span class="cross-period-type-count limit-badge limit-badge-info">${crossPeriodTypeOptions.length}/${crossPeriodTypeOptions.length}</span>
+                </div>
+                <div class="cross-period-expr-row">
+                    <textarea
+                        class="cross-period-textarea"
+                        name="crossPeriodExpr_${index}"
+                        data-role="expr"
+                        placeholder="粘贴跨期表达式，换行保留，例如：&#10;6*[13]=>[]&#10;5*[12 22]=>[]&#10;4*[06 09 23 26 33 34]=>[]&#10;3*[05 10 11 18 21 27 35]=>[]&#10;2*[02 04 07 08 17 19 28 29 31 32]=>[]&#10;1*[01 03 14 15 16 20 24 25 30]=>[]"
+                        spellcheck="false"
+                    ></textarea>
+                    <div class="cross-period-actions">
+                        <button type="button" class="px-3 py-2 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 whitespace-nowrap" data-action="add">
+                            新增
+                        </button>
+                        <button type="button" class="px-3 py-2 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 whitespace-nowrap ${index === 0 ? 'hidden' : ''}" data-action="remove">
+                            删除
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mt-1">
+                    <span class="text-xs font-medium text-gray-600">类型</span>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" class="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90" data-action="selectAllTypes">全选</button>
+                        <button type="button" class="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300" data-action="clearTypes">清空</button>
+                    </div>
+                </div>
+                <div class="checkbox-grid cross-period-types" data-role="types"></div>
+            `;
+            const typesEl = block.querySelector('[data-role="types"]');
+            buildCrossPeriodTypeCheckboxes(typesEl, index);
+            updateCrossPeriodTypeCount(block);
+            block.querySelector('[data-action="add"]').addEventListener('click', () => addCrossPeriodBlock());
+            block.querySelector('[data-action="remove"]').addEventListener('click', () => removeCrossPeriodBlock(block));
+            block.querySelector('[data-action="selectAllTypes"]').addEventListener('click', () => {
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = true;
+                    cb.closest('.checkbox-item')?.classList.add('selected');
+                });
+                updateCrossPeriodTypeCount(block);
+            });
+            block.querySelector('[data-action="clearTypes"]').addEventListener('click', () => {
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('.checkbox-item')?.classList.remove('selected');
+                });
+                updateCrossPeriodTypeCount(block);
+            });
+            return block;
+        }
+
+        function reindexCrossPeriodBlocks() {
+            const container = document.getElementById('crossPeriodBlocks');
+            const blocks = [...container.querySelectorAll('.cross-period-block')];
+            blocks.forEach((block, index) => {
+                block.dataset.index = String(index);
+                const title = block.querySelector('h4');
+                if (title) title.textContent = `表达式${crossPeriodLetter(index)}`;
+                const ta = block.querySelector('[data-role="expr"]');
+                if (ta) ta.name = `crossPeriodExpr_${index}`;
+                const removeBtn = block.querySelector('[data-action="remove"]');
+                if (removeBtn) {
+                    removeBtn.classList.toggle('hidden', index === 0 || blocks.length === 1);
+                }
+                const typesEl = block.querySelector('[data-role="types"]');
+                const prevChecked = [...typesEl.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+                buildCrossPeriodTypeCheckboxes(typesEl, index);
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    const on = prevChecked.includes(cb.value);
+                    cb.checked = on;
+                    cb.closest('.checkbox-item')?.classList.toggle('selected', on);
+                });
+                updateCrossPeriodTypeCount(block);
+            });
+            renderCrossPeriodRelations();
+        }
+
+        function renderCrossPeriodRelations() {
+            const relContainer = document.getElementById('crossPeriodRelations');
+            if (!relContainer) return;
+            const prevChecked = relContainer.querySelector('input[name="crossPeriodRel"]:checked');
+            const defaultOp = prevChecked ? prevChecked.value : 'intersect';
+            const blockCount = document.querySelectorAll('#crossPeriodBlocks .cross-period-block').length;
+            relContainer.innerHTML = '';
+            if (blockCount < 2) return;
+            const card = document.createElement('div');
+            card.className = 'cross-period-relation-card';
+            card.innerHTML = `
+                <div class="text-sm font-medium text-gray-800 mb-2">表达式之间的关系</div>
+                <div class="flex flex-wrap gap-4">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="radio" name="crossPeriodRel" value="intersect" class="text-primary" ${defaultOp === 'intersect' ? 'checked' : ''}>
+                        交集
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="radio" name="crossPeriodRel" value="union" class="text-primary" ${defaultOp === 'union' ? 'checked' : ''}>
+                        并集
+                    </label>
+                </div>
+            `;
+            relContainer.appendChild(card);
+        }
+
+        function addCrossPeriodBlock() {
+            const snapshot = collectCrossPeriodFormData();
+            if (snapshot.blocks.length >= CROSS_PERIOD_MAX_BLOCKS) {
+                showError(`最多支持 ${CROSS_PERIOD_MAX_BLOCKS} 个跨期表达式`);
+                return;
+            }
+            applyCrossPeriodFormData({
+                blocks: [
+                    ...snapshot.blocks,
+                    {
+                        name: crossPeriodLetter(snapshot.blocks.length),
+                        text: '',
+                        types: crossPeriodTypeOptions.map(t => t.key),
+                    },
+                ],
+                relations: snapshot.relations.length
+                    ? snapshot.relations.slice(0, 1)
+                    : ['intersect'],
+            });
+        }
+
+        function removeCrossPeriodBlock(blockEl) {
+            const snapshot = collectCrossPeriodFormData();
+            if (snapshot.blocks.length <= 1) return;
+            const idx = Number(blockEl.dataset.index);
+            const nextBlocks = snapshot.blocks.filter((_, i) => i !== idx);
+            applyCrossPeriodFormData({
+                blocks: nextBlocks,
+                relations: nextBlocks.length >= 2
+                    ? (snapshot.relations.slice(0, 1).length ? snapshot.relations.slice(0, 1) : ['intersect'])
+                    : [],
+            });
+        }
+
+        function collectCrossPeriodFormData() {
+            const blocks = [];
+            document.querySelectorAll('#crossPeriodBlocks .cross-period-block').forEach((block, index) => {
+                const text = block.querySelector('[data-role="expr"]')?.value ?? '';
+                const types = [...block.querySelectorAll('.cross-period-types input[type="checkbox"]:checked')]
+                    .map(cb => cb.value);
+                blocks.push({
+                    name: crossPeriodLetter(index),
+                    text,
+                    types,
+                });
+            });
+            const relations = [];
+            if (blocks.length >= 2) {
+                const checked = document.querySelector('input[name="crossPeriodRel"]:checked');
+                relations.push(checked ? checked.value : 'intersect');
+            }
+            return { blocks, relations };
+        }
+
+        function applyCrossPeriodFormData(data) {
+            const container = document.getElementById('crossPeriodBlocks');
+            container.innerHTML = '';
+            const blocks = (data && data.blocks) || [{ name: 'A', text: '', types: crossPeriodTypeOptions.map(t => t.key) }];
+            blocks.forEach((b, index) => {
+                const el = createCrossPeriodBlock(index);
+                const ta = el.querySelector('[data-role="expr"]');
+                if (ta) ta.value = b.text || '';
+                const typesEl = el.querySelector('[data-role="types"]');
+                const selected = b.types || [];
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    const on = selected.includes(cb.value);
+                    cb.checked = on;
+                    cb.closest('.checkbox-item')?.classList.toggle('selected', on);
+                });
+                updateCrossPeriodTypeCount(el);
+                container.appendChild(el);
+            });
+            reindexCrossPeriodBlocks();
+            const rels = (data && data.relations) || [];
+            const op = rels[0] || 'intersect';
+            const radio = document.querySelector(`input[name="crossPeriodRel"][value="${op}"]`);
+            if (radio) radio.checked = true;
+        }
+
+        function initCrossPeriodSection() {
+            applyCrossPeriodFormData({
+                blocks: [{ name: 'A', text: '', types: crossPeriodTypeOptions.map(t => t.key) }],
+                relations: [],
+            });
+        }
+
+        function validateForm() {
+            const cross = collectCrossPeriodFormData();
+            const hasText = cross.blocks.some(b => (b.text || '').trim());
+            if (!hasText) {
+                showError('请填写跨期表达式');
+                return false;
+            }
+            const hasType = cross.blocks.some(b => (b.types || []).length > 0);
+            if (!hasType) {
+                showError('请至少勾选一种取号类型');
+                return false;
+            }
+            return true;
+        }
+
+        function getFormData() {
+            const randomCountEl = document.querySelector('input[name="randomCount"]:checked');
+            return {
+                randomCount: randomCountEl ? parseInt(randomCountEl.value, 10) : 5,
+                crossPeriod: collectCrossPeriodFormData(),
+            };
+        }
+
+        function displayGeneratedNumbers(numbers) {
+            numbersDisplay.innerHTML = '';
+            if (!numbers || numbers.length === 0) {
+                numbersDisplay.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fa fa-exclamation-circle text-3xl mb-2"></i>
+                        <p class="text-lg font-medium mb-1">未生成任何号码</p>
+                        <p class="text-sm">请调整跨期表达式后重试</p>
+                    </div>
+                `;
+                return;
+            }
+            numbers.forEach((number, index) => {
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200 shadow-sm';
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'flex items-center justify-between mb-2';
+                const numberLabel = document.createElement('div');
+                numberLabel.className = 'font-medium text-gray-700 flex items-center';
+                numberLabel.innerHTML = `<span class="w-6 h-6 flex items-center justify-center bg-primary text-white rounded-full text-xs mr-2">${index + 1}</span>第 ${index + 1} 注`;
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'px-3 py-1 text-xs bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition duration-200 flex items-center';
+                copyBtn.innerHTML = '<i class="fa fa-copy mr-1"></i>复制';
+                copyBtn.dataset.number = number;
+                copyBtn.addEventListener('click', function() {
+                    navigator.clipboard.writeText(this.dataset.number).then(() => {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fa fa-check mr-1"></i>已复制';
+                        this.classList.remove('bg-primary/10');
+                        this.classList.add('bg-green-100', 'text-green-700');
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.classList.remove('bg-green-100', 'text-green-700');
+                            this.classList.add('bg-primary/10', 'text-primary');
+                        }, 2000);
+                    });
+                });
+                headerDiv.appendChild(numberLabel);
+                headerDiv.appendChild(copyBtn);
+                const numberContent = document.createElement('div');
+                numberContent.className = 'number-display font-bold text-gray-800 text-center py-3';
+                numberContent.textContent = number;
+                numberDiv.appendChild(headerDiv);
+                numberDiv.appendChild(numberContent);
+                numbersDisplay.appendChild(numberDiv);
+            });
+        }
+
+        async function submitForm() {
+            if (!validateForm()) return null;
+            const formData = getFormData();
+            selectConfig = xuHaoSt = {
+                RandomCount: formData.randomCount,
+                CrossPeriodBlocks: (formData.crossPeriod && formData.crossPeriod.blocks) || [],
+                CrossPeriodRelations: (formData.crossPeriod && formData.crossPeriod.relations) || [],
+            };
+            try {
+                await startSelection();
+                if (isGenCancelled) throw new Error('生成被取消');
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                if (error.message !== '生成被取消') throw error;
+            }
+        }
+
+        function renderFilterStepStats(stats, meta) {
+            const panel = document.getElementById('filterStepStats');
+            const titleEl = document.getElementById('filterStepStatsTitle');
+            const bodyEl = document.getElementById('filterStepStatsBody');
+            if (!panel || !bodyEl) return;
+            if (!stats || stats.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+            if (titleEl) {
+                const cores = meta?.cores || cpuCores;
+                const seconds = meta?.seconds != null ? meta.seconds : '';
+                titleEl.textContent = seconds !== ''
+                    ? `用时 ${seconds} 秒（仅跨期表达式 · 前区 5 码）`
+                    : `仅跨期表达式 · 前区 5 码`;
+            }
+            const rows = stats.map((s, idx) => {
+                const before = s.before || 0;
+                const after = s.after || 0;
+                const dropped = Math.max(0, before - after);
+                const keepRatio = before > 0 ? ((after / before) * 100).toFixed(2) : '0.00';
+                const dropRatio = before > 0 ? ((dropped / before) * 100).toFixed(2) : '0.00';
+                const idle = !s.active;
+                const rowClass = idle ? 'filter-step-idle' : '';
+                const status = idle
+                    ? '<span class="text-xs text-gray-400">未启用</span>'
+                    : (dropped > 0
+                        ? `<span class="filter-step-drop">过滤掉 ${dropped.toLocaleString()}</span>`
+                        : `<span class="filter-step-keep">全部通过</span>`);
+                return `
+                    <tr class="${rowClass}">
+                        <td class="px-3 py-2 whitespace-nowrap text-gray-500">${idx + 1}</td>
+                        <td class="px-3 py-2 font-medium text-gray-800">${s.name}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">${before.toLocaleString()}</td>
+                        <td class="px-3 py-2 text-right tabular-nums ${after < before && s.active ? 'text-red-600 font-semibold' : ''}">${after.toLocaleString()}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">${keepRatio}%</td>
+                        <td class="px-3 py-2 text-right tabular-nums ${dropped > 0 && s.active ? 'text-red-500' : 'text-gray-400'}">${dropRatio}%</td>
+                        <td class="px-3 py-2 text-right">${status}</td>
+                    </tr>
+                `;
+            }).join('');
+            const firstBefore = stats[0]?.before || 0;
+            const lastAfter = stats[stats.length - 1]?.after || 0;
+            const totalDropped = Math.max(0, firstBefore - lastAfter);
+            const totalKeep = firstBefore > 0 ? ((lastAfter / firstBefore) * 100).toFixed(4) : '0.0000';
+            const totalDrop = firstBefore > 0 ? ((totalDropped / firstBefore) * 100).toFixed(4) : '0.0000';
+            bodyEl.innerHTML = `
+                <table>
+                    <thead>
+                        <tr class="border-b border-gray-200 text-gray-500">
+                            <th class="px-3 py-2 text-left font-medium">#</th>
+                            <th class="px-3 py-2 text-left font-medium">过滤步骤</th>
+                            <th class="px-3 py-2 text-right font-medium">过滤前(注)</th>
+                            <th class="px-3 py-2 text-right font-medium">过滤后(注)</th>
+                            <th class="px-3 py-2 text-right font-medium">通过率</th>
+                            <th class="px-3 py-2 text-right font-medium">滤除率</th>
+                            <th class="px-3 py-2 text-right font-medium">说明</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">${rows}</tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-gray-200 bg-gray-50">
+                            <td class="px-3 py-2 font-semibold text-gray-800" colspan="2">总体（全部组合 → 跨期后）</td>
+                            <td class="px-3 py-2 text-right font-semibold tabular-nums">${firstBefore.toLocaleString()}</td>
+                            <td class="px-3 py-2 text-right font-bold text-primary tabular-nums">${lastAfter.toLocaleString()}</td>
+                            <td class="px-3 py-2 text-right font-semibold tabular-nums">${totalKeep}%</td>
+                            <td class="px-3 py-2 text-right font-semibold tabular-nums ${totalDropped > 0 ? 'text-red-500' : 'text-gray-400'}">${totalDrop}%</td>
+                            <td class="px-3 py-2 text-right text-xs text-gray-500">仅跨期表达式</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+            panel.classList.remove('hidden');
+        }
+
+        generateRandomCountRadio();
+        initCrossPeriodSection();
+
+        submitBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在生成并统计过滤...';
+            isGenCancelled = false;
+            showLoading();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const t0 = Date.now();
+            try {
+                await submitForm();
+                const seconds = ((Date.now() - t0) / 1000).toFixed(3);
+                renderFilterStepStats(lastFilterStepStats, { cores: cpuCores, seconds });
+                if (!isGenCancelled && curNumbers !== null) {
+                    displayGeneratedNumbers(curNumbers);
+                    resultArea.classList.remove('hidden');
+                    const statsPanel = document.getElementById('filterStepStats');
+                    if (statsPanel && !statsPanel.classList.contains('hidden')) {
+                        statsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            } catch (error) {
+                if (!isGenCancelled) {
+                    console.error('生成失败详情:', error);
+                    showError('生成号码失败: ' + error.message);
+                }
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        });
+
+        copyAllNumbersBtn.addEventListener('click', function() {
+            const numberElements = document.querySelectorAll('.number-display');
+            if (numberElements.length === 0) {
+                showError('没有号码可以复制');
+                return;
+            }
+            const allNumbers = Array.from(numberElements).map(el => el.textContent).join('\n');
+            navigator.clipboard.writeText(allNumbers).then(() => {
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fa fa-check mr-2"></i>已复制所有号码';
+                this.classList.remove('bg-primary');
+                this.classList.add('bg-green-500', 'hover:bg-green-600');
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    this.classList.add('bg-primary', 'hover:bg-primary/90');
+                }, 2000);
+            });
+        });
+
+        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+        if (downloadExcelBtn) {
+            downloadExcelBtn.addEventListener('click', async function() {
+                this.disabled = true;
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在下载...';
+                try {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = '/excel/{{.LastDrawTime}}.xlsx';
+                    document.body.appendChild(iframe);
+                    setTimeout(() => document.body.removeChild(iframe), 5000);
+                } catch (error) {
+                    console.error('下载失败:', error);
+                    showError('下载失败，请稍后重试');
+                } finally {
+                    setTimeout(() => {
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                    }, 1000);
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

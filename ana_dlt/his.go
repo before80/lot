@@ -612,9 +612,9 @@ type DltStatData struct {
 }
 
 type DltTimesSliNumStr struct {
-	Times  int      // 出现次数
-	Sli    []string // 包括哪些前区单号
-	NumStr []string // 哪些前区单号在该期数中出现
+	Times  int      // Sli 中这些前区号码的出现次数
+	Sli    []string // 包括哪些前区单号(这些前区都是出现 Times 次)
+	NumStr []string // 该期前区单号中哪些在 Sli 中出现
 }
 
 type DltTSN struct {
@@ -657,6 +657,8 @@ var DxDlts []models.Dlt
 // ZxDlts 正序
 var ZxDlts []models.Dlt
 
+var DrawNum2Dlt map[string]models.Dlt
+
 // ZxAllDlts 正序
 //var ZxAllDlts = make([]models.AllDlt, 0, 21425712)
 
@@ -697,4 +699,28 @@ func InitDlts() {
 		wg.Wait()
 	}
 
+}
+
+func InitDrawNum2Dlt() {
+	DrawNum2Dlt = make(map[string]models.Dlt)
+	for _, dlt := range DxDlts {
+		DrawNum2Dlt[dlt.DrawNum] = dlt
+	}
+}
+
+var Eq1DxDlts, Eq2DxDlts, Eq3DxDlts []models.Dlt
+
+func InitEqDxDlt() {
+	for _, dlt := range DxDlts {
+		if dlt.EquipmentCount == 1 {
+			Eq1DxDlts = append(Eq1DxDlts, dlt)
+		}
+		if dlt.EquipmentCount == 2 {
+			Eq2DxDlts = append(Eq2DxDlts, dlt)
+		}
+
+		if dlt.EquipmentCount == 3 {
+			Eq3DxDlts = append(Eq3DxDlts, dlt)
+		}
+	}
 }

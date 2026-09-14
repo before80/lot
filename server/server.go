@@ -67,7 +67,7 @@ func StartServer() {
 
 		dlts, _ := dbop.ReadAllDlt(false)
 		t2MoniABCDEs := ana_dlt.GenTx2MoniABCDE()
-		txHis, oeHis, qzhHis, frontDhHis, backDhHis, backCombHis, quShi2St := ana_dlt.Stats(dlts, t2MoniABCDEs)
+		eqHis, txHis, oeHis, qzhHis, frontDhHis, backDhHis, backCombHis, quShi2St := ana_dlt.Stats(dlts, t2MoniABCDEs)
 
 		lastDlt := dlts[len(dlts)-1]
 
@@ -75,6 +75,7 @@ func StartServer() {
 			"Dlts":         dlts,
 			"LastBackComb": fmt.Sprintf("%s,%s", lastDlt.B1, lastDlt.B2),
 			"T2MoniABCDEs": t2MoniABCDEs,
+			"EqHis":        eqHis,
 			"TxHis":        txHis,
 			"OeHis":        oeHis,
 			"QzhHis":       qzhHis,
@@ -84,6 +85,343 @@ func StartServer() {
 			"QuShi2St":     quShi2St,
 			"LastHisSlice": gen.LastHisSlice,
 			"LastDrawTime": dlts[len(dlts)-1].DrawTime,
+		})
+
+		if err != nil {
+			lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 3)
+			return
+		}
+	})
+
+	mux.HandleFunc("/dqxh", func(w http.ResponseWriter, req *http.Request) {
+		// ===== 1. 获取客户端 IP =====
+		clientIP := getClientIP(req)
+
+		// ===== 2. 写入 ips 表（不影响主流程）=====
+		go func(ip string) {
+			if ip == "" {
+				return
+			}
+
+			err := db.DB.Create(&models.Ip{
+				Ip:        ip,
+				CreatedAt: time.Now(),
+			}).Error
+
+			if err != nil {
+				lg.ErrorToFile(fmt.Sprintf("写入IP失败: %v", err))
+			}
+		}(clientIP)
+
+		templatesDir := "./requestHtml"
+		tmpl, err := template.New("dqxh").ParseGlob(templatesDir + "/dqxh.html")
+
+		dlts, _ := dbop.ReadAllDlt(false)
+		t2MoniABCDEs := ana_dlt.GenTx2MoniABCDE()
+		eqHis, txHis, oeHis, qzhHis, frontDhHis, backDhHis, backCombHis, quShi2St, txEqHis, oeEqHis, qzhEqHis, frontDhEqHis, backDhEqHis, backCombEqHis := ana_dlt.DStats(dlts, t2MoniABCDEs)
+
+		lianHaoHis, fbChongHaoHis, teShuHis, lianHaoEqHis, fbChongHaoEqHis, teShuEqHis := ana_dlt.DStatsLhFbTeShu(dlts)
+
+		hzHis, hzEqHis := ana_dlt.DStatsHz(dlts)
+		lastDlt := dlts[len(dlts)-1]
+
+		err = tmpl.ExecuteTemplate(w, "dqxh.html", map[string]interface{}{
+			"Dlts":            dlts,
+			"LastBackComb":    fmt.Sprintf("%s,%s", lastDlt.B1, lastDlt.B2),
+			"T2MoniABCDEs":    t2MoniABCDEs,
+			"EqHis":           eqHis,
+			"TxHis":           txHis,
+			"OeHis":           oeHis,
+			"QzhHis":          qzhHis,
+			"FrontDhHis":      frontDhHis,
+			"BackDhHis":       backDhHis,
+			"BackCombHis":     backCombHis,
+			"QuShi2St":        quShi2St,
+			"LastHisSlice":    gen.LastHisSlice,
+			"LastDrawTime":    dlts[len(dlts)-1].DrawTime,
+			"TxEqHis":         txEqHis,
+			"OeEqHis":         oeEqHis,
+			"QzhEqHis":        qzhEqHis,
+			"FrontDhEqHis":    frontDhEqHis,
+			"BackDhEqHis":     backDhEqHis,
+			"BackCombEqHis":   backCombEqHis,
+			"LianHaoHis":      lianHaoHis,
+			"FbChongHaoHis":   fbChongHaoHis,
+			"TeShuHis":        teShuHis,
+			"LianHaoEqHis":    lianHaoEqHis,
+			"FbChongHaoEqHis": fbChongHaoEqHis,
+			"TeShuEqHis":      teShuEqHis,
+			"HzHis":           hzHis,
+			"HzEqHis":         hzEqHis,
+		})
+
+		if err != nil {
+			lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 3)
+			return
+		}
+	})
+
+	mux.HandleFunc("/duan", func(w http.ResponseWriter, req *http.Request) {
+		// ===== 1. 获取客户端 IP =====
+		clientIP := getClientIP(req)
+
+		// ===== 2. 写入 ips 表（不影响主流程）=====
+		go func(ip string) {
+			if ip == "" {
+				return
+			}
+
+			err := db.DB.Create(&models.Ip{
+				Ip:        ip,
+				CreatedAt: time.Now(),
+			}).Error
+
+			if err != nil {
+				lg.ErrorToFile(fmt.Sprintf("写入IP失败: %v", err))
+			}
+		}(clientIP)
+
+		templatesDir := "./requestHtml"
+		tmpl, err := template.New("duan").ParseGlob(templatesDir + "/duan.html")
+
+		dlts, _ := dbop.ReadAllDlt(false)
+		t2MoniABCDEs := ana_dlt.GenTx2MoniABCDE()
+		eqHis, txHis, oeHis, qzhHis, frontDhHis, backDhHis, backCombHis, quShi2St := ana_dlt.Stats(dlts, t2MoniABCDEs)
+
+		lastDlt := dlts[len(dlts)-1]
+
+		err = tmpl.ExecuteTemplate(w, "duan.html", map[string]interface{}{
+			"Dlts":         dlts,
+			"LastBackComb": fmt.Sprintf("%s,%s", lastDlt.B1, lastDlt.B2),
+			"T2MoniABCDEs": t2MoniABCDEs,
+			"EqHis":        eqHis,
+			"TxHis":        txHis,
+			"OeHis":        oeHis,
+			"QzhHis":       qzhHis,
+			"FrontDhHis":   frontDhHis,
+			"BackDhHis":    backDhHis,
+			"BackCombHis":  backCombHis,
+			"QuShi2St":     quShi2St,
+			"LastHisSlice": gen.LastHisSlice,
+			"LastDrawTime": dlts[len(dlts)-1].DrawTime,
+		})
+
+		if err != nil {
+			lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 3)
+			return
+		}
+	})
+
+	mux.HandleFunc("/dyqxh", func(w http.ResponseWriter, req *http.Request) {
+		// ===== 1. 获取客户端 IP =====
+		clientIP := getClientIP(req)
+
+		// ===== 2. 写入 ips 表（不影响主流程）=====
+		go func(ip string) {
+			if ip == "" {
+				return
+			}
+
+			err := db.DB.Create(&models.Ip{
+				Ip:        ip,
+				CreatedAt: time.Now(),
+			}).Error
+
+			if err != nil {
+				lg.ErrorToFile(fmt.Sprintf("写入IP失败: %v", err))
+			}
+		}(clientIP)
+
+		templatesDir := "./requestHtml"
+		tmpl, err := template.New("dyqxh").ParseGlob(templatesDir + "/dyqxh.html")
+
+		dlts, _ := dbop.ReadAllDlt(false)
+		t2MoniABCDEs := ana_dlt.GenTx2MoniABCDE()
+
+		lastDlt := dlts[len(dlts)-1]
+
+		qs := req.URL.Query().Get("qs") // 没有时返回 ""
+
+		if qs == "" {
+			qs = lastDlt.DrawNum
+		}
+
+		type DrawNumTime struct {
+			DrawNum  string
+			DrawTime string
+			FullStr  string
+		}
+
+		var recentDraws []DrawNumTime
+		maxLen := 100
+		qsExistInMaxLen := false
+		jieZhiIndex := len(dlts) - 1
+		for i := len(dlts) - 1; i >= len(dlts)-maxLen; i-- {
+			if !qsExistInMaxLen && qs == dlts[i].DrawNum {
+				qsExistInMaxLen = true
+				jieZhiIndex = i
+
+			}
+			recentDraws = append(recentDraws, DrawNumTime{
+				DrawNum:  dlts[i].DrawNum,
+				DrawTime: dlts[i].DrawTime,
+				FullStr:  fmt.Sprintf("%s,%s,%s,%s,%s|%s,%s", dlts[i].F1, dlts[i].F2, dlts[i].F3, dlts[i].F4, dlts[i].F5, dlts[i].B1, dlts[i].B2),
+			})
+		}
+
+		if !qsExistInMaxLen {
+			qs = lastDlt.DrawNum
+			lastDlt = dlts[len(dlts)-2]
+		} else {
+			lastDlt = dlts[jieZhiIndex-1]
+		}
+
+		newDlts := dlts[:jieZhiIndex]
+		eqHis, txHis, oeHis, qzhHis, frontDhHis, backDhHis, backCombHis, quShi2St, txEqHis, oeEqHis, qzhEqHis, frontDhEqHis, backDhEqHis, backCombEqHis := ana_dlt.DStats(newDlts, t2MoniABCDEs)
+
+		lianHaoHis, fbChongHaoHis, teShuHis, lianHaoEqHis, fbChongHaoEqHis, teShuEqHis := ana_dlt.DStatsLhFbTeShu(newDlts)
+
+		hzHis, hzEqHis := ana_dlt.DStatsHz(newDlts)
+
+		err = tmpl.ExecuteTemplate(w, "dyqxh.html", map[string]interface{}{
+			"Dlts":            newDlts,
+			"RecentDraws":     recentDraws,
+			"VerifyQiShu":     qs,
+			"LastBackComb":    fmt.Sprintf("%s,%s", lastDlt.B1, lastDlt.B2),
+			"T2MoniABCDEs":    t2MoniABCDEs,
+			"EqHis":           eqHis,
+			"TxHis":           txHis,
+			"OeHis":           oeHis,
+			"QzhHis":          qzhHis,
+			"FrontDhHis":      frontDhHis,
+			"BackDhHis":       backDhHis,
+			"BackCombHis":     backCombHis,
+			"QuShi2St":        quShi2St,
+			"LastHisSlice":    gen.LastHisSlice,
+			"LastDrawTime":    dlts[len(dlts)-1].DrawTime,
+			"TxEqHis":         txEqHis,
+			"OeEqHis":         oeEqHis,
+			"QzhEqHis":        qzhEqHis,
+			"FrontDhEqHis":    frontDhEqHis,
+			"BackDhEqHis":     backDhEqHis,
+			"BackCombEqHis":   backCombEqHis,
+			"LianHaoHis":      lianHaoHis,
+			"FbChongHaoHis":   fbChongHaoHis,
+			"TeShuHis":        teShuHis,
+			"LianHaoEqHis":    lianHaoEqHis,
+			"FbChongHaoEqHis": fbChongHaoEqHis,
+			"TeShuEqHis":      teShuEqHis,
+			"HzHis":           hzHis,
+			"HzEqHis":         hzEqHis,
+		})
+
+		if err != nil {
+			lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("执行模板错误: %v", err), 3)
+			return
+		}
+	})
+
+	mux.HandleFunc("/ndyqxh", func(w http.ResponseWriter, req *http.Request) {
+		// ===== 1. 获取客户端 IP =====
+		clientIP := getClientIP(req)
+
+		// ===== 2. 写入 ips 表（不影响主流程）=====
+		go func(ip string) {
+			if ip == "" {
+				return
+			}
+
+			err := db.DB.Create(&models.Ip{
+				Ip:        ip,
+				CreatedAt: time.Now(),
+			}).Error
+
+			if err != nil {
+				lg.ErrorToFile(fmt.Sprintf("写入IP失败: %v", err))
+			}
+		}(clientIP)
+
+		templatesDir := "./requestHtml"
+		tmpl, err := template.New("ndyqxh").ParseGlob(templatesDir + "/ndyqxh.html")
+
+		dlts, _ := dbop.ReadAllDlt(false)
+		t2MoniABCDEs := ana_dlt.GenTx2MoniABCDE()
+
+		lastDlt := dlts[len(dlts)-1]
+
+		qs := req.URL.Query().Get("qs") // 没有时返回 ""
+
+		if qs == "" {
+			qs = lastDlt.DrawNum
+		}
+
+		type DrawNumTime struct {
+			DrawNum  string
+			DrawTime string
+			FullStr  string
+		}
+
+		var recentDraws []DrawNumTime
+		maxLen := 100
+		qsExistInMaxLen := false
+		jieZhiIndex := len(dlts) - 1
+		for i := len(dlts) - 1; i >= len(dlts)-maxLen; i-- {
+			if !qsExistInMaxLen && qs == dlts[i].DrawNum {
+				qsExistInMaxLen = true
+				jieZhiIndex = i
+
+			}
+			recentDraws = append(recentDraws, DrawNumTime{
+				DrawNum:  dlts[i].DrawNum,
+				DrawTime: dlts[i].DrawTime,
+				FullStr:  fmt.Sprintf("%s,%s,%s,%s,%s|%s,%s", dlts[i].F1, dlts[i].F2, dlts[i].F3, dlts[i].F4, dlts[i].F5, dlts[i].B1, dlts[i].B2),
+			})
+		}
+
+		if !qsExistInMaxLen {
+			qs = lastDlt.DrawNum
+			lastDlt = dlts[len(dlts)-2]
+		} else {
+			lastDlt = dlts[jieZhiIndex-1]
+		}
+
+		newDlts := dlts[:jieZhiIndex]
+		eqHis, txHis, oeHis, qzhHis, frontDhHis, backDhHis, backCombHis, quShi2St, txEqHis, oeEqHis, qzhEqHis, frontDhEqHis, backDhEqHis, backCombEqHis := ana_dlt.DStats(newDlts, t2MoniABCDEs)
+
+		lianHaoHis, fbChongHaoHis, teShuHis, lianHaoEqHis, fbChongHaoEqHis, teShuEqHis := ana_dlt.DStatsLhFbTeShu(newDlts)
+
+		hzHis, hzEqHis := ana_dlt.DStatsHz(newDlts)
+
+		err = tmpl.ExecuteTemplate(w, "ndyqxh.html", map[string]interface{}{
+			"Dlts":            newDlts,
+			"RecentDraws":     recentDraws,
+			"VerifyQiShu":     qs,
+			"LastBackComb":    fmt.Sprintf("%s,%s", lastDlt.B1, lastDlt.B2),
+			"T2MoniABCDEs":    t2MoniABCDEs,
+			"EqHis":           eqHis,
+			"TxHis":           txHis,
+			"OeHis":           oeHis,
+			"QzhHis":          qzhHis,
+			"FrontDhHis":      frontDhHis,
+			"BackDhHis":       backDhHis,
+			"BackCombHis":     backCombHis,
+			"QuShi2St":        quShi2St,
+			"LastHisSlice":    gen.LastHisSlice,
+			"LastDrawTime":    dlts[len(dlts)-1].DrawTime,
+			"TxEqHis":         txEqHis,
+			"OeEqHis":         oeEqHis,
+			"QzhEqHis":        qzhEqHis,
+			"FrontDhEqHis":    frontDhEqHis,
+			"BackDhEqHis":     backDhEqHis,
+			"BackCombEqHis":   backCombEqHis,
+			"LianHaoHis":      lianHaoHis,
+			"FbChongHaoHis":   fbChongHaoHis,
+			"TeShuHis":        teShuHis,
+			"LianHaoEqHis":    lianHaoEqHis,
+			"FbChongHaoEqHis": fbChongHaoEqHis,
+			"TeShuEqHis":      teShuEqHis,
+			"HzHis":           hzHis,
+			"HzEqHis":         hzEqHis,
 		})
 
 		if err != nil {
@@ -269,12 +607,14 @@ func StartServer() {
 	mux.HandleFunc("/excel/", excelDownloadHandler)
 
 	if cfg.Default.EnvIsLocal == 1 {
-		log.Fatal(http.ListenAndServeTLS(
-			":8082",
-			"lot.cn.crt",
-			"lot.cn.key",
-			mux,
-		))
+		//log.Fatal(http.ListenAndServeTLS(
+		//	":8082",
+		//	"lot.cn.crt",
+		//	"lot.cn.key",
+		//	mux,
+		//))
+
+		log.Fatal(http.ListenAndServe(":8082", mux))
 	} else {
 		//startProductionServer()
 		//cert, err := tls.LoadX509KeyPair(

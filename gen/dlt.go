@@ -37,6 +37,45 @@ var AllDltTxs = []string{
 	"OtherT",
 }
 
+// AllDltEqs 大乐透开奖使用的所有设备
+var AllDltEqs = []string{
+	"eq1", "eq2", "eq3",
+}
+
+var (
+	// AllDltLianHaos 前区连号选项。
+	//   none   无连号
+	//   lh2    恰好 1 个 2 连号
+	//   lh3    恰好 1 个 3 连号
+	//   lh3_2  1 个 3 连号 + 1 个 2 连号（两段不相连，前区共 5 号，非 5 连）
+	//   lh4    恰好 1 个 4 连号
+	//   lh5    恰好 1 个 5 连号
+	//   lh2gap 间隔 2 连号：两段互不相连的 2 连号（非 4 连）
+	AllDltLianHaos = []string{
+		"none", "lh2", "lh3", "lh3_2", "lh4", "lh5", "lh2gap",
+	}
+
+	// AllDltFbChongHaos 前后区重号选项。
+	// 「重号」= 前区与后区号码字符串完全相同的个数（后区最多 2 个，故最多 dup2）。
+	//   none  0 个重号
+	//   dup1  1 个重号
+	//   dup2  2 个重号
+	AllDltFbChongHaos = []string{
+		"none", "dup1", "dup2",
+	}
+
+	// AllDltTeShus 前后区特殊号选项。
+	//   none   不满足任何特殊形态
+	//   gap3   前区存在 3 个号构成等差数列，公差 d∈[2,17]
+	//   gap4   前区存在 4 个号构成等差数列，公差 d∈[2,11]
+	//   gap5   前区 5 个号构成等差数列，公差 d∈[2,8]
+	//   fbLhk  前+后合集中，最长且「同时含前区号与后区号」的连号长度恰好为 k
+	AllDltTeShus = []string{
+		"none", "gap3", "gap4", "gap5",
+		"fbLh2", "fbLh3", "fbLh4", "fbLh5", "fbLh6", "fbLh7",
+	}
+)
+
 // GetDltBackQuShiHaoMasFromQuShi 获取大乐透指定后区两个号码（例如"01,02"）和趋势字符串（例如"sk"）的情况下，可能的下一期后区号码的组合的切片
 //
 //	@Description:

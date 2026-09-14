@@ -629,8 +629,95 @@ func DltMoreDataToExcel(prevRunMoni bool) {
 	for xuHao, dlt := range dlts {
 		rowNum := xuHao + 1
 		frontHm := fmt.Sprintf("%s,%s,%s,%s,%s", dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5)
-		hz := CalDltHz([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5, dlt.B1, dlt.B2})
-		oe := CalDltOe([]string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5, dlt.B1, dlt.B2})
+		frontHms := []string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5}
+		backHms := []string{dlt.B1, dlt.B2}
+		fullHms := []string{dlt.F1, dlt.F2, dlt.F3, dlt.F4, dlt.F5, dlt.B1, dlt.B2}
+		hz := CalDltHz(fullHms)
+		oe := CalDltOe(fullHms)
+
+		// 计算前区连号情况
+		frontLhStr := CalDltLianHaoType(frontHms)
+		wuFrontLh := 0
+		frontLh := 0
+		if frontLhStr == "other" || frontLhStr == "none" {
+			wuFrontLh = 1
+		} else {
+			switch frontLhStr {
+			case "lh2":
+				frontLh = 2
+			case "lh3":
+				frontLh = 3
+			case "lh4":
+				frontLh = 4
+			case "lh5":
+				frontLh = 5
+			case "lh2gap":
+				frontLh = 22
+			case "lh3_2":
+				frontLh = 32
+			}
+		}
+
+		// 计算前后区重号情况
+		wuFbCh := 0
+		fbCh := 0
+		fbChStr := CalDltFbChongHaoType(frontHms, backHms)
+		if fbChStr == "other" || fbChStr == "none" {
+			wuFbCh = 1
+		} else {
+			switch fbChStr {
+			case "dup1":
+				fbCh = 1
+			case "dup2":
+				fbCh = 2
+			}
+		}
+
+		// 计算前后区特殊号情况
+		wuTeShu := 0
+		teShuFrontJianGe := 0
+		teShuFbLianXu := 0
+		teshuTyps := MatchDltTeShuTypes(frontHms, backHms)
+		if len(teshuTyps) == 1 && teshuTyps[0] == "none" {
+			wuTeShu = 1
+		} else {
+			if slices.Contains(teshuTyps, "gap3") {
+				teShuFrontJianGe = 3
+			}
+
+			if slices.Contains(teshuTyps, "gap4") {
+				teShuFrontJianGe = 4
+			}
+
+			if slices.Contains(teshuTyps, "gap5") {
+				teShuFrontJianGe = 5
+			}
+
+			if slices.Contains(teshuTyps, "fbLh2") {
+				teShuFbLianXu = 2
+			}
+
+			if slices.Contains(teshuTyps, "fbLh3") {
+				teShuFbLianXu = 3
+			}
+
+			if slices.Contains(teshuTyps, "fbLh4") {
+				teShuFbLianXu = 4
+			}
+
+			if slices.Contains(teshuTyps, "fbLh5") {
+				teShuFbLianXu = 5
+			}
+
+			if slices.Contains(teshuTyps, "fbLh6") {
+				teShuFbLianXu = 6
+			}
+
+			if slices.Contains(teshuTyps, "fbLh7") {
+				teShuFbLianXu = 7
+			}
+		}
+
 		t7 := make([]int, 5)
 		for i, hm := range hm7s {
 			if i >= len(t7) {
@@ -708,6 +795,13 @@ func DltMoreDataToExcel(prevRunMoni bool) {
 			NewAddCh7:           drawNum2CHongHaoSt[dlt.DrawNum].NewAddCh7,
 			DangQiTotalNewAddCh: drawNum2CHongHaoSt[dlt.DrawNum].DangQiTotalNewAddCh,
 			LeiJiaCh:            drawNum2CHongHaoSt[dlt.DrawNum].LeiJiaCh,
+			WuFrontLh:           wuFrontLh,
+			FrontLh:             frontLh,
+			WuFbCh:              wuFbCh,
+			FbCh:                fbCh,
+			WuTeShu:             wuTeShu,
+			TeShuFrontJianGe:    teShuFrontJianGe,
+			TeShuFbLianXu:       teShuFbLianXu,
 			T71:                 t7[0], T72: t7[1], T73: t7[2], T74: t7[3], T75: t7[4],
 			T111: t11[0], T112: t11[1], T113: t11[2], T114: t11[3], T115: t11[4],
 			T151: t15[0], T152: t15[1], T153: t15[2], T154: t15[3], T155: t15[4],
@@ -1399,7 +1493,14 @@ func DltFrontStatDataToExcel(crossDrawNumSli []int, flag string, eqNumCount int)
 	}
 }
 
-func DltNextFrontStatDataToExcel(crossDrawNumSli []int) {
+// DltNextFrontStatDataToExcel
+//
+//	@Description:
+//	@param spStartDrawNum 指定的某一期的期数作为分析的开始
+//	@param startCrossDrawNum 起始的跨期数
+//	@param endCrossDrawNum 结束的跨期数
+//	@param anaDrawNum 需要分析多少期 (即 从期数为 startDrawNum 开始, 需要分析多少期前区号码, 每一期都是从跨 startCrossDrawNum 期开始分析,直到分析到 endCrossDrawNum 期 )
+func DltNextFrontStatDataToExcel(spStartDrawNum string, startCrossDrawNum, endCrossDrawNum, anaDrawNum int) {
 	if len(DxDlts) == 0 {
 		InitDlts()
 	}
@@ -1409,7 +1510,20 @@ func DltNextFrontStatDataToExcel(crossDrawNumSli []int) {
 		lg.ErrorToFile(fmt.Sprintf("创建目录失败: %v", err))
 		return
 	}
-	fileName := filepath.Join(saveDir, fmt.Sprintf("大乐透截止至%s的数据分析_%s的下一期前区分析", DxDlts[0].DrawNum, DxDlts[0].DrawTime))
+	var fileName string
+	var curDlt models.Dlt
+	if spStartDrawNum == "" {
+		curDlt = DxDlts[0]
+	} else {
+		for _, dlt := range DxDlts {
+			if dlt.DrawNum == spStartDrawNum {
+				curDlt = dlt
+				break
+			}
+		}
+	}
+
+	fileName = filepath.Join(saveDir, fmt.Sprintf("大乐透截止至%s的数据分析_%s的下一期前区分析", curDlt.DrawNum, curDlt.DrawTime))
 
 	f, err := excel.CreateNewExcelFile(fileName)
 	if err != nil {
@@ -1456,26 +1570,51 @@ func DltNextFrontStatDataToExcel(crossDrawNumSli []int) {
 
 	var coverStatData []DltCoverCrossTSN
 	var statData []DltCrossTSN
-	for i := 0; i <= 9 && i < len(DxDlts); i++ {
-		if i == 0 {
-			statData = DltFrontSpDrawNumCrossDrawNumStat(DxDlts[i].DrawNum, crossDrawNumSli, true, false)
+	var j int
+	for i := 0; i < len(DxDlts); i++ {
+		if DxDlts[i].DrawNum > curDlt.DrawNum {
+			continue
+		}
+		j++
+
+		if j == 1 {
+			statData = DltFrontSpDrawNumCrossDrawNumStat(DxDlts[i].DrawNum, startCrossDrawNum, endCrossDrawNum, true, false)
 			coverStatData = append(coverStatData, DltCoverCrossTSN{
 				DrawNum:  DxDlts[i].DrawNum,
 				CrossTsn: statData,
 			})
-			statData = DltFrontSpDrawNumCrossDrawNumStat(DxDlts[i].DrawNum, crossDrawNumSli, false, true)
+			allEqs := []int{1, 2, 3}
+			if DxDlts[i].EquipmentCount == 0 {
+				break
+			}
+			idx := slices.Index(allEqs, DxDlts[i].EquipmentCount)
+			allEqs = slices.Delete(allEqs, idx, idx+1)
+
+			// 变换成其他设备号
+			for _, eq := range allEqs {
+				statData = DltFrontSpDrawNumCrossDrawNumStatWithEqCount(DxDlts[i].DrawNum, startCrossDrawNum, endCrossDrawNum, false, eq)
+				coverStatData = append(coverStatData, DltCoverCrossTSN{
+					DrawNum:  DxDlts[i].DrawNum,
+					CrossTsn: statData,
+				})
+			}
+
+			statData = DltFrontSpDrawNumCrossDrawNumStat(DxDlts[i].DrawNum, startCrossDrawNum, endCrossDrawNum, false, true)
 		} else {
-			statData = DltFrontSpDrawNumCrossDrawNumStat(DxDlts[i].DrawNum, crossDrawNumSli, false, true)
+			statData = DltFrontSpDrawNumCrossDrawNumStat(DxDlts[i].DrawNum, startCrossDrawNum, endCrossDrawNum, false, true)
 		}
 		coverStatData = append(coverStatData, DltCoverCrossTSN{
 			DrawNum:  DxDlts[i].DrawNum,
 			CrossTsn: statData,
 		})
+
+		if j >= anaDrawNum || DxDlts[i].EquipmentCount == 0 {
+			break
+		}
 	}
 
 	// 写入 excel 表格
-	_ = SaveNextFrontStatToExcelFile(f, colorSlice, styleID, fmt.Sprintf("%s的下一期", DxDlts[0].DrawNum), coverStatData, true)
-
+	_ = SaveNextFrontStatToExcelFile(f, colorSlice, styleID, fmt.Sprintf("%s的下一期", curDlt.DrawNum), coverStatData, true)
 }
 
 func SaveNextFrontStatToExcelFile(f *excelize.File, colorSlice []int, styleID int, sheetName string, dltCoverCrossTsnData []DltCoverCrossTSN, isFirst bool) (err error) {
@@ -1564,8 +1703,15 @@ func SaveNextFrontStatToExcelFile(f *excelize.File, colorSlice []int, styleID in
 						text += fmt.Sprintf("\n%d*%v", d.Times, d.Sli)
 					}
 				}
+				sg := ParseToSegments(tsn.Tsn)
+				sgStr := ""
+				for _, sgTyp := range AllSegmentTypSli {
+					tempCount, _ := CountBySegmentsAndRule(sg, sgTyp)
+					sgStr = fmt.Sprintf("%s\n%s->%d", sgStr, sgTyp, tempCount)
+				}
+
 				cellPos := fmt.Sprintf("D%d", rowNum)
-				_ = f.SetCellValue(sheetName, cellPos, text)
+				_ = f.SetCellValue(sheetName, cellPos, fmt.Sprintf("%s\n------\n%s", text, sgStr))
 				_ = f.SetCellStyle(sheetName, cellPos, cellPos, wrapStyle)
 				tNum++
 				rowNum++
@@ -1578,7 +1724,12 @@ func SaveNextFrontStatToExcelFile(f *excelize.File, colorSlice []int, styleID in
 			_ = f.SetColWidth(sheetName, ziMu, ziMu, 9)
 
 			ziMu = excel.GetColumnStr(4 + (ik-1)*2 + 2)
-			_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", ziMu), dltCoverCrossTSN.DrawNum)
+			if ik == 2 || ik == 1 {
+				_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", ziMu), "下一期待推测")
+			} else {
+				_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", ziMu), dltCoverCrossTSN.DrawNum)
+			}
+
 			_ = f.SetColWidth(sheetName, ziMu, ziMu, 30)
 			tNum := 1
 			rowNum := 2
@@ -1595,6 +1746,10 @@ func SaveNextFrontStatToExcelFile(f *excelize.File, colorSlice []int, styleID in
 				ziMu = excel.GetColumnStr(4 + (ik-1)*2 + 2)
 				var runs []excelize.RichTextRun
 				runs = nil
+
+				var frontHms []string
+				frontHms = nil
+
 				for _, d := range tsn.Tsn {
 					if len(runs) == 0 {
 						if len(d.NumStr) == 0 {
@@ -1629,6 +1784,47 @@ func SaveNextFrontStatToExcelFile(f *excelize.File, colorSlice []int, styleID in
 						}
 					}
 				}
+				for _, iTsn := range tsn.Tsn {
+					if len(iTsn.NumStr) != 0 {
+						frontHms = append(frontHms, iTsn.NumStr...)
+					}
+				}
+
+				slices.Sort(frontHms)
+				// 判断 frontHms 是T1到T17或者OtherT中的哪种类型
+
+				runs = append(runs, excelize.RichTextRun{
+					Text: fmt.Sprintf("\n------"),
+					Font: &excelize.Font{
+						//Color: "00B050", // 设置为绿色 (十六进制 RRGGBB)
+						//Color: "FF0000", // 设置为红色 (十六进制 RRGGBB)
+					},
+				})
+
+				sg := ParseToSegments(tsn.Tsn)
+				curSgTyp := CalSegmentTyp(tsn.Tsn)
+				for _, sgTyp := range AllSegmentTypSli {
+					tempCount, _ := CountBySegmentsAndRule(sg, sgTyp)
+					if curSgTyp == sgTyp {
+						runs = append(runs, excelize.RichTextRun{
+							Text: fmt.Sprintf("\n%s->%d", sgTyp, tempCount),
+							Font: &excelize.Font{
+								//Color: "00B050", // 设置为绿色 (十六进制 RRGGBB)
+								Color: "FF0000", // 设置为红色 (十六进制 RRGGBB)
+							},
+						},
+						)
+					} else {
+						runs = append(runs, excelize.RichTextRun{
+							Text: fmt.Sprintf("\n%s->%d", sgTyp, tempCount),
+							Font: &excelize.Font{
+								//Color: "00B050", // 设置为绿色 (十六进制 RRGGBB)
+								//Color: "FF0000", // 设置为红色 (十六进制 RRGGBB)
+							},
+						},
+						)
+					}
+				}
 
 				cellPos := fmt.Sprintf("%s%d", ziMu, rowNum)
 				_ = f.SetCellRichText(sheetName, cellPos, runs)
@@ -1638,7 +1834,264 @@ func SaveNextFrontStatToExcelFile(f *excelize.File, colorSlice []int, styleID in
 				rowNum++
 			}
 		}
+	}
 
+	_ = f.AutoFilter(sheetName, "A1:AZ1", nil)
+	return
+}
+
+// DltFrontDuanStatDataToExcel 前区段数据分析
+//
+//	@Description:
+func DltFrontDuanStatDataToExcel() {
+	if len(DxDlts) == 0 {
+		InitDlts()
+	}
+
+	saveDir := "./output/excel"
+	if err := os.MkdirAll(saveDir, 0755); err != nil {
+		lg.ErrorToFile(fmt.Sprintf("创建目录失败: %v", err))
+		return
+	}
+	var fileName string
+	var curDlt models.Dlt
+
+	curDlt = DxDlts[0]
+
+	fileName = filepath.Join(saveDir, fmt.Sprintf("大乐透截止至%s的段数据统计", curDlt.DrawNum))
+
+	f, err := excel.CreateNewExcelFile(fileName)
+	if err != nil {
+		lg.ErrorToFile(fmt.Sprintf("创建工作簿过程中出现错误：%v\n", err))
+		return
+	}
+
+	defer func() {
+		if err = f.Close(); err != nil {
+			lg.ErrorToFile(fmt.Sprintf("关闭excel文件出现错误：%v", err))
+		}
+	}()
+
+	defer func() {
+		_ = f.Save()
+	}()
+
+	styleID, _ := f.NewStyle(&excelize.Style{
+		//Font: &excelize.Font{Family: "Consolas", Size: 8},
+		Font: &excelize.Font{Family: "monospace", Size: 8},
+		Alignment: &excelize.Alignment{
+			WrapText: false,
+		},
+	})
+
+	greenStyle, _ := f.NewStyle(&excelize.Style{
+		Fill: excelize.Fill{
+			Type:    "pattern",
+			Color:   []string{"#00FF00"},
+			Pattern: 1,
+		},
+	})
+	_ = greenStyle
+
+	yellowStyle, _ := f.NewStyle(&excelize.Style{
+		Fill: excelize.Fill{
+			Type:    "pattern",
+			Color:   []string{"#FFFF00"},
+			Pattern: 1,
+		},
+	})
+	_ = yellowStyle
+	colorSlice := []int{greenStyle, yellowStyle}
+
+	allETMap := CalDuanTyp()
+	//fmt.Printf("3-> 7 -> 5=> %v\n", allETMap[3][7][5])
+	//_ = 3
+	// 写入 excel 表格
+	_ = SaveFrontDuanStatToExcelFile(f, colorSlice, styleID, fmt.Sprintf("设备%d", 1), allETMap[1], true)
+	_ = SaveFrontDuanStatToExcelFile(f, colorSlice, styleID, fmt.Sprintf("设备%d", 2), allETMap[2], false)
+	_ = SaveFrontDuanStatToExcelFile(f, colorSlice, styleID, fmt.Sprintf("设备%d", 3), allETMap[3], false)
+}
+
+func SaveFrontDuanStatToExcelFile(f *excelize.File, colorSlice []int, styleID int, sheetName string, eTMap map[int]map[int]map[string]int, isFirst bool) (err error) {
+	defer func() {
+		_ = f.Save()
+	}()
+
+	greenStyle := colorSlice[0]
+	_ = greenStyle
+	//yellowStyle := colorSlice[1]
+	// 创建自动换行样式
+	//wrapStyle, _ := f.NewStyle(&excelize.Style{
+	//	Alignment: &excelize.Alignment{
+	//		WrapText: true,
+	//		Vertical: "top",
+	//	},
+	//})
+
+	if isFirst {
+		if err = f.SetSheetName("Sheet1", sheetName); err != nil {
+			return fmt.Errorf("重命名Sheet1工作表为%s遇到错误：%v", sheetName, err)
+		}
+	} else {
+		_, err = f.NewSheet(sheetName)
+		if err != nil {
+			return fmt.Errorf("新建工作表%s出现错误：%v\n", sheetName, err)
+		}
+	}
+
+	for ch := 'A'; ch <= 'Z'; ch++ {
+		_ = f.SetColStyle(sheetName, fmt.Sprintf("%c", ch), styleID)
+	}
+
+	_ = f.SetPanes(sheetName, &excelize.Panes{
+		Freeze: true, // 启用冻结窗口
+		YSplit: 1,    // 冻结第一行
+		//TopLeftCell: "A2",         // 冻结后左上角的单元格
+		//ActivePane:  "bottomLeft", // 冻结后活动区域
+	})
+
+	colNum0 := 1 // 这里从1开始,因为 excel.GetColumnStr 会自动减1
+	colZiMu := excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "序号")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 6)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "跨几期")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 6)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "最近几期")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 9)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "类型11111")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 10)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "类型2111")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 10)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "类型221")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 10)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "类型311")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 10)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "类型32")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 10)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "类型41")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 10)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "类型5")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 10)
+
+	// 取出跨期列, 后面用来循环
+	var crossDrawNumSli = make([]int, 0, len(eTMap))
+	for i := range eTMap {
+		crossDrawNumSli = append(crossDrawNumSli, i)
+	}
+
+	//fmt.Printf("1 crossDrawNumSli=%v\n", crossDrawNumSli)
+	slices.Sort(crossDrawNumSli)
+	//fmt.Printf("2 crossDrawNumSli=%v\n", crossDrawNumSli)
+
+	//fmt.Printf("3 eTMap=%+v\n", eTMap)
+	tNum := 1
+	rowNum := 2
+	//unit := EndCrossDrawNum - StartCrossDrawNum + 1
+	for _, crossDrawNum := range crossDrawNumSli {
+
+		//iRowNum := rowNum
+		for _, l := range LastestStatTyp {
+			_ = f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowNum), tNum)
+
+			_ = f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowNum), crossDrawNum)
+			_ = f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowNum), l)
+			m := eTMap[crossDrawNum][l]
+
+			// 找出最大值, 用于后面给单元格加上背景色
+			maxV := 0
+			temp := 0
+			for _, v := range m {
+				if temp == 0 {
+					maxV = v
+					temp++
+				}
+				if v > maxV {
+					maxV = v
+				}
+			}
+
+			colNum1 := 4
+			cellPos := fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum)
+			_ = f.SetCellValue(sheetName, cellPos, m["T11111"]) // 类型11111
+			if m["T11111"] == maxV {
+				_ = f.SetCellStyle(sheetName, cellPos, cellPos, greenStyle)
+			}
+
+			colNum1++
+			cellPos = fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum)
+			_ = f.SetCellValue(sheetName, cellPos, m["T2111"]) // 类型2111
+			if m["T2111"] == maxV {
+				_ = f.SetCellStyle(sheetName, cellPos, cellPos, greenStyle)
+			}
+
+			colNum1++
+			cellPos = fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum)
+			_ = f.SetCellValue(sheetName, cellPos, m["T221"]) // 类型221
+			if m["T221"] == maxV {
+				_ = f.SetCellStyle(sheetName, cellPos, cellPos, greenStyle)
+			}
+
+			colNum1++
+			cellPos = fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum)
+			_ = f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowNum), m["T311"]) // 类型311
+			if m["T311"] == maxV {
+				_ = f.SetCellStyle(sheetName, cellPos, cellPos, greenStyle)
+			}
+			colNum1++
+			cellPos = fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum)
+			_ = f.SetCellValue(sheetName, cellPos, m["T32"]) // 类型32
+			if m["T32"] == maxV {
+				_ = f.SetCellStyle(sheetName, cellPos, cellPos, greenStyle)
+			}
+
+			colNum1++
+			cellPos = fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum)
+			_ = f.SetCellValue(sheetName, cellPos, m["T41"]) // 类型41
+			if m["T41"] == maxV {
+				_ = f.SetCellStyle(sheetName, cellPos, cellPos, greenStyle)
+			}
+
+			colNum1++
+			cellPos = fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum)
+			_ = f.SetCellValue(sheetName, cellPos, m["T5"]) // 类类型5
+			if m["T5"] == maxV {
+				_ = f.SetCellStyle(sheetName, cellPos, cellPos, greenStyle)
+			}
+
+			//iRowNum++
+			rowNum++
+			tNum++
+		}
+
+		// 合并单元格
+		//_ = f.MergeCell(sheetName, fmt.Sprintf("B%d", rowNum-unit-1), fmt.Sprintf("B%d", rowNum-1))
 	}
 
 	_ = f.AutoFilter(sheetName, "A1:AZ1", nil)
@@ -1833,6 +2286,11 @@ func SetFirstSheetContent(f *excelize.File, colorSlice []int, styleID int, sheet
 	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "号码")
 	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 18)
 
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "设备")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 6)
+
 	// ---
 	colNum0++
 	colZiMu = excel.GetColumnStr(colNum0)
@@ -1891,10 +2349,6 @@ func SetFirstSheetContent(f *excelize.File, colorSlice []int, styleID int, sheet
 
 	colNum0++
 	colZiMu = excel.GetColumnStr(colNum0)
-	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "设备")
-	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 6)
-	colNum0++
-	colZiMu = excel.GetColumnStr(colNum0)
 	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "奇偶")
 	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 6)
 	colNum0++
@@ -1925,10 +2379,46 @@ func SetFirstSheetContent(f *excelize.File, colorSlice []int, styleID int, sheet
 	colZiMu = excel.GetColumnStr(colNum0)
 	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "总重")
 	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 6)
+
 	colNum0++
 	colZiMu = excel.GetColumnStr(colNum0)
 	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "累重")
 	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 6)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "前无连")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 7)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "前连类")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 7)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "前后无重")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 9)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "前后重类")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 9)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "前后无特")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 9)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "前后特间类")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 11)
+
+	colNum0++
+	colZiMu = excel.GetColumnStr(colNum0)
+	_ = f.SetCellValue(sheetName, fmt.Sprintf("%s1", colZiMu), "前后特连类")
+	_ = f.SetColWidth(sheetName, colZiMu, colZiMu, 11)
 
 	colNum0++
 	colZiMu = excel.GetColumnStr(colNum0)
@@ -2018,6 +2508,10 @@ func SetFirstSheetContent(f *excelize.File, colorSlice []int, styleID int, sheet
 		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.DrawTime)
 		colNum1++
 		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.FullHm)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.EquipmentCount)
+
 		// --
 		colNum1++
 		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.UnSortDrawResult)
@@ -2055,8 +2549,6 @@ func SetFirstSheetContent(f *excelize.File, colorSlice []int, styleID int, sheet
 		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.StakeAmount401)
 		//---
 
-		colNum1++
-		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.EquipmentCount)
 		colNum1++
 		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.Oe)
 		colNum1++
@@ -2096,6 +2588,27 @@ func SetFirstSheetContent(f *excelize.File, colorSlice []int, styleID int, sheet
 		}
 		colNum1++
 		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.LeiJiaCh)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.WuFrontLh)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.FrontLh)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.WuFbCh)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.FbCh)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.WuTeShu)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.TeShuFrontJianGe)
+
+		colNum1++
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("%s%d", excel.GetColumnStr(colNum1), rowNum), iData.TeShuFbLianXu)
 
 		tds := []int{
 			iData.T71, iData.T72, iData.T73, iData.T74, iData.T75,

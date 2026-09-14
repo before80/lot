@@ -183,9 +183,70 @@
             }
 
             .combination-badge {
-                @apply absolute -top-2 left-1/2 transform -translate-x-1/2 px-2 py-0.5 text-xs font-bold rounded-full shadow-sm z-10;
-                min-width: 1.5rem;
+                @apply px-1.5 py-0.5 text-[10px] font-bold rounded-full shadow-sm;
+                min-width: 1.25rem;
                 text-align: center;
+                line-height: 1.2;
+            }
+            /* 单个角标（设备分布 / 后区组合等）：顶部居中 */
+            .checkbox-item > .combination-badge,
+            .combination-item > .combination-badge,
+            .qzh-item > .combination-badge {
+                @apply absolute -top-2 left-1/2 transform -translate-x-1/2 z-10;
+            }
+            /* 四角标横排：全部 / 设备1 / 设备2 / 设备3 */
+            .badge-stack {
+                @apply absolute -top-2.5 left-1/2 transform -translate-x-1/2 flex items-center gap-0.5 z-10;
+                max-width: calc(100% + 0.5rem);
+            }
+            .badge-stack .combination-badge {
+                position: static;
+                transform: none;
+                flex-shrink: 0;
+            }
+            .badge-stack .combination-badge[data-eq="all"] {
+                @apply ring-1 ring-primary/40;
+            }
+
+            /* 20. 跨期表达式 */
+            .cross-period-block {
+                @apply p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3;
+            }
+            .cross-period-expr-row {
+                @apply flex gap-3 items-stretch;
+            }
+            .cross-period-textarea {
+                @apply flex-1 w-full min-h-[7.5rem] px-3 py-2 text-sm border border-gray-300 rounded-lg
+                focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary
+                font-mono leading-relaxed whitespace-pre bg-white resize-y;
+            }
+            .cross-period-actions {
+                @apply flex flex-col gap-2 shrink-0;
+            }
+            .cross-period-relations {
+                @apply space-y-3;
+            }
+            .cross-period-relation-card {
+                @apply p-3 bg-white rounded-lg border border-dashed border-primary/40;
+            }
+
+            /* 4. 和值：最近几期统计行 */
+            .hz-stat-row {
+                @apply flex flex-wrap items-center gap-x-4 gap-y-2 p-3 bg-white rounded-lg border border-gray-200 text-sm;
+            }
+            .hz-stat-row .hz-stat-label {
+                @apply font-semibold text-gray-800 w-16 shrink-0;
+            }
+            .hz-stat-row .hz-stat-nums {
+                @apply flex flex-wrap items-center gap-3 text-gray-700 flex-1 min-w-[12rem];
+            }
+            .hz-stat-row .hz-stat-nums span b {
+                @apply font-semibold text-primary;
+            }
+            /* 四角标占用顶部空间，避免压住号码文字 */
+            .checkbox-item:has(.badge-stack),
+            .combination-item:has(.badge-stack) {
+                padding-top: 0.35rem;
             }
             .badge-gray {
                 @apply bg-gray-200 text-gray-700;
@@ -201,6 +262,21 @@
             }
             .badge-purple {
                 @apply bg-purple-100 text-purple-800;
+            }
+            .filter-stats-panel {
+                @apply mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm;
+            }
+            .filter-stats-panel table {
+                @apply min-w-full text-sm;
+            }
+            .filter-step-drop {
+                @apply text-red-600 font-semibold;
+            }
+            .filter-step-keep {
+                @apply text-green-700 font-semibold;
+            }
+            .filter-step-idle {
+                @apply text-gray-400;
             }
             /* 调整组合项容器为相对定位，以便绝对定位标签 */
             .checkbox-item {
@@ -402,6 +478,19 @@
             <!-- 6. 和值范围 -->
             <div class="space-y-4">
                 <h3 class="section-title">4. 和值范围</h3>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg space-y-3">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatHzGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                    <div id="hzPeriodStats" class="space-y-2">
+                        <!-- 全设备 / 设备1~3 的 min·max·avg + 置入，由 JS 根据服务端数据渲染 -->
+                    </div>
+                </div>
+
                 <div class="slider-container">
                     <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center space-x-4">
@@ -421,7 +510,13 @@
                     <div id="hzSlider" class="mt-4"></div>
                 </div>
                 <div class="section-description">
-                    <i class="fa fa-info-circle"></i> 拖动滑块或输入数字设置和值范围，最小18，最大188
+                    <i class="fa fa-info-circle"></i>
+                    拖动滑块或输入数字设置和值范围（最小18，最大188）。
+                    也可点上方「置入」把对应期数窗口的历史最小/最大值写入滑块。<br>
+                    <strong>「最近几期」计算口径与本页其它区块不同：</strong>
+                    「全设备」按时间轴最近 N 期统计（与其它区块一致）；
+                    「设备1 / 2 / 3」则是该设备<strong>自身</strong>最近出现的 N 期（这 N 期必须都是该设备开出的），
+                    而不是从全库最近 N 期里再筛该设备。
                 </div>
             </div>
 
@@ -781,6 +876,140 @@
                 </div>
             </div>
 
+            <!-- 17. 前区连号情况（复选，可多选） -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">17. 前区连号情况</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllLianHao"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectLianHao"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="lianHaoCount" class="limit-badge limit-badge-info">7/7</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatLianHaoGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="lianHaoGroup" class="checkbox-grid">
+                    <!-- 连号类型由 JS 动态生成（复选） -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    可多选连号形态：前区命中任一勾选项即通过；不选则不限制。<br>
+                    「间隔2连号」= 两个互不相连的 2 连号（非 4 连号）；
+                    「1个3连号+1个2连号」= 一段 3 连与一段 2 连互不相连（非 5 连号）。
+                </div>
+            </div>
+
+            <!-- 18. 前后区重号情况（复选，可多选） -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">18. 前后区重号情况</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllFbChongHao"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectFbChongHao"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="fbChongHaoCount" class="limit-badge limit-badge-info">3/3</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatFbChongHaoGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="fbChongHaoGroup" class="checkbox-grid">
+                    <!-- 前后区重号类型由 JS 动态生成（复选） -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    「重号」指前区与后区号码出现相同值的个数（后区最多 2 个，故最多 2 个重号）。
+                    可多选：命中任一勾选项即通过；不选则不限制。
+                </div>
+            </div>
+
+            <!-- 19. 前后区特殊号（复选，可多选） -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">19. 前后区特殊号</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllTeShu"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectTeShu"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="teShuCount" class="limit-badge limit-badge-info">10/10</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatTeShuGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="teShuGroup" class="checkbox-grid">
+                    <!-- 特殊号类型由 JS 动态生成（复选） -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    「前区 n 号间隔」：前区能找出 n 个号构成等差数列，各段间隔必须相同且公差 d 落在对应范围
+                    （3号：2～17；4号：2～11；5号：2～8；d=1 为连号，不计）。
+                    例：01,03,05（3号 d=2）；01,12,19 间隔不同则不算。<br>
+                    「前后区组成 k 连号」：前+后合集中，最长且同时含前区号与后区号的连号长度恰好为 k（k=2～7；如最长为5则只算5连，不算2/3/4连）；
+                    「无特殊号」：不满足以上任一特殊形态。可多选，命中任一勾选项即通过；不选则不限制。
+                </div>
+            </div>
+
+            <!-- 20. 跨期表达式 -->
+            <div class="space-y-4" id="crossPeriodSection">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">20. 跨期表达式</h3>
+                </div>
+
+                <div id="crossPeriodBlocks" class="space-y-4">
+                    <!-- 表达式块由 JS 动态生成：textarea + 新增 + 类型复选 -->
+                </div>
+
+                <div id="crossPeriodRelations" class="cross-period-relations">
+                    <!-- 相邻表达式之间的交集/并集关系 -->
+                </div>
+
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    每个表达式块含：多行跨期文本（粘贴保留换行）、右侧「新增」、下方取号类型（2111 / 221 / 311 / 32 / 41 / 5 / 11111）。<br>
+                    每行形如 <code>次数*[号1 号2 …]=&gt;[…]</code>，只取「*」后<strong>第一个 []</strong> 作为一段；按勾选类型从不同段中取号拼成前区 5 码（多类型取并集）。<br>
+                    多个表达式时共用一组「交集 / 并集」关系，最终再与其它过滤结果做<strong>交集</strong>。表达式为空或格式不符则该块不参与。
+                </div>
+            </div>
+
             <!-- 错误提示 -->
             <div id="errorMessage" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-200">
                 <i class="fa fa-exclamation-circle mr-1"></i> <span></span>
@@ -819,6 +1048,20 @@
                         class="w-full py-3 px-6 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl">
                     <i class="fa fa-random mr-2"></i> 开始生成随机号码
                 </button>
+
+                <!-- 各过滤步骤：过滤前 / 过滤后注数 -->
+                <div id="filterStepStats" class="filter-stats-panel hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-gray-800">
+                            <i class="fa fa-filter text-primary mr-1"></i>
+                            过滤步骤注数统计
+                            <span id="filterStepStatsTitle" class="ml-2 text-xs font-normal text-gray-500"></span>
+                        </h4>
+                    </div>
+                    <div id="filterStepStatsBody" class="overflow-x-auto">
+                        <!-- 由 JS 填充 -->
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -856,13 +1099,22 @@
 <script>
 
     /**
-     * dlt_clear.html — 大乐透随机选号（JS 结构清晰版）
+     * dqxh.html — 大乐透随机选号（多核 + 过滤步骤注数统计）
+     * 过滤统计：Worker 流水线统计各步骤过滤前/后注数（不含 0.设备 / 1.随机注数）。
      * 由 dlt.html 衍生：HTML/CSS 与 Go template 数据保持一致，
      * 选号引擎与注释已重写，便于阅读与维护。
      *
      * 依赖服务端注入数据：
      *   curT2MoniABCDEs, allHistoricalData, txHis, oeHis, qzhHis,
-     *   frontDhHis, backDhHis, backCombHis, eqHis, quShi2St, heatOptions
+     *   frontDhHis, backDhHis, backCombHis, eqHis,
+     *   txEqHis, oeEqHis, qzhEqHis, frontDhEqHis, backDhEqHis, backCombEqHis,
+     *   lianHaoHis, fbChongHaoHis, teShuHis,
+     *   lianHaoEqHis, fbChongHaoEqHis, teShuEqHis,
+     *   hzHis, hzEqHis,
+     *   quShi2St, heatOptions
+     *
+     * 角标约定：第1个=全部设备(*His)，第2~4个=eq1/eq2/eq3(*EqHis)
+     * 「0.设备分布」界面文案显示「设备1/2/3」，数据 key 仍为 eq1/eq2/eq3
      */
 
     const curT2MoniABCDEs = {
@@ -877,6 +1129,7 @@
 
     const allHistoricalData = [{{range $dlt := .Dlts}}{F1: "{{$dlt.F1}}", F2: "{{$dlt.F2}}", F3: "{{$dlt.F3}}", F4: "{{$dlt.F4}}", F5: "{{$dlt.F5}}", B1: "{{$dlt.B1}}", B2: "{{$dlt.B2}}"},{{end}}];
 
+    // 组合历史
     const txHis = {
     {{range $typeKey, $typeData := .TxHis}}
     "{{$typeKey}}": {
@@ -887,6 +1140,7 @@
     {{end}}
     }
 
+    // 奇偶历史
     const oeHis = {
     {{range $typeKey, $typeData := .OeHis}}
     "{{$typeKey}}": {
@@ -897,6 +1151,7 @@
     {{end}}
     }
 
+    // 前中后历史
     const qzhHis = {
     {{range $typeKey, $typeData := .QzhHis}}
     "{{$typeKey}}": {
@@ -907,6 +1162,7 @@
     {{end}}
     }
 
+    // 前区单号历史
     const frontDhHis = {
     {{range $typeKey, $typeData := .FrontDhHis}}
     "{{$typeKey}}": {
@@ -917,6 +1173,7 @@
     {{end}}
     }
 
+    // 后区单号历史
     const backDhHis = {
     {{range $typeKey, $typeData := .BackDhHis}}
     "{{$typeKey}}": {
@@ -927,6 +1184,7 @@
     {{end}}
     }
 
+    // 后区组合历史
     const backCombHis = {
     {{range $typeKey, $typeData := .BackCombHis}}
     "{{$typeKey}}": {
@@ -937,12 +1195,176 @@
     {{end}}
     }
 
-    // 设备分布统计：key 为 "设备1" / "设备2" / "设备3"，内层 key 为期数
+    // 设备分布统计：key 为 "eq1" / "eq2" / "eq3"，内层 key 为期数
     const eqHis = {
     {{range $typeKey, $typeData := .EqHis}}
     "{{$typeKey}}": {
         {{range $groupKey, $numbers := $typeData}}
         "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    /**
+     * 各维度「按设备」统计：结构均为
+     *   { "eq1": { "选项": { "期数": 次数 } }, "eq2": {...}, "eq3": {...} }
+     * 与下方全部统计（txHis 等）配合，组成复选框上的 4 个角标。
+     */
+    const txEqHis = {
+    {{range $eqKey, $eqData := .TxEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const oeEqHis = {
+    {{range $eqKey, $eqData := .OeEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const qzhEqHis = {
+    {{range $eqKey, $eqData := .QzhEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const frontDhEqHis = {
+    {{range $eqKey, $eqData := .FrontDhEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const backDhEqHis = {
+    {{range $eqKey, $eqData := .BackDhEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    // 后区组合按设备统计；内层选项 key 与 backCombHis 一致，形如 "01,02"
+    const backCombEqHis = {
+    {{range $eqKey, $eqData := .BackCombEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    // 前区连号 / 前后区重号 / 特殊号：全部设备统计（选项 key -> 期数 -> 次数）
+    const lianHaoHis = {
+    {{range $typeKey, $typeData := .LianHaoHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const fbChongHaoHis = {
+    {{range $typeKey, $typeData := .FbChongHaoHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const teShuHis = {
+    {{range $typeKey, $typeData := .TeShuHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    // 按设备拆分（eq1/eq2/eq3）
+    const lianHaoEqHis = {
+    {{range $eqKey, $eqData := .LianHaoEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const fbChongHaoEqHis = {
+    {{range $eqKey, $eqData := .FbChongHaoEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const teShuEqHis = {
+    {{range $eqKey, $eqData := .TeShuEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
         {{end}}
     },
     {{end}}
@@ -954,12 +1376,36 @@
     {{end}}
     }
 
+    /**
+     * 和值区间统计（服务端注入）
+     * hzHis[期数] = { min, max, avg }           —— 全设备：时间轴最近 N 期
+     * hzEqHis[eq1|eq2|eq3][期数] = { min, max, avg }
+     *   —— 仅该设备自身最近 N 期（必须都是该设备开出的）
+     * 和值 = 前区5码 + 后区2码 之和
+     */
+    const hzHis = {
+    {{range $qi, $st := .HzHis}}
+    "{{$qi}}": { min: {{$st.Min}}, max: {{$st.Max}}, avg: {{printf "%.2f" $st.Avg}} },
+    {{end}}
+    }
+
+    const hzEqHis = {
+    {{range $eqKey, $eqData := .HzEqHis}}
+    "{{$eqKey}}": {
+        {{range $qi, $st := $eqData}}
+        "{{$qi}}": { min: {{$st.Min}}, max: {{$st.Max}}, avg: {{printf "%.2f" $st.Avg}} },
+        {{end}}
+    },
+    {{end}}
+    }
+
     // 默认选中的最近几期
     const defaultLastQiShuObj = {
-        "eq": "5",
+        "eq": "10",
         "combs": "20",
         "parity": "100",
         "qzh": "100",
+        "hz": "100",
         "danMa": "100",
         "frontInclude": "100",
         "frontExclude": "100",
@@ -967,11 +1413,80 @@
         "backExclude": "100",
         "backCombInclude": "100",
         "backCombExclude": "100",
+        "lianHao": "100",
+        "fbChongHao": "100",
+        "teShu": "100",
     }
 
 
-    // 设备分布展示项（仅展示角标，不可勾选）
-    const eqOptions = ['eq1', 'eq2', 'eq3'];
+    // 设备分布展示项：key 用 eq1/eq2/eq3；界面文案仍显示「设备1/2/3」
+    const eqOptions = [
+        { key: 'eq1', label: '设备1' },
+        { key: 'eq2', label: '设备2' },
+        { key: 'eq3', label: '设备3' },
+    ];
+
+    // 复选框四角标：内部 key 与 *EqHis / eqHis 的设备 key 对齐
+    const STAT_BADGE_SLOTS = [
+        { key: 'all', eqName: null, title: '全部设备' },
+        { key: 'eq1', eqName: 'eq1', title: '设备1' },
+        { key: 'eq2', eqName: 'eq2', title: '设备2' },
+        { key: 'eq3', eqName: 'eq3', title: '设备3' },
+    ];
+
+    // 哪些区块使用「全部+三设备」四角标
+    const MULTI_BADGE_TYPES = new Set([
+        'combs', 'parity', 'qzh', 'danMa',
+        'frontInclude', 'frontExclude', 'backInclude', 'backExclude',
+        'backCombInclude', 'backCombExclude',
+        'lianHao', 'fbChongHao', 'teShu',
+    ]);
+
+    // 前区连号类型（复选）
+    const lianHaoOptions = [
+        { key: 'none', label: '无连号' },
+        { key: 'lh2', label: '1个2连号' },
+        { key: 'lh3', label: '1个3连号' },
+        { key: 'lh3_2', label: '1个3连号+1个2连号' },
+        { key: 'lh4', label: '1个4连号' },
+        { key: 'lh5', label: '1个5连号' },
+        { key: 'lh2gap', label: '间隔2连号' },
+    ];
+
+    // 前后区重号类型（复选）：前区与后区号码相同值的个数
+    const fbChongHaoOptions = [
+        { key: 'none', label: '无重号' },
+        { key: 'dup1', label: '1个重号' },
+        { key: 'dup2', label: '2个重号' },
+    ];
+
+    // 前后区特殊号（复选）；
+    // gap3/4/5 = 前区 n 码等差间隔（公差相同）；fbLhk = 最长前后区共参与连号恰好为 k
+    const teShuOptions = [
+        { key: 'none', label: '无特殊号' },
+        { key: 'gap3', label: '前区3号间隔2~17' },
+        { key: 'gap4', label: '前区4号间隔2~11' },
+        { key: 'gap5', label: '前区5号间隔2~8' },
+        { key: 'fbLh2', label: '前后区组成2连号' },
+        { key: 'fbLh3', label: '前后区组成3连号' },
+        { key: 'fbLh4', label: '前后区组成4连号' },
+        { key: 'fbLh5', label: '前后区组成5连号' },
+        { key: 'fbLh6', label: '前后区组成6连号' },
+        { key: 'fbLh7', label: '前后区组成7连号' },
+    ];
+
+    // 跨期表达式取号类型：数字串表示从不同「段」依次取出的个数（之和为 5）
+    // 例：2111 = 某段取2 + 另三段各取1；221 = 两段各取2 + 一段取1
+    const crossPeriodTypeOptions = [
+        { key: '2111', label: '2111' },
+        { key: '221', label: '221' },
+        { key: '311', label: '311' },
+        { key: '32', label: '32' },
+        { key: '41', label: '41' },
+        { key: '5', label: '5' },
+        { key: '11111', label: '11111' },
+    ];
+    const CROSS_PERIOD_MAX_BLOCKS = 10;
 
     // 可选组合选项
     const combs = [
@@ -1042,6 +1557,15 @@
         Ch4MustGetCount: 21,
         Ch5MustGetCount: 0,
         Ch6MustGetCount: 0,
+        // 前区连号类型：空数组表示不限制；否则命中任一勾选类型即通过
+        LianHaoTypes: ['none', 'lh2', 'lh3', 'lh3_2', 'lh4', 'lh5', 'lh2gap'],
+        // 前后区重号：空数组不限制；默认全选 none/dup1/dup2
+        FbChongHaoTypes: ['none', 'dup1', 'dup2'],
+        // 前后区特殊号：空数组不限制；默认全选
+        TeShuTypes: ['none', 'gap3', 'gap4', 'gap5', 'fbLh2', 'fbLh3', 'fbLh4', 'fbLh5', 'fbLh6', 'fbLh7'],
+        // 跨期表达式：blocks + 相邻关系（intersect|union）
+        CrossPeriodBlocks: [],
+        CrossPeriodRelations: [],
     };
 
     /** 兼容旧变量名（部分 UI / 取消逻辑仍可能引用） */
@@ -1281,6 +1805,170 @@
                 }
 
                 /**
+                 * 判定前区连号类型（互斥分类，基于连续段长度）：
+                 *   none    — 无连号
+                 *   lh2     — 1个2连号
+                 *   lh3     — 1个3连号
+                 *   lh3_2   — 1个3连号+1个2连号（两段互不相连，非5连号）
+                 *   lh4     — 1个4连号
+                 *   lh5     — 1个5连号
+                 *   lh2gap  — 间隔2连号：两段互不相连的2连号（非4连号）
+                 *   other   — 其它形态，不对应任一单选项
+                 */
+                function calDltLianHaoType(front) {
+                    const nums = front.map(x => parseInt(x, 10)).sort((a, b) => a - b);
+                    const runLens = [];
+                    let len = 1;
+                    for (let i = 1; i < nums.length; i++) {
+                        if (nums[i] === nums[i - 1] + 1) {
+                            len++;
+                        } else {
+                            runLens.push(len);
+                            len = 1;
+                        }
+                    }
+                    runLens.push(len);
+
+                    const consec = runLens.filter(r => r >= 2);
+                    if (consec.length === 0) return 'none';
+
+                    if (consec.length === 1) {
+                        if (consec[0] === 2) return 'lh2';
+                        if (consec[0] === 3) return 'lh3';
+                        if (consec[0] === 4) return 'lh4';
+                        if (consec[0] === 5) return 'lh5';
+                    }
+
+                    if (consec.length === 2) {
+                        const a = Math.min(consec[0], consec[1]);
+                        const b = Math.max(consec[0], consec[1]);
+                        // 间隔2连号：2+2
+                        if (a === 2 && b === 2) return 'lh2gap';
+                        // 1个3连号+1个2连号：2+3（前区共5个号，不可能是5连）
+                        if (a === 2 && b === 3) return 'lh3_2';
+                    }
+
+                    return 'other';
+                }
+
+                /**
+                 * 前后区重号类型：前区与后区号码相同值的个数。
+                 *   none — 无重号；dup1 — 1个重号；dup2 — 2个重号
+                 */
+                function calDltFbChongHaoType(front, back) {
+                    const n = getIntersection(front, back).length;
+                    if (n === 0) return 'none';
+                    if (n === 1) return 'dup1';
+                    if (n === 2) return 'dup2';
+                    return 'other';
+                }
+
+                /**
+                 * 前区是否存在「n 码等差间隔」：
+                 * 任取 n 个号升序后，相邻间隔全部相等，且公差 d∈[dMin,dMax]。
+                 *   gap3: n=3, d∈[2,17]
+                 *   gap4: n=4, d∈[2,11]
+                 *   gap5: n=5, d∈[2,8]
+                 */
+                function hasFrontArithGap(front, n, dMin, dMax) {
+                    const nums = front.map(x => parseInt(x, 10)).sort((a, b) => a - b);
+                    if (nums.length < n) return false;
+
+                    const chosen = new Array(n);
+                    function dfs(start, depth) {
+                        if (depth === n) {
+                            const d = chosen[1] - chosen[0];
+                            if (d < dMin || d > dMax) return false;
+                            for (let i = 2; i < n; i++) {
+                                if (chosen[i] - chosen[i - 1] !== d) return false;
+                            }
+                            return true;
+                        }
+                        for (let i = start; i <= nums.length - (n - depth); i++) {
+                            chosen[depth] = nums[i];
+                            if (dfs(i + 1, depth + 1)) return true;
+                        }
+                        return false;
+                    }
+                    return dfs(0, 0);
+                }
+
+                function hasFrontGap3_2_17(front) {
+                    return hasFrontArithGap(front, 3, 2, 17);
+                }
+
+                function hasFrontGap4_2_11(front) {
+                    return hasFrontArithGap(front, 4, 2, 11);
+                }
+
+                function hasFrontGap5_2_8(front) {
+                    return hasFrontArithGap(front, 5, 2, 8);
+                }
+
+                /**
+                 * 前+后合集中是否存在长度为 k 的连号窗口，且窗口内同时含前区号与后区号。
+                 */
+                function hasFbLianHaoBoth(front, back, k) {
+                    const frontSet = new Set(front.map(x => parseInt(x, 10)));
+                    const backSet = new Set(back.map(x => parseInt(x, 10)));
+                    const all = Array.from(new Set([...frontSet, ...backSet])).sort((a, b) => a - b);
+                    if (all.length < k) return false;
+
+                    // 在合集中找极大连续段，再滑窗检查长度为 k 的子段
+                    let runStart = 0;
+                    for (let i = 1; i <= all.length; i++) {
+                        if (i === all.length || all[i] !== all[i - 1] + 1) {
+                            const runLen = i - runStart;
+                            if (runLen >= k) {
+                                for (let s = runStart; s + k <= i; s++) {
+                                    let hasF = false;
+                                    let hasB = false;
+                                    for (let t = s; t < s + k; t++) {
+                                        const n = all[t];
+                                        if (frontSet.has(n)) hasF = true;
+                                        if (backSet.has(n)) hasB = true;
+                                    }
+                                    if (hasF && hasB) return true;
+                                }
+                            }
+                            runStart = i;
+                        }
+                    }
+                    return false;
+                }
+
+                /**
+                 * 一注号码命中的特殊号类型列表。
+                 * 前后区组合 k 连号按「最长且前后区都参与」的长度精确归属（互斥）：
+                 *   例如最长为 5，则只记 fbLh5，不记 fbLh3/4。
+                 * gap3/gap4/gap5 可互相并存，也可与某一个 fbLhk 并存；
+                 * none 仅在其它均不成立时加入。
+                 */
+                function matchTeShuTypes(front, back) {
+                    const hit = [];
+                    if (hasFrontGap3_2_17(front)) hit.push('gap3');
+                    if (hasFrontGap4_2_11(front)) hit.push('gap4');
+                    if (hasFrontGap5_2_8(front)) hit.push('gap5');
+
+                    let maxFbLh = 0;
+                    for (let k = 7; k >= 2; k--) {
+                        if (hasFbLianHaoBoth(front, back, k)) {
+                            maxFbLh = k;
+                            break;
+                        }
+                    }
+                    if (maxFbLh === 2) hit.push('fbLh2');
+                    else if (maxFbLh === 3) hit.push('fbLh3');
+                    else if (maxFbLh === 4) hit.push('fbLh4');
+                    else if (maxFbLh === 5) hit.push('fbLh5');
+                    else if (maxFbLh === 6) hit.push('fbLh6');
+                    else if (maxFbLh === 7) hit.push('fbLh7');
+
+                    if (hit.length === 0) hit.push('none');
+                    return hit;
+                }
+
+                /**
                  * 类型匹配：moni 有 A/B/C/D/E 五组号池，
                  * 要求前区 5 个号分别来自不同一组（一一对应、不共用同一组）。
                  */
@@ -1378,36 +2066,6 @@
                 }
 
                 /**
-                 * 仅针对前区的快速过滤（后区未定时也可做）。
-                 * 注意：和值这里只做粗筛 —— 用 HzMin-23（后区最大和 11+12=23），
-                 * 与原版一致；HzMax 未在此强制过滤。
-                 */
-                function checkFrontConditions(front, xuHaoSt, t2MoniABCDEs) {
-                    const frontHz = calDltHz(front);
-                    if (frontHz < (xuHaoSt.HzMin - 23)) return false;
-
-                    const danMaLen = xuHaoSt.FrontDanMaHms?.length || 0;
-                    if (danMaLen > 0) {
-                        const intersection = getIntersection(front, xuHaoSt.FrontDanMaHms);
-                        if (intersection.length !== danMaLen) return false;
-                    }
-
-                    if (xuHaoSt.FrontIncludeHms?.length > 0) {
-                        if (!xuHaoSt.FrontIncludeHms.some(item => front.includes(item))) return false;
-                    }
-
-                    if (xuHaoSt.FrontExcludeHms?.length > 0) {
-                        if (xuHaoSt.FrontExcludeHms.some(item => front.includes(item))) return false;
-                    }
-
-                    if (xuHaoSt.QzhSlice?.length > 0) {
-                        if (!xuHaoSt.QzhSlice.includes(calDltQzh(front))) return false;
-                    }
-
-                    return checkTypeConditions(front, xuHaoSt, t2MoniABCDEs);
-                }
-
-                /**
                  * 「新 n 重号」计分：
                  *   历史出现 1 次 -> +2 分；出现 >=2 次 -> +1 分
                  * compareMode: 1 = 要求分数 >= threshold；2 = 要求分数 === threshold
@@ -1428,68 +2086,151 @@
                 }
 
                 /**
-                 * 后区 + 历史 + 重号条件（前区已通过时调用）
+                 * 按页面过滤步骤顺序构建流水线（不含 0.设备 / 1.随机注数 / 20.跨期）。
+                 * 每步记录 entered(过滤前到达数) / exited(通过数)。
                  */
-                function checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms, c5ms, c6ms) {
-                    const frontStr = front.join(',');
-                    const backStr = back.join(',');
-                    const fullStr = frontStr + '|' + backStr;
+                function buildFilterSteps(xuHaoSt, t2MoniABCDEs, hisFullHmStrSlice, c4ms, c5ms, c6ms) {
+                    const txActive = (xuHaoSt.Tx || []).length > 0;
+                    const oeActive = (xuHaoSt.Oes || []).length > 0;
+                    const qzhActive = (xuHaoSt.QzhSlice || []).length > 0;
+                    const removeHisActive = xuHaoSt.RemoveHis === 1;
+                    const hzMin = xuHaoSt.HzMin ?? 18;
+                    const hzMax = xuHaoSt.HzMax ?? 188;
+                    const hzActive = !(hzMin <= 18 && hzMax >= 188);
+                    const danMa = xuHaoSt.FrontDanMaHms || [];
+                    const danMaActive = danMa.length > 0;
+                    const frontInc = xuHaoSt.FrontIncludeHms || [];
+                    const frontIncActive = frontInc.length > 0;
+                    const frontExc = xuHaoSt.FrontExcludeHms || [];
+                    const frontExcActive = frontExc.length > 0;
+                    const backInc = xuHaoSt.BackIncludeHms || [];
+                    const backIncActive = backInc.length > 0;
+                    const backExc = xuHaoSt.BackExcludeHms || [];
+                    const backExcActive = backExc.length > 0;
+                    const backCombInc = xuHaoSt.BackIncludeCombs || [];
+                    const backCombIncActive = backCombInc.length > 0;
+                    const backCombExc = xuHaoSt.BackExcludeCombs || [];
+                    const backCombExcActive = backCombExc.length > 0;
+                    const ch4Active = !(xuHaoSt.Ch4Get == 1 && (xuHaoSt.Ch4MustGetCount || 0) <= 0);
+                    const ch5Active = !(xuHaoSt.Ch5Get == 1 && (xuHaoSt.Ch5MustGetCount || 0) <= 0);
+                    const ch6Active = !(xuHaoSt.Ch6Get == 1 && (xuHaoSt.Ch6MustGetCount || 0) <= 0);
+                    const lhTypes = xuHaoSt.LianHaoTypes || [];
+                    const lhActive = lhTypes.length > 0;
+                    const fbTypes = xuHaoSt.FbChongHaoTypes || [];
+                    const fbActive = fbTypes.length > 0;
+                    const teTypes = xuHaoSt.TeShuTypes || [];
+                    const teActive = teTypes.length > 0;
 
-                    // 去掉已在历史上出现过的完整一注
-                    if (xuHaoSt.RemoveHis === 1 && hisFullHmStrSlice.includes(fullStr)) {
-                        return false;
-                    }
-
-                    if (xuHaoSt.BackIncludeHms.length !== 0 &&
-                        getIntersection(xuHaoSt.BackIncludeHms, back).length === 0) {
-                        return false;
-                    }
-
-                    if (xuHaoSt.BackExcludeHms.length !== 0 &&
-                        getIntersection(xuHaoSt.BackExcludeHms, back).length !== 0) {
-                        return false;
-                    }
-
-                    if (xuHaoSt.BackIncludeCombs.length !== 0 &&
-                        !xuHaoSt.BackIncludeCombs.includes(backStr)) {
-                        return false;
-                    }
-
-                    if (xuHaoSt.BackExcludeCombs.length !== 0 &&
-                        xuHaoSt.BackExcludeCombs.includes(backStr)) {
-                        return false;
-                    }
-
-                    // 4 重号：前4 / 前3+后1 / 前2+后2
-                    const ic4s = crossComb(front, back, 4, 0)
-                        .concat(crossComb(front, back, 3, 1))
-                        .concat(crossComb(front, back, 2, 2));
-                    if (!passChongHaoScore(ic4s, c4ms, xuHaoSt.Ch4MustGetCount, xuHaoSt.Ch4Get)) {
-                        return false;
-                    }
-
-                    // 5 重号：前5 / 前4+后1 / 前3+后2
-                    const ic5s = crossComb(front, back, 5, 0)
-                        .concat(crossComb(front, back, 4, 1))
-                        .concat(crossComb(front, back, 3, 2));
-                    if (!passChongHaoScore(ic5s, c5ms, xuHaoSt.Ch5MustGetCount, xuHaoSt.Ch5Get)) {
-                        return false;
-                    }
-
-                    // 6 重号：前5+后1 / 前4+后2
-                    // 说明：原版此处误写成 xuHaoSt.Ch5Get，已改为 Ch6Get
-                    const ic6s = crossComb(front, back, 5, 1)
-                        .concat(crossComb(front, back, 4, 2));
-                    if (!passChongHaoScore(ic6s, c6ms, xuHaoSt.Ch6MustGetCount, xuHaoSt.Ch6Get)) {
-                        return false;
-                    }
-
-                    return true;
+                    return [
+                        {
+                            id: 'tx', name: '2. 组合选择', active: txActive,
+                            test: (front) => !txActive || checkTypeConditions(front, xuHaoSt, t2MoniABCDEs),
+                        },
+                        {
+                            id: 'oe', name: '3. 奇偶比例', active: oeActive,
+                            test: (front, back) => !oeActive || xuHaoSt.Oes.includes(calDltOe(front.concat(back))),
+                        },
+                        {
+                            id: 'qzh', name: '13. 前区前中后分布比例', active: qzhActive,
+                            test: (front) => !qzhActive || xuHaoSt.QzhSlice.includes(calDltQzh(front)),
+                        },
+                        {
+                            id: 'removeHis', name: '5. 是否移除历史数据', active: removeHisActive,
+                            test: (front, back) => {
+                                if (!removeHisActive) return true;
+                                const fullStr = front.join(',') + '|' + back.join(',');
+                                return !hisFullHmStrSlice.includes(fullStr);
+                            },
+                        },
+                        {
+                            id: 'hz', name: '4. 和值范围', active: hzActive,
+                            test: (front, back) => {
+                                const hz = calDltHz(front) + calDltHz(back);
+                                return hz >= hzMin && hz <= hzMax;
+                            },
+                        },
+                        {
+                            id: 'danMa', name: '6. 胆码选择', active: danMaActive,
+                            test: (front) => {
+                                if (!danMaActive) return true;
+                                return getIntersection(front, danMa).length === danMa.length;
+                            },
+                        },
+                        {
+                            id: 'frontInclude', name: '7. 前区必须包括的号码', active: frontIncActive,
+                            test: (front) => !frontIncActive || frontInc.some(item => front.includes(item)),
+                        },
+                        {
+                            id: 'frontExclude', name: '8. 前区必须排除的号码', active: frontExcActive,
+                            test: (front) => !frontExcActive || !frontExc.some(item => front.includes(item)),
+                        },
+                        {
+                            id: 'backInclude', name: '9. 后区必须包括的号码', active: backIncActive,
+                            test: (front, back) => !backIncActive || getIntersection(backInc, back).length > 0,
+                        },
+                        {
+                            id: 'backExclude', name: '10. 后区必须排除的号码', active: backExcActive,
+                            test: (front, back) => !backExcActive || getIntersection(backExc, back).length === 0,
+                        },
+                        {
+                            id: 'backCombInclude', name: '11. 后区必须包含的组合', active: backCombIncActive,
+                            test: (front, back) => !backCombIncActive || backCombInc.includes(back.join(',')),
+                        },
+                        {
+                            id: 'backCombExclude', name: '12. 后区必须排除的组合', active: backCombExcActive,
+                            test: (front, back) => !backCombExcActive || !backCombExc.includes(back.join(',')),
+                        },
+                        {
+                            id: 'ch4', name: '14. 新4重号数', active: ch4Active,
+                            test: (front, back) => {
+                                if (!ch4Active) return true;
+                                const ic4s = crossComb(front, back, 4, 0)
+                                    .concat(crossComb(front, back, 3, 1))
+                                    .concat(crossComb(front, back, 2, 2));
+                                return passChongHaoScore(ic4s, c4ms, xuHaoSt.Ch4MustGetCount, xuHaoSt.Ch4Get);
+                            },
+                        },
+                        {
+                            id: 'ch5', name: '15. 新5重号数', active: ch5Active,
+                            test: (front, back) => {
+                                if (!ch5Active) return true;
+                                const ic5s = crossComb(front, back, 5, 0)
+                                    .concat(crossComb(front, back, 4, 1))
+                                    .concat(crossComb(front, back, 3, 2));
+                                return passChongHaoScore(ic5s, c5ms, xuHaoSt.Ch5MustGetCount, xuHaoSt.Ch5Get);
+                            },
+                        },
+                        {
+                            id: 'ch6', name: '16. 新6重号数', active: ch6Active,
+                            test: (front, back) => {
+                                if (!ch6Active) return true;
+                                const ic6s = crossComb(front, back, 5, 1)
+                                    .concat(crossComb(front, back, 4, 2));
+                                return passChongHaoScore(ic6s, c6ms, xuHaoSt.Ch6MustGetCount, xuHaoSt.Ch6Get);
+                            },
+                        },
+                        {
+                            id: 'lianHao', name: '17. 前区连号情况', active: lhActive,
+                            test: (front) => !lhActive || lhTypes.includes(calDltLianHaoType(front)),
+                        },
+                        {
+                            id: 'fbChongHao', name: '18. 前后区重号情况', active: fbActive,
+                            test: (front, back) => !fbActive || fbTypes.includes(calDltFbChongHaoType(front, back)),
+                        },
+                        {
+                            id: 'teShu', name: '19. 前后区特殊号', active: teActive,
+                            test: (front, back) => {
+                                if (!teActive) return true;
+                                const hit = matchTeShuTypes(front, back);
+                                return hit.some(t => teTypes.includes(t));
+                            },
+                        },
+                    ];
                 }
 
                 /**
-                 * 单个 Worker 任务：枚举 rangeA 内的前区五元组 × 全部后区二元组，
-                 * 收集所有满足条件的完整号码串。
+                 * 单个 Worker：枚举前区×后区，按过滤流水线统计每步前后注数并收集通过注。
+                 * 返回 { matched, steps: [{id,name,active,before,after}] }
                  */
                 function processTask(taskData) {
                     const { xuHaoSt, rangeA, historicalData, t2MoniABCDEs } = taskData;
@@ -1506,11 +2247,17 @@
                         (i + 1).toString().padStart(2, '0')
                     );
 
+                    const filterSteps = buildFilterSteps(
+                        xuHaoSt, t2MoniABCDEs, hisFullHmStrSlice, c4ms, c5ms, c6ms
+                    );
+                    const stepCount = filterSteps.length;
+                    const entered = new Array(stepCount).fill(0);
+                    const exited = new Array(stepCount).fill(0);
+
                     const matched = [];
                     let processedCount = 0;
                     const { start: aStart, end: aEnd } = rangeA;
 
-                    // 五重循环枚举 C(35,5)；a 的范围由主线程按 Worker 切分
                     for (let a = aStart; a <= aEnd; a++) {
                         for (let b = a + 1; b <= 31; b++) {
                             for (let c = b + 1; c <= 32; c++) {
@@ -1524,11 +2271,6 @@
                                             allDltFrontHms[e]
                                         ].sort();
 
-                                        if (!checkFrontConditions(front, xuHaoSt, t2MoniABCDEs)) {
-                                            continue;
-                                        }
-
-                                        // 后区：C(12,2)
                                         for (let x = 0; x <= 10; x++) {
                                             for (let y = x + 1; y <= 11; y++) {
                                                 const back = [
@@ -1536,18 +2278,17 @@
                                                     allDltBackHms[y]
                                                 ].sort();
 
-                                                const full = front.concat(back);
-                                                const curOe = calDltOe(full);
-                                                if (xuHaoSt.Oes.length !== 0 && !xuHaoSt.Oes.includes(curOe)) {
-                                                    continue;
-                                                }
-
-                                                if (checkConditions(front, back, xuHaoSt, hisFullHmStrSlice, c4ms, c5ms, c6ms)) {
-                                                    matched.push(front.join(',') + '|' + back.join(','));
+                                                for (let si = 0; si < stepCount; si++) {
+                                                    entered[si]++;
+                                                    if (!filterSteps[si].test(front, back)) break;
+                                                    exited[si]++;
+                                                    if (si === stepCount - 1) {
+                                                        matched.push(front.join(',') + '|' + back.join(','));
+                                                    }
                                                 }
 
                                                 processedCount++;
-                                                if (processedCount % 1000 === 0 && self.postMessage) {
+                                                if (processedCount % 5000 === 0 && self.postMessage) {
                                                     self.postMessage({ type: 'progress', count: processedCount });
                                                 }
                                             }
@@ -1558,7 +2299,16 @@
                         }
                     }
 
-                    return matched;
+                    return {
+                        matched,
+                        steps: filterSteps.map((s, i) => ({
+                            id: s.id,
+                            name: s.name,
+                            active: s.active,
+                            before: entered[i],
+                            after: exited[i],
+                        })),
+                    };
                 }
 
                 self.onmessage = (event) => {
@@ -1679,21 +2429,191 @@
     /** 从合格组合中无放回随机取 count 注 */
     function selectRandomCombs(arr, count) {
         if (arr.length <= count) return [...arr];
-        const selected = new Set();
-        const result = [];
-        arr = shuffle(arr);
-        while (result.length < count && selected.size < arr.length) {
-            const randomIndex = Math.floor(Math.random() * arr.length);
-            if (!selected.has(randomIndex)) {
-                selected.add(randomIndex);
-                result.push(arr[randomIndex]);
-            }
-        }
-        return result;
+        const copy = shuffle([...arr]);
+        return copy.slice(0, count);
     }
 
     /**
-     * 启动多核选号：分配任务 -> 合并结果 -> 随机抽取。
+     * 从数组中取 k 个元素的全部组合（保持相对顺序无关，返回新数组）。
+     */
+    function combinationsOf(arr, k) {
+        const res = [];
+        if (k <= 0 || k > arr.length) return res;
+        const path = [];
+        function dfs(start) {
+            if (path.length === k) {
+                res.push(path.slice());
+                return;
+            }
+            for (let i = start; i < arr.length; i++) {
+                path.push(arr[i]);
+                dfs(i + 1);
+                path.pop();
+            }
+        }
+        dfs(0);
+        return res;
+    }
+
+    /** 类型串 → 各段取号个数，如 "2111" → [2,1,1,1]；非法则返回 null */
+    function parseCrossPeriodTypeParts(typeKey) {
+        const s = String(typeKey || '');
+        if (!/^[1-5]+$/.test(s)) return null;
+        const parts = s.split('').map(ch => parseInt(ch, 10));
+        const sum = parts.reduce((a, b) => a + b, 0);
+        if (sum !== 5) return null;
+        return parts;
+    }
+
+    /**
+     * 解析跨期表达式文本为「段」列表。
+     * 每行须匹配：次数*[号码… ]=>[…]，只取 * 后第一个 [] 内号码为一线一段。
+     * 空文本或存在非空却不合法的行 → 返回 null（整块不处理）。
+     */
+    function parseCrossPeriodSegments(text) {
+        const raw = String(text || '');
+        if (!raw.trim()) return null;
+
+        const segments = [];
+        const lines = raw.split(/\r?\n/);
+        // 例：3*[05 10 11]= >[27 28] 或 3*[05 10 11]=>[]
+        const lineRe = /^\s*\d+\s*\*\s*\[([^\]]*)\]\s*=>\s*\[[^\]]*\]\s*$/;
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue; // 空行忽略
+
+            const m = trimmed.match(lineRe);
+            if (!m) return null; // 有一行不合规则 → 整块不处理
+
+            const nums = (m[1].match(/\d{1,2}/g) || [])
+                .map(n => parseInt(n, 10))
+                .filter(n => !isNaN(n) && n >= 1 && n <= 35)
+                .map(n => n.toString().padStart(2, '0'));
+
+            // 第一 [] 为空则跳过该段（不算非法）
+            if (nums.length === 0) continue;
+
+            const uniq = [...new Set(nums)].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+            segments.push(uniq);
+        }
+
+        if (segments.length === 0) return null;
+        return segments;
+    }
+
+    /**
+     * 按类型 parts（如 [2,1,1,1]）从各段取号，生成全部可能的前区 5 码（已升序、去重）。
+     * 每一「取」都必须来自尚未使用的段，且该段号码数 >= 需要取出的个数。
+     */
+    function generateFrontsByTypeParts(segments, parts) {
+        const out = new Set();
+        if (!segments || !parts || parts.length === 0) return out;
+
+        function dfs(partIdx, usedSeg, picked) {
+            if (partIdx >= parts.length) {
+                if (picked.length === 5) {
+                    const front = picked.slice().sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+                    out.add(front.join(','));
+                }
+                return;
+            }
+            const need = parts[partIdx];
+            for (let si = 0; si < segments.length; si++) {
+                if (usedSeg.has(si)) continue;
+                const seg = segments[si];
+                if (seg.length < need) continue;
+                const combos = combinationsOf(seg, need);
+                usedSeg.add(si);
+                for (const combo of combos) {
+                    // 前区号码不可重复；跨段撞号则丢弃该组合
+                    if (combo.some(n => picked.includes(n))) continue;
+                    dfs(partIdx + 1, usedSeg, picked.concat(combo));
+                }
+                usedSeg.delete(si);
+            }
+        }
+
+        dfs(0, new Set(), []);
+        return out;
+    }
+
+    /**
+     * 单块表达式展开为允许的前区集合。
+     * - 文本空 / 格式不符 → null（不参与）
+     * - 未勾选类型 → null（无法取号，不参与）
+     * - 多类型：各自生成后做并集
+     */
+    function expandCrossPeriodBlock(block) {
+        const text = (block && block.text) || '';
+        const segments = parseCrossPeriodSegments(text);
+        if (!segments) return null;
+
+        const types = (block.types || []).filter(Boolean);
+        if (types.length === 0) return null;
+
+        const out = new Set();
+        for (const typeKey of types) {
+            const parts = parseCrossPeriodTypeParts(typeKey);
+            if (!parts) continue;
+            const fronts = generateFrontsByTypeParts(segments, parts);
+            for (const f of fronts) out.add(f);
+        }
+        return out;
+    }
+
+    function setIntersect(a, b) {
+        const out = new Set();
+        for (const x of a) {
+            if (b.has(x)) out.add(x);
+        }
+        return out;
+    }
+
+    function setUnion(a, b) {
+        const out = new Set(a);
+        for (const x of b) out.add(x);
+        return out;
+    }
+
+    /**
+     * 将多个表达式块按统一关系折叠为一份允许集合。
+     * relation：'intersect' | 'union'（全体表达式共用一个关系）
+     * 无效/空块跳过；若全部跳过则返回 null（表示不约束）。
+     */
+    function combineCrossPeriodBlocks(blocks, relations) {
+        const list = blocks || [];
+        // 兼容：relations 为单值数组，取第一个作为全局关系
+        const op = (Array.isArray(relations) ? relations[0] : relations) || 'intersect';
+        let acc = null;
+
+        for (let i = 0; i < list.length; i++) {
+            const setI = expandCrossPeriodBlock(list[i]);
+            if (setI == null) continue;
+            if (acc == null) {
+                acc = setI;
+                continue;
+            }
+            acc = op === 'union' ? setUnion(acc, setI) : setIntersect(acc, setI);
+        }
+        return acc;
+    }
+
+    /** 其它过滤得到的注码 ∩ 跨期允许集合（按前区匹配） */
+    function filterCombsByCrossPeriod(allCombs, allowedSet) {
+        if (!allowedSet) return allCombs;
+        return allCombs.filter(comb => {
+            if (allowedSet.has(comb)) return true;
+            const front = String(comb).split('|')[0];
+            return allowedSet.has(front);
+        });
+    }
+
+    /** 最近一次生成的过滤步骤统计（供 UI 展示） */
+    let lastFilterStepStats = [];
+
+    /**
+     * 启动多核选号：分配任务 -> 合并结果与步骤统计 -> 跨期表达式 -> 随机抽取。
      */
     async function startSelection() {
         if (isProcessing || isGenCancelled) return;
@@ -1701,6 +2621,7 @@
         isProcessing = true;
         const zhuShu = selectConfig.RandomCount || 5;
         const workerCount = cpuCores;
+        lastFilterStepStats = [];
 
         try {
             const start = Date.now();
@@ -1709,14 +2630,65 @@
             workerManager = new DltWorkerManager(workerCount);
             const tasks = splitTasks(selectConfig, workerManager.workerCount);
 
-            // assignTask 直接 resolve 为号码数组（不是 PromiseSettledResult）
             const results = await Promise.all(tasks.map(task => workerManager.assignTask(task)));
 
             if (isGenCancelled) {
                 throw new Error('GENERATION_CANCELLED');
             }
 
-            const allCombs = results.flat();
+            // 兼容：旧版 Worker 直接返回数组；新版返回 { matched, steps }
+            let allCombs = [];
+            const stepMap = new Map();
+            for (const r of results) {
+                if (Array.isArray(r)) {
+                    allCombs.push(...r);
+                    continue;
+                }
+                if (r && Array.isArray(r.matched)) {
+                    allCombs.push(...r.matched);
+                }
+                if (r && Array.isArray(r.steps)) {
+                    for (const s of r.steps) {
+                        if (!stepMap.has(s.id)) {
+                            stepMap.set(s.id, {
+                                id: s.id,
+                                name: s.name,
+                                active: !!s.active,
+                                before: 0,
+                                after: 0,
+                            });
+                        }
+                        const acc = stepMap.get(s.id);
+                        acc.before += s.before || 0;
+                        acc.after += s.after || 0;
+                        acc.active = acc.active || !!s.active;
+                    }
+                }
+            }
+
+            // 保持 Worker 内步骤顺序
+            const orderedIds = (results.find(r => r && Array.isArray(r.steps))?.steps || [])
+                .map(s => s.id);
+            lastFilterStepStats = orderedIds.map(id => stepMap.get(id)).filter(Boolean);
+
+            // 20. 跨期表达式：在主线程对 Worker 结果再过滤，并记入步骤统计
+            const allowed = combineCrossPeriodBlocks(
+                selectConfig.CrossPeriodBlocks,
+                selectConfig.CrossPeriodRelations
+            );
+            const crossBefore = allCombs.length;
+            if (allowed) {
+                allCombs = filterCombsByCrossPeriod(allCombs, allowed);
+                console.log(`跨期表达式过滤: ${crossBefore} -> ${allCombs.length}（允许前区 ${allowed.size} 种）`);
+            }
+            lastFilterStepStats.push({
+                id: 'crossPeriod',
+                name: '20. 跨期表达式',
+                active: !!allowed,
+                before: crossBefore,
+                after: allCombs.length,
+            });
+
             const finalSelections = selectRandomCombs(allCombs, zhuShu);
             curNumbers = finalSelections;
 
@@ -1730,6 +2702,7 @@
             if (error.message === 'GENERATION_CANCELLED') {
                 console.log('生成已被取消');
                 curNumbers = [];
+                lastFilterStepStats = [];
             } else {
                 console.error('选号失败:', error);
                 throw error;
@@ -1775,12 +2748,84 @@
          */
         function applyBadgeStyle(badge, value) {
             badge.textContent = value;
+            // 保留 data-eq / title 等属性，只重置颜色相关 class
+            const eq = badge.getAttribute('data-eq') || '';
             badge.className = 'combination-badge';
+            if (eq) badge.setAttribute('data-eq', eq);
             if (value === 0) badge.classList.add('badge-gray');
             else if (value <= 19) badge.classList.add('badge-green');
             else if (value <= 50) badge.classList.add('badge-orange');
             else if (value <= 80) badge.classList.add('badge-red');
             else badge.classList.add('badge-purple');
+        }
+
+        /**
+         * 读取「全部 + 三设备」四元组。
+         * allHis: 原 *His；eqHisMap: 对应 *EqHis（按 eq1/eq2/eq3）
+         */
+        function getStatQuad(allHis, eqHisMap, option, qiShu) {
+            const all = allHis?.[option]?.[qiShu] || 0;
+            return {
+                all: all,
+                eq1: eqHisMap?.['eq1']?.[option]?.[qiShu] || 0,
+                eq2: eqHisMap?.['eq2']?.[option]?.[qiShu] || 0,
+                eq3: eqHisMap?.['eq3']?.[option]?.[qiShu] || 0,
+            };
+        }
+
+        /** 按区块类型取四元组 */
+        function getStatQuadByTyp(typ, option, qiShu) {
+            switch (typ) {
+                case 'combs':
+                    return getStatQuad(txHis, txEqHis, option, qiShu);
+                case 'parity':
+                    return getStatQuad(oeHis, oeEqHis, option, qiShu);
+                case 'qzh':
+                    return getStatQuad(qzhHis, qzhEqHis, option, qiShu);
+                case 'danMa':
+                case 'frontInclude':
+                case 'frontExclude':
+                    return getStatQuad(frontDhHis, frontDhEqHis, option, qiShu);
+                case 'backInclude':
+                case 'backExclude':
+                    return getStatQuad(backDhHis, backDhEqHis, option, qiShu);
+                case 'backCombInclude':
+                case 'backCombExclude':
+                    // option 为 "01,02" 形式，与 backCombHis / backCombEqHis 的 key 一致
+                    return getStatQuad(backCombHis, backCombEqHis, option, qiShu);
+                case 'lianHao':
+                    return getStatQuad(lianHaoHis, lianHaoEqHis, option, qiShu);
+                case 'fbChongHao':
+                    return getStatQuad(fbChongHaoHis, fbChongHaoEqHis, option, qiShu);
+                case 'teShu':
+                    return getStatQuad(teShuHis, teShuEqHis, option, qiShu);
+                default:
+                    return { all: 0, eq1: 0, eq2: 0, eq3: 0 };
+            }
+        }
+
+        /** 在复选框项上创建四角标横排；id 形如 stat_combs_T1_all */
+        function appendMultiStatBadges(parentEl, idPrefix, quad) {
+            const stack = document.createElement('div');
+            stack.className = 'badge-stack';
+            STAT_BADGE_SLOTS.forEach(slot => {
+                const badge = document.createElement('div');
+                badge.id = `${idPrefix}_${slot.key}`;
+                badge.setAttribute('data-eq', slot.key);
+                badge.title = slot.title;
+                applyBadgeStyle(badge, quad[slot.key] || 0);
+                stack.appendChild(badge);
+            });
+            parentEl.appendChild(stack);
+            return stack;
+        }
+
+        /** 切换「最近几期」时更新某一选项的四角标 */
+        function updateMultiStatBadges(idPrefix, quad) {
+            STAT_BADGE_SLOTS.forEach(slot => {
+                const el = document.getElementById(`${idPrefix}_${slot.key}`);
+                if (el) applyBadgeStyle(el, quad[slot.key] || 0);
+            });
         }
 
         // 页面加载完成后初始化统计数据
@@ -2015,6 +3060,93 @@
             });
         }
 
+        /** 读取某设备（或全设备）在指定期数窗口的和值统计 */
+        function getHzPeriodStat(eqKey, qiShu) {
+            if (!eqKey || eqKey === 'all') {
+                return hzHis[qiShu] || null;
+            }
+            return hzEqHis[eqKey]?.[qiShu] || null;
+        }
+
+        /** 把 min/max 写入滑块与输入框（立即生效） */
+        function applyHzRangeToSlider(minVal, maxVal) {
+            if (!hzSliderInstance) return;
+            let min = parseInt(minVal, 10);
+            let max = parseInt(maxVal, 10);
+            if (isNaN(min)) min = 18;
+            if (isNaN(max)) max = 188;
+            if (min < 18) min = 18;
+            if (max > 188) max = 188;
+            if (min > max) {
+                const t = min;
+                min = max;
+                max = t;
+            }
+            if (min === max) {
+                if (max < 188) max = min + 1;
+                else min = max - 1;
+            }
+            hzSliderInstance.set([min, max]);
+        }
+
+        /**
+         * 渲染 / 刷新「最近几期」下方的四行统计：
+         * 全设备、设备1、设备2、设备3 —— 各含最小/最大/平均 + 置入
+         */
+        function updateHzPeriodStats(qiShu) {
+            const container = document.getElementById('hzPeriodStats');
+            if (!container) return;
+
+            const rows = [
+                { key: 'all', label: '全设备' },
+                { key: 'eq1', label: '设备1' },
+                { key: 'eq2', label: '设备2' },
+                { key: 'eq3', label: '设备3' },
+            ];
+
+            container.innerHTML = '';
+            rows.forEach(row => {
+                const st = getHzPeriodStat(row.key, qiShu);
+                const has = st && typeof st.min === 'number' && typeof st.max === 'number';
+                const minText = has ? st.min : '-';
+                const maxText = has ? st.max : '-';
+                const avgText = has && st.avg != null && !isNaN(Number(st.avg))
+                    ? Number(st.avg).toFixed(2)
+                    : '-';
+
+                const div = document.createElement('div');
+                div.className = 'hz-stat-row';
+                div.innerHTML = `
+                    <span class="hz-stat-label">${row.label}</span>
+                    <div class="hz-stat-nums">
+                        <span>最小值: <b data-role="min">${minText}</b></span>
+                        <span>最大值: <b data-role="max">${maxText}</b></span>
+                        <span>平均值: <b data-role="avg">${avgText}</b></span>
+                    </div>
+                    <button type="button"
+                        class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                        data-action="apply-hz"
+                        ${has ? '' : 'disabled'}>
+                        置入
+                    </button>
+                `;
+
+                const btn = div.querySelector('[data-action="apply-hz"]');
+                if (btn && has) {
+                    btn.addEventListener('click', () => {
+                        applyHzRangeToSlider(st.min, st.max);
+                    });
+                }
+                container.appendChild(div);
+            });
+        }
+
+        function initHzPeriodSection() {
+            generateHeatOptions('hzGroup');
+            const qiShu = defaultLastQiShuObj.hz || '100';
+            updateHzPeriodStats(qiShu);
+        }
+
         // 生成复选框组
         // typ 的类型在 fetchStats 中
 
@@ -2032,22 +3164,23 @@
 
             const statsData = fetchStats(qiShu, typ);
 
-            options.forEach(option => {
-                const newOption = option.replace(/[,\.-]/g, '').replace(/\s+/g, '');
+            options.forEach(item => {
+                const key = item.key;
+                const labelText = item.label;
                 const div = document.createElement('div');
                 // 视觉与组合项一致，但不可交互
                 div.className = 'checkbox-item cursor-default';
                 div.style.pointerEvents = 'none';
 
-                const badgeValue = statsData[option] || 0;
+                const badgeValue = statsData[key] || 0;
                 const badge = document.createElement('div');
-                badge.id = `stat_${newContainerId}_${newOption}`;
+                badge.id = `stat_${newContainerId}_${key}`;
                 applyBadgeStyle(badge, badgeValue);
                 div.appendChild(badge);
 
                 const label = document.createElement('div');
                 label.className = 'checkbox-label';
-                label.textContent = option;
+                label.textContent = labelText;
                 div.appendChild(label);
 
                 container.appendChild(div);
@@ -2084,26 +3217,17 @@
                     }
                 }
 
-                const badgeValue = statsData[option] || 0
-                // 创建统计标签
-                const badge = document.createElement('div');
-                badge.className = 'combination-badge';
-                badge.id = `stat_${newContainerId}_${newOption}`;
-                badge.textContent = "" + badgeValue;
-
-                if (badgeValue === 0) {
-                    badge.classList.add('badge-gray');
-                } else if (badgeValue >= 1 && badgeValue <= 19) {
-                    badge.classList.add('badge-green');
-                } else if (badgeValue >= 20 && badgeValue <= 50) {
-                    badge.classList.add('badge-orange');
-                } else if (badgeValue >= 51 && badgeValue <= 80) {
-                    badge.classList.add('badge-red');
+                // 四角标：全部 / 设备1 / 设备2 / 设备3
+                const idPrefix = `stat_${newContainerId}_${newOption}`;
+                if (MULTI_BADGE_TYPES.has(typ)) {
+                    appendMultiStatBadges(div, idPrefix, getStatQuadByTyp(typ, option, qiShu));
                 } else {
-                    badge.classList.add('badge-purple');
+                    const badgeValue = statsData[option] || 0;
+                    const badge = document.createElement('div');
+                    badge.id = idPrefix;
+                    applyBadgeStyle(badge, badgeValue);
+                    div.appendChild(badge);
                 }
-
-                div.appendChild(badge);
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -2135,7 +3259,7 @@
 
                 // 点击整个区域都可以选中
                 div.addEventListener('click', function(e) {
-                    if (e.target !== checkbox && e.target !== badge) {
+                    if (e.target !== checkbox && !e.target.classList.contains('combination-badge') && !e.target.classList.contains('badge-stack')) {
                         checkbox.checked = !checkbox.checked;
                     }
                     if (checkbox.checked) {
@@ -2180,10 +3304,10 @@
         /* ---- 从服务端注入的历史统计对象取角标数字 ---- */
         function fetchStats(qiShu, typ) {
             const stats = {};
-            // 设备分布（仅展示）
+            // 设备分布（仅展示；key 为 eq1/eq2/eq3）
             if (typ === "eq") {
-                eqOptions.forEach(option => {
-                    stats[option] = eqHis[option]?.[qiShu] || 0
+                eqOptions.forEach(item => {
+                    stats[item.key] = eqHis[item.key]?.[qiShu] || 0
                 })
             }
 
@@ -2645,32 +3769,23 @@
             for (let i = min; i <= max; i++) {
                 const numberStr = i.toString().padStart(2, '0');
                 const newOption = numberStr;
-                const badgeValue = statsData[newOption] || 0
                 const div = document.createElement('div');
                 div.className = 'checkbox-item';
                 if (defaultChecked) {
                     div.classList.add('selected');
                 }
 
-                // 创建统计标签
-                const badge = document.createElement('div');
-                badge.className = 'combination-badge';
-                badge.id = `stat_${newContainerId}_${newOption}`;
-                badge.textContent = "" + badgeValue;
-
-                if (badgeValue === 0) {
-                    badge.classList.add('badge-gray');
-                } else if (badgeValue >= 1 && badgeValue <= 19) {
-                    badge.classList.add('badge-green');
-                } else if (badgeValue >= 20 && badgeValue <= 50) {
-                    badge.classList.add('badge-orange');
-                } else if (badgeValue >= 51 && badgeValue <= 80) {
-                    badge.classList.add('badge-red');
+                // 四角标：全部 / 设备1 / 设备2 / 设备3
+                const idPrefix = `stat_${newContainerId}_${newOption}`;
+                if (MULTI_BADGE_TYPES.has(typ)) {
+                    appendMultiStatBadges(div, idPrefix, getStatQuadByTyp(typ, numberStr, qiShu));
                 } else {
-                    badge.classList.add('badge-purple');
+                    const badgeValue = statsData[newOption] || 0;
+                    const badge = document.createElement('div');
+                    badge.id = idPrefix;
+                    applyBadgeStyle(badge, badgeValue);
+                    div.appendChild(badge);
                 }
-
-                div.appendChild(badge);
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -2706,8 +3821,11 @@
                 label.className = 'checkbox-label';
                 label.textContent = numberStr;
 
-                // 点击整个区域都可以选中
+                // 点击整个区域都可以选中（点角标区域不切换勾选）
                 div.addEventListener('click', function(e) {
+                    if (e.target.closest('.badge-stack') || e.target.classList.contains('combination-badge')) {
+                        return;
+                    }
                     if (e.target !== checkbox) {
                         checkbox.checked = !checkbox.checked;
                     }
@@ -2716,7 +3834,6 @@
                     } else {
                         this.classList.remove('selected');
                     }
-                    // 触发change事件
                     checkbox.dispatchEvent(new Event('change'));
                 });
 
@@ -2741,7 +3858,6 @@
             const statsData = fetchStats(qiShu, typ);
 
             pairs.forEach(pair => {
-                const badgeValue = statsData[pair] || 0
                 const newOption = pair.replace(",", "");
                 const div = document.createElement('div');
                 div.className = 'combination-item';
@@ -2749,25 +3865,17 @@
                     div.classList.add('selected');
                 }
 
-                // 创建统计标签
-                const badge = document.createElement('div');
-                badge.className = 'combination-badge';
-                badge.id = `stat_${newContainerId}_${newOption}`;
-                badge.textContent = "" + badgeValue;
-
-                if (badgeValue === 0) {
-                    badge.classList.add('badge-gray');
-                } else if (badgeValue >= 1 && badgeValue <= 19) {
-                    badge.classList.add('badge-green');
-                } else if (badgeValue >= 20 && badgeValue <= 50) {
-                    badge.classList.add('badge-orange');
-                } else if (badgeValue >= 51 && badgeValue <= 80) {
-                    badge.classList.add('badge-red');
+                // 四角标：全部 / 设备1 / 设备2 / 设备3（查找 key 用带逗号的 pair）
+                const idPrefix = `stat_${newContainerId}_${newOption}`;
+                if (MULTI_BADGE_TYPES.has(typ)) {
+                    appendMultiStatBadges(div, idPrefix, getStatQuadByTyp(typ, pair, qiShu));
                 } else {
-                    badge.classList.add('badge-purple');
+                    const badgeValue = statsData[pair] || 0;
+                    const badge = document.createElement('div');
+                    badge.id = idPrefix;
+                    applyBadgeStyle(badge, badgeValue);
+                    div.appendChild(badge);
                 }
-
-                div.appendChild(badge);
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -2799,8 +3907,11 @@
                 label.className = 'combination-label';
                 label.textContent = pair;
 
-                // 点击整个区域都可以选中
+                // 点击整个区域都可以选中（点角标不切换勾选）
                 div.addEventListener('click', function(e) {
+                    if (e.target.closest('.badge-stack') || e.target.classList.contains('combination-badge')) {
+                        return;
+                    }
                     if (e.target !== checkbox) {
                         checkbox.checked = !checkbox.checked;
                     }
@@ -2809,7 +3920,6 @@
                     } else {
                         this.classList.remove('selected');
                     }
-                    // 触发change事件
                     checkbox.dispatchEvent(new Event('change'));
                 });
 
@@ -2991,6 +4101,583 @@
             return values;
         }
 
+        /**
+         * 前区连号：复选（可多选）。
+         * 过滤逻辑：勾选若干类型后，前区连号命中其中任一即通过；清空则不限制。
+         */
+        /* ---- 前区连号复选 ---- */
+        function generateLianHaoCheckboxGroup() {
+            const container = document.getElementById('lianHaoGroup');
+            if (!container) return;
+            const typ = 'lianHao';
+            const qiShu = defaultLastQiShuObj[typ] || '100';
+            container.innerHTML = '';
+
+            lianHaoOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+
+                appendMultiStatBadges(
+                    div,
+                    `stat_${typ}_${item.key}`,
+                    getStatQuadByTyp(typ, item.key, qiShu)
+                );
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'lianHaoTypes';
+                checkbox.value = item.key;
+                checkbox.id = `lianHao_${item.key}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = 'lianHaoGroup';
+                checkbox.checked = true; // 默认全选 7 种连号类型
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateLianHaoCount();
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox || e.target.closest('.badge-stack')) return;
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            const selectAllBtn = document.getElementById('selectAllLianHao');
+            if (selectAllBtn) {
+                selectAllBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = true;
+                        cb.closest('.checkbox-item')?.classList.add('selected');
+                    });
+                    updateLianHaoCount();
+                };
+            }
+
+            const clearBtn = document.getElementById('deselectLianHao');
+            if (clearBtn) {
+                clearBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item')?.classList.remove('selected');
+                    });
+                    updateLianHaoCount();
+                };
+            }
+
+            updateLianHaoCount();
+        }
+
+        function updateLianHaoCount() {
+            const total = lianHaoOptions.length;
+            const checkedCount = document.querySelectorAll('#lianHaoGroup input[type="checkbox"]:checked').length;
+            const badge = document.getElementById('lianHaoCount');
+            if (!badge) return;
+            badge.textContent = `${checkedCount}/${total}`;
+            if (checkedCount > 0 && checkedCount < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
+        /**
+         * 前后区重号：复选（可多选），默认全选。
+         * 过滤：勾选若干类型后，前后区重号个数命中任一即通过；清空则不限制。
+         */
+        /* ---- 前后区重号复选 ---- */
+        function generateFbChongHaoCheckboxGroup() {
+            const container = document.getElementById('fbChongHaoGroup');
+            if (!container) return;
+            const typ = 'fbChongHao';
+            const qiShu = defaultLastQiShuObj[typ] || '100';
+            container.innerHTML = '';
+
+            fbChongHaoOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+
+                appendMultiStatBadges(
+                    div,
+                    `stat_${typ}_${item.key}`,
+                    getStatQuadByTyp(typ, item.key, qiShu)
+                );
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'fbChongHaoTypes';
+                checkbox.value = item.key;
+                checkbox.id = `fbChongHao_${item.key}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = 'fbChongHaoGroup';
+                checkbox.checked = true;
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateFbChongHaoCount();
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox || e.target.closest('.badge-stack')) return;
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            const selectAllBtn = document.getElementById('selectAllFbChongHao');
+            if (selectAllBtn) {
+                selectAllBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = true;
+                        cb.closest('.checkbox-item')?.classList.add('selected');
+                    });
+                    updateFbChongHaoCount();
+                };
+            }
+
+            const clearBtn = document.getElementById('deselectFbChongHao');
+            if (clearBtn) {
+                clearBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item')?.classList.remove('selected');
+                    });
+                    updateFbChongHaoCount();
+                };
+            }
+
+            updateFbChongHaoCount();
+        }
+
+        function updateFbChongHaoCount() {
+            const total = fbChongHaoOptions.length;
+            const checkedCount = document.querySelectorAll('#fbChongHaoGroup input[type="checkbox"]:checked').length;
+            const badge = document.getElementById('fbChongHaoCount');
+            if (!badge) return;
+            badge.textContent = `${checkedCount}/${total}`;
+            if (checkedCount > 0 && checkedCount < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
+        /**
+         * 前后区特殊号：复选（可多选），默认全选。
+         * 过滤：一注命中的特殊类型与勾选集合有交集即通过；清空则不限制。
+         */
+        /* ---- 前后区特殊号复选 ---- */
+        function generateTeShuCheckboxGroup() {
+            const container = document.getElementById('teShuGroup');
+            if (!container) return;
+            const typ = 'teShu';
+            const qiShu = defaultLastQiShuObj[typ] || '100';
+            container.innerHTML = '';
+
+            teShuOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+
+                appendMultiStatBadges(
+                    div,
+                    `stat_${typ}_${item.key}`,
+                    getStatQuadByTyp(typ, item.key, qiShu)
+                );
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'teShuTypes';
+                checkbox.value = item.key;
+                checkbox.id = `teShu_${item.key}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = 'teShuGroup';
+                checkbox.checked = true;
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateTeShuCount();
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox || e.target.closest('.badge-stack')) return;
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            const selectAllBtn = document.getElementById('selectAllTeShu');
+            if (selectAllBtn) {
+                selectAllBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = true;
+                        cb.closest('.checkbox-item')?.classList.add('selected');
+                    });
+                    updateTeShuCount();
+                };
+            }
+
+            const clearBtn = document.getElementById('deselectTeShu');
+            if (clearBtn) {
+                clearBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item')?.classList.remove('selected');
+                    });
+                    updateTeShuCount();
+                };
+            }
+
+            updateTeShuCount();
+        }
+
+        function updateTeShuCount() {
+            const total = teShuOptions.length;
+            const checkedCount = document.querySelectorAll('#teShuGroup input[type="checkbox"]:checked').length;
+            const badge = document.getElementById('teShuCount');
+            if (!badge) return;
+            badge.textContent = `${checkedCount}/${total}`;
+            if (checkedCount > 0 && checkedCount < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
+        /* ---- 20. 跨期表达式 UI ---- */
+        function crossPeriodLetter(index) {
+            return String.fromCharCode(65 + index); // A, B, C...
+        }
+
+        function updateCrossPeriodTypeCount(blockEl) {
+            const badge = blockEl.querySelector('.cross-period-type-count');
+            if (!badge) return;
+            const total = crossPeriodTypeOptions.length;
+            const checked = blockEl.querySelectorAll('.cross-period-types input[type="checkbox"]:checked').length;
+            badge.textContent = `${checked}/${total}`;
+            if (checked > 0 && checked < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
+        function buildCrossPeriodTypeCheckboxes(container, blockIndex) {
+            container.innerHTML = '';
+            crossPeriodTypeOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox-input';
+                checkbox.value = item.key;
+                checkbox.checked = true;
+                checkbox.id = `crossPeriodType_${blockIndex}_${item.key}`;
+                checkbox.name = `crossPeriodTypes_${blockIndex}`;
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) div.classList.add('selected');
+                    else div.classList.remove('selected');
+                    updateCrossPeriodTypeCount(container.closest('.cross-period-block'));
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox) return;
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+
+        function createCrossPeriodBlock(index) {
+            const letter = crossPeriodLetter(index);
+            const block = document.createElement('div');
+            block.className = 'cross-period-block';
+            block.dataset.index = String(index);
+
+            block.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold text-gray-800">表达式${letter}</h4>
+                    <span class="cross-period-type-count limit-badge limit-badge-info">${crossPeriodTypeOptions.length}/${crossPeriodTypeOptions.length}</span>
+                </div>
+                <div class="cross-period-expr-row">
+                    <textarea
+                        class="cross-period-textarea"
+                        name="crossPeriodExpr_${index}"
+                        data-role="expr"
+                        placeholder="粘贴跨期表达式，换行保留，例如：&#10;6*[13]=>[]&#10;5*[12 22]=>[]&#10;4*[06 09 23 26 33 34]=>[]&#10;3*[05 10 11 18 21 27 35]=>[]&#10;2*[02 04 07 08 17 19 28 29 31 32]=>[]&#10;1*[01 03 14 15 16 20 24 25 30]=>[]"
+                        spellcheck="false"
+                    ></textarea>
+                    <div class="cross-period-actions">
+                        <button type="button" class="px-3 py-2 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 whitespace-nowrap" data-action="add">
+                            新增
+                        </button>
+                        <button type="button" class="px-3 py-2 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 whitespace-nowrap ${index === 0 ? 'hidden' : ''}" data-action="remove">
+                            删除
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mt-1">
+                    <span class="text-xs font-medium text-gray-600">类型</span>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" class="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90" data-action="selectAllTypes">全选</button>
+                        <button type="button" class="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300" data-action="clearTypes">清空</button>
+                    </div>
+                </div>
+                <div class="checkbox-grid cross-period-types" data-role="types"></div>
+            `;
+
+            const typesEl = block.querySelector('[data-role="types"]');
+            buildCrossPeriodTypeCheckboxes(typesEl, index);
+            updateCrossPeriodTypeCount(block);
+
+            block.querySelector('[data-action="add"]').addEventListener('click', () => {
+                addCrossPeriodBlock();
+            });
+
+            block.querySelector('[data-action="remove"]').addEventListener('click', () => {
+                removeCrossPeriodBlock(block);
+            });
+
+            block.querySelector('[data-action="selectAllTypes"]').addEventListener('click', () => {
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = true;
+                    cb.closest('.checkbox-item')?.classList.add('selected');
+                });
+                updateCrossPeriodTypeCount(block);
+            });
+
+            block.querySelector('[data-action="clearTypes"]').addEventListener('click', () => {
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('.checkbox-item')?.classList.remove('selected');
+                });
+                updateCrossPeriodTypeCount(block);
+            });
+
+            return block;
+        }
+
+        function reindexCrossPeriodBlocks() {
+            const container = document.getElementById('crossPeriodBlocks');
+            const blocks = [...container.querySelectorAll('.cross-period-block')];
+            blocks.forEach((block, index) => {
+                block.dataset.index = String(index);
+                const letter = crossPeriodLetter(index);
+                const title = block.querySelector('h4');
+                if (title) title.textContent = `表达式${letter}`;
+
+                const ta = block.querySelector('[data-role="expr"]');
+                if (ta) ta.name = `crossPeriodExpr_${index}`;
+
+                const removeBtn = block.querySelector('[data-action="remove"]');
+                if (removeBtn) {
+                    removeBtn.classList.toggle('hidden', index === 0 || blocks.length === 1);
+                }
+
+                // 重建类型 checkbox 的 id，避免重复
+                const typesEl = block.querySelector('[data-role="types"]');
+                const prevChecked = [...typesEl.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+                buildCrossPeriodTypeCheckboxes(typesEl, index);
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    const on = prevChecked.includes(cb.value);
+                    cb.checked = on;
+                    cb.closest('.checkbox-item')?.classList.toggle('selected', on);
+                });
+                updateCrossPeriodTypeCount(block);
+            });
+            renderCrossPeriodRelations();
+        }
+
+        function renderCrossPeriodRelations() {
+            const relContainer = document.getElementById('crossPeriodRelations');
+            if (!relContainer) return;
+
+            const prevChecked = relContainer.querySelector('input[name="crossPeriodRel"]:checked');
+            const defaultOp = prevChecked ? prevChecked.value : 'intersect';
+
+            const blockCount = document.querySelectorAll('#crossPeriodBlocks .cross-period-block').length;
+            relContainer.innerHTML = '';
+            if (blockCount < 2) return;
+
+            // 无论几个表达式，关系单选始终只有一组
+            const card = document.createElement('div');
+            card.className = 'cross-period-relation-card';
+            card.innerHTML = `
+                <div class="text-sm font-medium text-gray-800 mb-2">表达式之间的关系</div>
+                <div class="flex flex-wrap gap-4">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="radio" name="crossPeriodRel" value="intersect" class="text-primary" ${defaultOp === 'intersect' ? 'checked' : ''}>
+                        交集
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="radio" name="crossPeriodRel" value="union" class="text-primary" ${defaultOp === 'union' ? 'checked' : ''}>
+                        并集
+                    </label>
+                </div>
+            `;
+            relContainer.appendChild(card);
+        }
+
+        function addCrossPeriodBlock() {
+            const snapshot = collectCrossPeriodFormData();
+            if (snapshot.blocks.length >= CROSS_PERIOD_MAX_BLOCKS) {
+                showError(`最多支持 ${CROSS_PERIOD_MAX_BLOCKS} 个跨期表达式`);
+                return;
+            }
+            applyCrossPeriodFormData({
+                blocks: [
+                    ...snapshot.blocks,
+                    {
+                        name: crossPeriodLetter(snapshot.blocks.length),
+                        text: '',
+                        types: crossPeriodTypeOptions.map(t => t.key),
+                    },
+                ],
+                // 始终最多保留一个全局关系
+                relations: snapshot.relations.length
+                    ? snapshot.relations.slice(0, 1)
+                    : ['intersect'],
+            });
+        }
+
+        function removeCrossPeriodBlock(blockEl) {
+            const snapshot = collectCrossPeriodFormData();
+            if (snapshot.blocks.length <= 1) return;
+            const idx = Number(blockEl.dataset.index);
+            const nextBlocks = snapshot.blocks.filter((_, i) => i !== idx);
+            applyCrossPeriodFormData({
+                blocks: nextBlocks,
+                relations: nextBlocks.length >= 2
+                    ? (snapshot.relations.slice(0, 1).length ? snapshot.relations.slice(0, 1) : ['intersect'])
+                    : [],
+            });
+        }
+
+        function collectCrossPeriodFormData() {
+            const blocks = [];
+            document.querySelectorAll('#crossPeriodBlocks .cross-period-block').forEach((block, index) => {
+                const text = block.querySelector('[data-role="expr"]')?.value ?? '';
+                const types = [...block.querySelectorAll('.cross-period-types input[type="checkbox"]:checked')]
+                    .map(cb => cb.value);
+                blocks.push({
+                    name: crossPeriodLetter(index),
+                    text,
+                    types,
+                });
+            });
+            const relations = [];
+            if (blocks.length >= 2) {
+                const checked = document.querySelector('input[name="crossPeriodRel"]:checked');
+                relations.push(checked ? checked.value : 'intersect');
+            }
+            return { blocks, relations };
+        }
+
+        function applyCrossPeriodFormData(data) {
+            const container = document.getElementById('crossPeriodBlocks');
+            container.innerHTML = '';
+            const blocks = (data && data.blocks) || [{ name: 'A', text: '', types: crossPeriodTypeOptions.map(t => t.key) }];
+            blocks.forEach((b, index) => {
+                const el = createCrossPeriodBlock(index);
+                const ta = el.querySelector('[data-role="expr"]');
+                if (ta) ta.value = b.text || '';
+                const typesEl = el.querySelector('[data-role="types"]');
+                const selected = b.types || [];
+                typesEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    const on = selected.includes(cb.value);
+                    cb.checked = on;
+                    cb.closest('.checkbox-item')?.classList.toggle('selected', on);
+                });
+                updateCrossPeriodTypeCount(el);
+                container.appendChild(el);
+            });
+            reindexCrossPeriodBlocks();
+            const rels = (data && data.relations) || [];
+            const op = rels[0] || 'intersect';
+            const radio = document.querySelector(`input[name="crossPeriodRel"][value="${op}"]`);
+            if (radio) radio.checked = true;
+        }
+
+        function initCrossPeriodSection() {
+            applyCrossPeriodFormData({
+                blocks: [{ name: 'A', text: '', types: crossPeriodTypeOptions.map(t => t.key) }],
+                relations: [],
+            });
+        }
+
         // 初始化所有复选框组的函数
 
         /* ---- 初始化全部选项组 ---- */
@@ -3014,7 +4701,10 @@
             generateCheckboxGroup('qzhGroup', qzhOptions, false);
             setupSelectionButtonsWithExclusion('selectQzh', 'deselectQzh', 'qzhGroup');
 
-            // 4. 胆码
+            // 4. 和值范围（最近几期 + 设备统计置入）
+            initHzPeriodSection();
+
+            // 5. 胆码
             generateHeatOptions('danMaGroup')
             generateNumberCheckboxGroupWithExclusion('danMaGroup', 1, 35, false);
             updateDanMaCount();
@@ -3053,6 +4743,21 @@
             generateBhCombCheckboxGroupWithExclusion('bh-backCombIncludeGroup');
             // 12
             generatePcCombCheckboxGroupWithExclusion('pc-backCombExcludeGroup');
+
+            // 17. 前区连号情况（复选 + 四角标）
+            generateHeatOptions('lianHaoGroup');
+            generateLianHaoCheckboxGroup();
+
+            // 18. 前后区重号情况（复选 + 四角标）
+            generateHeatOptions('fbChongHaoGroup');
+            generateFbChongHaoCheckboxGroup();
+
+            // 19. 前后区特殊号（复选 + 四角标）
+            generateHeatOptions('teShuGroup');
+            generateTeShuCheckboxGroup();
+
+            // 20. 跨期表达式
+            initCrossPeriodSection();
 
         }
 
@@ -3142,6 +4847,10 @@
                 newFourRepeat: parseInt(newFourRepeatInput.value),
                 newFiveRepeat: parseInt(newFiveRepeatInput.value),
                 newSixRepeat: parseInt(newSixRepeatInput.value),
+                lianHaoTypes: getCheckboxValues('lianHaoGroup'),
+                fbChongHaoTypes: getCheckboxValues('fbChongHaoGroup'),
+                teShuTypes: getCheckboxValues('teShuGroup'),
+                crossPeriod: collectCrossPeriodFormData(),
             };
         }
 
@@ -3259,6 +4968,11 @@
                 Ch4MustGetCount: formData.newFourRepeat,
                 Ch5MustGetCount: formData.newFiveRepeat,
                 Ch6MustGetCount: formData.newSixRepeat,
+                LianHaoTypes: formData.lianHaoTypes || [],
+                FbChongHaoTypes: formData.fbChongHaoTypes || [],
+                TeShuTypes: formData.teShuTypes || [],
+                CrossPeriodBlocks: (formData.crossPeriod && formData.crossPeriod.blocks) || [],
+                CrossPeriodRelations: (formData.crossPeriod && formData.crossPeriod.relations) || [],
             }
 
             // showLoading();
@@ -3291,7 +5005,8 @@
 
         // 更新标签中的数字和 class
         function updateLabelValueAndClass(id, value) {
-            applyBadgeStyle(document.getElementById(id), value);
+            const el = document.getElementById(id);
+            if (el) applyBadgeStyle(el, value);
         }
 
         document.querySelectorAll('input[name^=heat]').forEach(radio => {
@@ -3305,53 +5020,45 @@
                 const zyContainerId = radio.getAttribute('data-zy-id')
                 const newContainerId = zyContainerId.replace("Group", "")
                 if (this.checked) {
-                    // 设备分布
+                    // 设备分布（单角标；DOM/数据 key 为 eq1/eq2/eq3）
                     if (typ === "eq") {
-                        eqOptions.forEach(option => {
-                            const key = option.replace(/[,\.-]/g, "").replace(/\s+/g, "");
-                            updateLabelValueAndClass(`stat_${newContainerId}_${key}`, eqHis[option]?.[qiShu] || 0)
+                        eqOptions.forEach(item => {
+                            updateLabelValueAndClass(`stat_${newContainerId}_${item.key}`, eqHis[item.key]?.[qiShu] || 0)
                         })
                     }
 
-                    if (typ === "combs") {
-                        combs.forEach(option => {
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, txHis[option][qiShu] || 0)
-                        })
+                    // 和值：刷新全设备 / 三设备 的 min·max·avg
+                    if (typ === "hz") {
+                        updateHzPeriodStats(qiShu);
                     }
 
-                    // 奇偶比例
-                    if (typ === "parity") {
-                        parityOptions.forEach(option => {
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, oeHis[option][qiShu] || 0)
-                        })
-                    }
-
-                    // 前中后
-                    if (typ === "qzh") {
-                        qzhOptions.forEach(option => {
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, qzhHis[option][qiShu] || 0)
-                        })
-                    }
-
-                    if (typ === "danMa" || typ === "frontInclude" || typ === "frontExclude") {
-                        for (let i = 1; i <= 35; i++) {
-                            const option = i.toString().padStart(2, '0');
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, frontDhHis[option][qiShu] || 0)
+                    // 组合 / 奇偶 / 前中后 / 胆码 / 前后区号码与后区组合包含排除（四角标）
+                    if (MULTI_BADGE_TYPES.has(typ)) {
+                        let options = [];
+                        if (typ === "combs") options = combs;
+                        else if (typ === "parity") options = parityOptions;
+                        else if (typ === "qzh") options = qzhOptions;
+                        else if (typ === "danMa" || typ === "frontInclude" || typ === "frontExclude") {
+                            for (let i = 1; i <= 35; i++) options.push(i.toString().padStart(2, '0'));
+                        } else if (typ === "backInclude" || typ === "backExclude") {
+                            for (let i = 1; i <= 12; i++) options.push(i.toString().padStart(2, '0'));
+                        } else if (typ === "backCombInclude" || typ === "backCombExclude") {
+                            options = backCombPairs.slice();
+                        } else if (typ === "lianHao") {
+                            options = lianHaoOptions.map(item => item.key);
+                        } else if (typ === "fbChongHao") {
+                            options = fbChongHaoOptions.map(item => item.key);
+                        } else if (typ === "teShu") {
+                            options = teShuOptions.map(item => item.key);
                         }
-                    }
-
-                    if (typ === "backInclude" || typ === "backExclude") {
-                        for (let i = 1; i <= 12; i++) {
-                            const option = i.toString().padStart(2, '0');
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, backDhHis[option][qiShu] || 0)
-                        }
-                    }
-
-                    if (typ === "backCombInclude" || typ === "backCombExclude") {
-                        backCombPairs.forEach(pair => {
-                            const option = pair.replace(",", "");
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, backCombHis[pair][qiShu] || 0)
-                        })
+                        options.forEach(option => {
+                            // 后区组合：DOM id 去掉逗号；统计 key 仍用 "01,02"
+                            const key = String(option).replace(/[,\.-]/g, "").replace(/\s+/g, "");
+                            updateMultiStatBadges(
+                                `stat_${newContainerId}_${key}`,
+                                getStatQuadByTyp(typ, option, qiShu)
+                            );
+                        });
                     }
 
                 }
@@ -3467,11 +5174,91 @@
             }
         });
 
+        function renderFilterStepStats(stats, meta) {
+            const panel = document.getElementById('filterStepStats');
+            const titleEl = document.getElementById('filterStepStatsTitle');
+            const bodyEl = document.getElementById('filterStepStatsBody');
+            if (!panel || !bodyEl) return;
+
+            if (!stats || stats.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            if (titleEl) {
+                const cores = meta?.cores || cpuCores;
+                const seconds = meta?.seconds != null ? meta.seconds : '';
+                titleEl.textContent = seconds !== ''
+                    ? `${cores} 核并行 · 用时 ${seconds} 秒（漏斗：每步仅统计上一通过后的注数）`
+                    : `${cores} 核并行（漏斗：每步仅统计上一通过后的注数）`;
+            }
+
+            const rows = stats.map((s, idx) => {
+                const before = s.before || 0;
+                const after = s.after || 0;
+                const dropped = Math.max(0, before - after);
+                const keepRatio = before > 0 ? ((after / before) * 100).toFixed(2) : '0.00';
+                const dropRatio = before > 0 ? ((dropped / before) * 100).toFixed(2) : '0.00';
+                const idle = !s.active;
+                const rowClass = idle ? 'filter-step-idle' : (dropped > 0 ? '' : '');
+                const status = idle
+                    ? '<span class="text-xs text-gray-400">未启用</span>'
+                    : (dropped > 0
+                        ? `<span class="filter-step-drop">过滤掉 ${dropped.toLocaleString()}</span>`
+                        : `<span class="filter-step-keep">全部通过</span>`);
+                return `
+                    <tr class="${rowClass}">
+                        <td class="px-3 py-2 whitespace-nowrap text-gray-500">${idx + 1}</td>
+                        <td class="px-3 py-2 font-medium text-gray-800">${s.name}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">${before.toLocaleString()}</td>
+                        <td class="px-3 py-2 text-right tabular-nums ${after < before && s.active ? 'text-red-600 font-semibold' : ''}">${after.toLocaleString()}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">${keepRatio}%</td>
+                        <td class="px-3 py-2 text-right tabular-nums ${dropped > 0 && s.active ? 'text-red-500' : 'text-gray-400'}">${dropRatio}%</td>
+                        <td class="px-3 py-2 text-right">${status}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const firstBefore = stats[0]?.before || 0;
+            const lastAfter = stats[stats.length - 1]?.after || 0;
+            const totalDropped = Math.max(0, firstBefore - lastAfter);
+            const totalKeep = firstBefore > 0 ? ((lastAfter / firstBefore) * 100).toFixed(4) : '0.0000';
+            const totalDrop = firstBefore > 0 ? ((totalDropped / firstBefore) * 100).toFixed(4) : '0.0000';
+
+            bodyEl.innerHTML = `
+                <table>
+                    <thead>
+                        <tr class="border-b border-gray-200 text-gray-500">
+                            <th class="px-3 py-2 text-left font-medium">#</th>
+                            <th class="px-3 py-2 text-left font-medium">过滤步骤</th>
+                            <th class="px-3 py-2 text-right font-medium">过滤前(注)</th>
+                            <th class="px-3 py-2 text-right font-medium">过滤后(注)</th>
+                            <th class="px-3 py-2 text-right font-medium">通过率</th>
+                            <th class="px-3 py-2 text-right font-medium">滤除率</th>
+                            <th class="px-3 py-2 text-right font-medium">说明</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">${rows}</tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-gray-200 bg-gray-50">
+                            <td class="px-3 py-2 font-semibold text-gray-800" colspan="2">总体（首步前 → 末步后）</td>
+                            <td class="px-3 py-2 text-right font-semibold tabular-nums">${firstBefore.toLocaleString()}</td>
+                            <td class="px-3 py-2 text-right font-bold text-primary tabular-nums">${lastAfter.toLocaleString()}</td>
+                            <td class="px-3 py-2 text-right font-semibold tabular-nums">${totalKeep}%</td>
+                            <td class="px-3 py-2 text-right font-semibold tabular-nums ${totalDropped > 0 ? 'text-red-500' : 'text-gray-400'}">${totalDrop}%</td>
+                            <td class="px-3 py-2 text-right text-xs text-gray-500">不含设备分布/随机注数</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+            panel.classList.remove('hidden');
+        }
+
         // 表单提交
         submitBtn.addEventListener('click', async function() {
             this.disabled = true;
             const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在生成...';
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在生成并统计过滤...';
 
             // 重置取消状态
             isGenCancelled = false;
@@ -3482,13 +5269,21 @@
             // 稍等片刻确保UI更新
             await new Promise(resolve => setTimeout(resolve, 100));
 
+            const t0 = Date.now();
             try {
                 await submitForm();
+                const seconds = ((Date.now() - t0) / 1000).toFixed(3);
+                renderFilterStepStats(lastFilterStepStats, { cores: cpuCores, seconds });
 
                 if (!isGenCancelled && curNumbers !== null) {
                     displayGeneratedNumbers(curNumbers);
                     resultArea.classList.remove('hidden');
-                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const statsPanel = document.getElementById('filterStepStats');
+                    if (statsPanel && !statsPanel.classList.contains('hidden')) {
+                        statsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                 }
             } catch (error) {
                 if (!isGenCancelled) {

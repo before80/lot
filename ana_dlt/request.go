@@ -13,7 +13,7 @@ import (
 // GenerateRequest 前端发送的请求结构体
 type GenerateRequest struct {
 	RandomCount         int      `json:"randomCount"`
-	Combinations        []string `json:"combinations"`
+	Combinations        []string `json:"combs"`
 	Parity              []string `json:"parity"`
 	HzMin               int      `json:"hzMin"`
 	HzMax               int      `json:"hzMax"`

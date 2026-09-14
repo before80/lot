@@ -183,9 +183,34 @@
             }
 
             .combination-badge {
-                @apply absolute -top-2 left-1/2 transform -translate-x-1/2 px-2 py-0.5 text-xs font-bold rounded-full shadow-sm z-10;
-                min-width: 1.5rem;
+                @apply px-1.5 py-0.5 text-[10px] font-bold rounded-full shadow-sm;
+                min-width: 1.25rem;
                 text-align: center;
+                line-height: 1.2;
+            }
+            /* 单个角标（设备分布 / 后区组合等）：顶部居中 */
+            .checkbox-item > .combination-badge,
+            .combination-item > .combination-badge,
+            .qzh-item > .combination-badge {
+                @apply absolute -top-2 left-1/2 transform -translate-x-1/2 z-10;
+            }
+            /* 四角标横排：全部 / 设备1 / 设备2 / 设备3 */
+            .badge-stack {
+                @apply absolute -top-2.5 left-1/2 transform -translate-x-1/2 flex items-center gap-0.5 z-10;
+                max-width: calc(100% + 0.5rem);
+            }
+            .badge-stack .combination-badge {
+                position: static;
+                transform: none;
+                flex-shrink: 0;
+            }
+            .badge-stack .combination-badge[data-eq="all"] {
+                @apply ring-1 ring-primary/40;
+            }
+            /* 四角标占用顶部空间，避免压住号码文字 */
+            .checkbox-item:has(.badge-stack),
+            .combination-item:has(.badge-stack) {
+                padding-top: 0.35rem;
             }
             .badge-gray {
                 @apply bg-gray-200 text-gray-700;
@@ -781,6 +806,118 @@
                 </div>
             </div>
 
+            <!-- 17. 前区连号情况（复选，可多选） -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">17. 前区连号情况</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllLianHao"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectLianHao"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="lianHaoCount" class="limit-badge limit-badge-info">7/7</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatLianHaoGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="lianHaoGroup" class="checkbox-grid">
+                    <!-- 连号类型由 JS 动态生成（复选） -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    可多选连号形态：前区命中任一勾选项即通过；不选则不限制。<br>
+                    「间隔2连号」= 两个互不相连的 2 连号（非 4 连号）；
+                    「1个3连号+1个2连号」= 一段 3 连与一段 2 连互不相连（非 5 连号）。
+                </div>
+            </div>
+
+            <!-- 18. 前后区重号情况（复选，可多选） -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">18. 前后区重号情况</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllFbChongHao"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectFbChongHao"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="fbChongHaoCount" class="limit-badge limit-badge-info">3/3</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatFbChongHaoGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="fbChongHaoGroup" class="checkbox-grid">
+                    <!-- 前后区重号类型由 JS 动态生成（复选） -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    「重号」指前区与后区号码出现相同值的个数（后区最多 2 个，故最多 2 个重号）。
+                    可多选：命中任一勾选项即通过；不选则不限制。
+                </div>
+            </div>
+
+            <!-- 19. 前后区特殊号（复选，可多选） -->
+            <div class="space-y-4">
+                <div class="section-header">
+                    <h3 class="text-lg font-semibold text-gray-800">19. 前后区特殊号</h3>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="selectAllTeShu"
+                                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200">
+                            全选
+                        </button>
+                        <button type="button" id="deselectTeShu"
+                                class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                            清空
+                        </button>
+                        <span id="teShuCount" class="limit-badge limit-badge-info">9/9</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <span class="text-sm font-medium text-gray-700">最近几期:</span>
+                        <div class="flex flex-wrap gap-2" id="heatTeShuGroup">
+                            <!-- 热度选项会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="teShuGroup" class="checkbox-grid">
+                    <!-- 特殊号类型由 JS 动态生成（复选） -->
+                </div>
+                <div class="section-description">
+                    <i class="fa fa-info-circle"></i>
+                    「前区 n 号间隔」：前区能找出 n 个号构成等差数列，各段间隔必须相同且公差 d 落在对应范围
+                    （3号：2～17；4号：2～11；5号：2～8；d=1 为连号，不计）。
+                    例：01,03,05（3号 d=2）；01,12,19 间隔不同则不算。<br>
+                    「前后区组成 k 连号」：前+后合集中，最长且同时含前区号与后区号的连号长度恰好为 k（如最长为5则只算5连，不算3/4连）；
+                    「无特殊号」：不满足以上任一特殊形态。可多选，命中任一勾选项即通过；不选则不限制。
+                </div>
+            </div>
+
             <!-- 错误提示 -->
             <div id="errorMessage" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-200">
                 <i class="fa fa-exclamation-circle mr-1"></i> <span></span>
@@ -862,7 +999,14 @@
      *
      * 依赖服务端注入数据：
      *   curT2MoniABCDEs, allHistoricalData, txHis, oeHis, qzhHis,
-     *   frontDhHis, backDhHis, backCombHis, eqHis, quShi2St, heatOptions
+     *   frontDhHis, backDhHis, backCombHis, eqHis,
+     *   txEqHis, oeEqHis, qzhEqHis, frontDhEqHis, backDhEqHis, backCombEqHis,
+     *   lianHaoHis, fbChongHaoHis, teShuHis,
+     *   lianHaoEqHis, fbChongHaoEqHis, teShuEqHis,
+     *   quShi2St, heatOptions
+     *
+     * 角标约定：第1个=全部设备(*His)，第2~4个=eq1/eq2/eq3(*EqHis)
+     * 「0.设备分布」界面文案显示「设备1/2/3」，数据 key 仍为 eq1/eq2/eq3
      */
 
     const curT2MoniABCDEs = {
@@ -877,6 +1021,7 @@
 
     const allHistoricalData = [{{range $dlt := .Dlts}}{F1: "{{$dlt.F1}}", F2: "{{$dlt.F2}}", F3: "{{$dlt.F3}}", F4: "{{$dlt.F4}}", F5: "{{$dlt.F5}}", B1: "{{$dlt.B1}}", B2: "{{$dlt.B2}}"},{{end}}];
 
+    // 组合历史
     const txHis = {
     {{range $typeKey, $typeData := .TxHis}}
     "{{$typeKey}}": {
@@ -887,6 +1032,7 @@
     {{end}}
     }
 
+    // 奇偶历史
     const oeHis = {
     {{range $typeKey, $typeData := .OeHis}}
     "{{$typeKey}}": {
@@ -897,6 +1043,7 @@
     {{end}}
     }
 
+    // 前中后历史
     const qzhHis = {
     {{range $typeKey, $typeData := .QzhHis}}
     "{{$typeKey}}": {
@@ -907,6 +1054,7 @@
     {{end}}
     }
 
+    // 前区单号历史
     const frontDhHis = {
     {{range $typeKey, $typeData := .FrontDhHis}}
     "{{$typeKey}}": {
@@ -917,6 +1065,7 @@
     {{end}}
     }
 
+    // 后区单号历史
     const backDhHis = {
     {{range $typeKey, $typeData := .BackDhHis}}
     "{{$typeKey}}": {
@@ -927,6 +1076,7 @@
     {{end}}
     }
 
+    // 后区组合历史
     const backCombHis = {
     {{range $typeKey, $typeData := .BackCombHis}}
     "{{$typeKey}}": {
@@ -937,12 +1087,176 @@
     {{end}}
     }
 
-    // 设备分布统计：key 为 "设备1" / "设备2" / "设备3"，内层 key 为期数
+    // 设备分布统计：key 为 "eq1" / "eq2" / "eq3"，内层 key 为期数
     const eqHis = {
     {{range $typeKey, $typeData := .EqHis}}
     "{{$typeKey}}": {
         {{range $groupKey, $numbers := $typeData}}
         "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    /**
+     * 各维度「按设备」统计：结构均为
+     *   { "eq1": { "选项": { "期数": 次数 } }, "eq2": {...}, "eq3": {...} }
+     * 与下方全部统计（txHis 等）配合，组成复选框上的 4 个角标。
+     */
+    const txEqHis = {
+    {{range $eqKey, $eqData := .TxEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const oeEqHis = {
+    {{range $eqKey, $eqData := .OeEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const qzhEqHis = {
+    {{range $eqKey, $eqData := .QzhEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const frontDhEqHis = {
+    {{range $eqKey, $eqData := .FrontDhEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const backDhEqHis = {
+    {{range $eqKey, $eqData := .BackDhEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    // 后区组合按设备统计；内层选项 key 与 backCombHis 一致，形如 "01,02"
+    const backCombEqHis = {
+    {{range $eqKey, $eqData := .BackCombEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    // 前区连号 / 前后区重号 / 特殊号：全部设备统计（选项 key -> 期数 -> 次数）
+    const lianHaoHis = {
+    {{range $typeKey, $typeData := .LianHaoHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const fbChongHaoHis = {
+    {{range $typeKey, $typeData := .FbChongHaoHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const teShuHis = {
+    {{range $typeKey, $typeData := .TeShuHis}}
+    "{{$typeKey}}": {
+        {{range $groupKey, $numbers := $typeData}}
+        "{{$groupKey}}": {{$numbers}},
+        {{end}}
+    },
+    {{end}}
+    }
+
+    // 按设备拆分（eq1/eq2/eq3）
+    const lianHaoEqHis = {
+    {{range $eqKey, $eqData := .LianHaoEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const fbChongHaoEqHis = {
+    {{range $eqKey, $eqData := .FbChongHaoEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
+        {{end}}
+    },
+    {{end}}
+    }
+
+    const teShuEqHis = {
+    {{range $eqKey, $eqData := .TeShuEqHis}}
+    "{{$eqKey}}": {
+        {{range $typeKey, $typeData := $eqData}}
+        "{{$typeKey}}": {
+            {{range $groupKey, $numbers := $typeData}}
+            "{{$groupKey}}": {{$numbers}},
+            {{end}}
+        },
         {{end}}
     },
     {{end}}
@@ -956,7 +1270,7 @@
 
     // 默认选中的最近几期
     const defaultLastQiShuObj = {
-        "eq": "5",
+        "eq": "10",
         "combs": "20",
         "parity": "100",
         "qzh": "100",
@@ -967,11 +1281,66 @@
         "backExclude": "100",
         "backCombInclude": "100",
         "backCombExclude": "100",
+        "lianHao": "100",
+        "fbChongHao": "100",
+        "teShu": "100",
     }
 
 
-    // 设备分布展示项（仅展示角标，不可勾选）
-    const eqOptions = ['eq1', 'eq2', 'eq3'];
+    // 设备分布展示项：key 用 eq1/eq2/eq3；界面文案仍显示「设备1/2/3」
+    const eqOptions = [
+        { key: 'eq1', label: '设备1' },
+        { key: 'eq2', label: '设备2' },
+        { key: 'eq3', label: '设备3' },
+    ];
+
+    // 复选框四角标：内部 key 与 *EqHis / eqHis 的设备 key 对齐
+    const STAT_BADGE_SLOTS = [
+        { key: 'all', eqName: null, title: '全部设备' },
+        { key: 'eq1', eqName: 'eq1', title: '设备1' },
+        { key: 'eq2', eqName: 'eq2', title: '设备2' },
+        { key: 'eq3', eqName: 'eq3', title: '设备3' },
+    ];
+
+    // 哪些区块使用「全部+三设备」四角标
+    const MULTI_BADGE_TYPES = new Set([
+        'combs', 'parity', 'qzh', 'danMa',
+        'frontInclude', 'frontExclude', 'backInclude', 'backExclude',
+        'backCombInclude', 'backCombExclude',
+        'lianHao', 'fbChongHao', 'teShu',
+    ]);
+
+    // 前区连号类型（复选）
+    const lianHaoOptions = [
+        { key: 'none', label: '无连号' },
+        { key: 'lh2', label: '1个2连号' },
+        { key: 'lh3', label: '1个3连号' },
+        { key: 'lh3_2', label: '1个3连号+1个2连号' },
+        { key: 'lh4', label: '1个4连号' },
+        { key: 'lh5', label: '1个5连号' },
+        { key: 'lh2gap', label: '间隔2连号' },
+    ];
+
+    // 前后区重号类型（复选）：前区与后区号码相同值的个数
+    const fbChongHaoOptions = [
+        { key: 'none', label: '无重号' },
+        { key: 'dup1', label: '1个重号' },
+        { key: 'dup2', label: '2个重号' },
+    ];
+
+    // 前后区特殊号（复选）；
+    // gap3/4/5 = 前区 n 码等差间隔（公差相同）；fbLhk = 最长前后区共参与连号恰好为 k
+    const teShuOptions = [
+        { key: 'none', label: '无特殊号' },
+        { key: 'gap3', label: '前区3号间隔2~17' },
+        { key: 'gap4', label: '前区4号间隔2~11' },
+        { key: 'gap5', label: '前区5号间隔2~8' },
+        { key: 'fbLh3', label: '前后区组成3连号' },
+        { key: 'fbLh4', label: '前后区组成4连号' },
+        { key: 'fbLh5', label: '前后区组成5连号' },
+        { key: 'fbLh6', label: '前后区组成6连号' },
+        { key: 'fbLh7', label: '前后区组成7连号' },
+    ];
 
     // 可选组合选项
     const combs = [
@@ -1042,6 +1411,12 @@
         Ch4MustGetCount: 21,
         Ch5MustGetCount: 0,
         Ch6MustGetCount: 0,
+        // 前区连号类型：空数组表示不限制；否则命中任一勾选类型即通过
+        LianHaoTypes: ['none', 'lh2', 'lh3', 'lh3_2', 'lh4', 'lh5', 'lh2gap'],
+        // 前后区重号：空数组不限制；默认全选 none/dup1/dup2
+        FbChongHaoTypes: ['none', 'dup1', 'dup2'],
+        // 前后区特殊号：空数组不限制；默认全选
+        TeShuTypes: ['none', 'gap3', 'gap4', 'gap5', 'fbLh3', 'fbLh4', 'fbLh5', 'fbLh6', 'fbLh7'],
     };
 
     /** 兼容旧变量名（部分 UI / 取消逻辑仍可能引用） */
@@ -1281,6 +1656,169 @@
                 }
 
                 /**
+                 * 判定前区连号类型（互斥分类，基于连续段长度）：
+                 *   none    — 无连号
+                 *   lh2     — 1个2连号
+                 *   lh3     — 1个3连号
+                 *   lh3_2   — 1个3连号+1个2连号（两段互不相连，非5连号）
+                 *   lh4     — 1个4连号
+                 *   lh5     — 1个5连号
+                 *   lh2gap  — 间隔2连号：两段互不相连的2连号（非4连号）
+                 *   other   — 其它形态，不对应任一单选项
+                 */
+                function calDltLianHaoType(front) {
+                    const nums = front.map(x => parseInt(x, 10)).sort((a, b) => a - b);
+                    const runLens = [];
+                    let len = 1;
+                    for (let i = 1; i < nums.length; i++) {
+                        if (nums[i] === nums[i - 1] + 1) {
+                            len++;
+                        } else {
+                            runLens.push(len);
+                            len = 1;
+                        }
+                    }
+                    runLens.push(len);
+
+                    const consec = runLens.filter(r => r >= 2);
+                    if (consec.length === 0) return 'none';
+
+                    if (consec.length === 1) {
+                        if (consec[0] === 2) return 'lh2';
+                        if (consec[0] === 3) return 'lh3';
+                        if (consec[0] === 4) return 'lh4';
+                        if (consec[0] === 5) return 'lh5';
+                    }
+
+                    if (consec.length === 2) {
+                        const a = Math.min(consec[0], consec[1]);
+                        const b = Math.max(consec[0], consec[1]);
+                        // 间隔2连号：2+2
+                        if (a === 2 && b === 2) return 'lh2gap';
+                        // 1个3连号+1个2连号：2+3（前区共5个号，不可能是5连）
+                        if (a === 2 && b === 3) return 'lh3_2';
+                    }
+
+                    return 'other';
+                }
+
+                /**
+                 * 前后区重号类型：前区与后区号码相同值的个数。
+                 *   none — 无重号；dup1 — 1个重号；dup2 — 2个重号
+                 */
+                function calDltFbChongHaoType(front, back) {
+                    const n = getIntersection(front, back).length;
+                    if (n === 0) return 'none';
+                    if (n === 1) return 'dup1';
+                    if (n === 2) return 'dup2';
+                    return 'other';
+                }
+
+                /**
+                 * 前区是否存在「n 码等差间隔」：
+                 * 任取 n 个号升序后，相邻间隔全部相等，且公差 d∈[dMin,dMax]。
+                 *   gap3: n=3, d∈[2,17]
+                 *   gap4: n=4, d∈[2,11]
+                 *   gap5: n=5, d∈[2,8]
+                 */
+                function hasFrontArithGap(front, n, dMin, dMax) {
+                    const nums = front.map(x => parseInt(x, 10)).sort((a, b) => a - b);
+                    if (nums.length < n) return false;
+
+                    const chosen = new Array(n);
+                    function dfs(start, depth) {
+                        if (depth === n) {
+                            const d = chosen[1] - chosen[0];
+                            if (d < dMin || d > dMax) return false;
+                            for (let i = 2; i < n; i++) {
+                                if (chosen[i] - chosen[i - 1] !== d) return false;
+                            }
+                            return true;
+                        }
+                        for (let i = start; i <= nums.length - (n - depth); i++) {
+                            chosen[depth] = nums[i];
+                            if (dfs(i + 1, depth + 1)) return true;
+                        }
+                        return false;
+                    }
+                    return dfs(0, 0);
+                }
+
+                function hasFrontGap3_2_17(front) {
+                    return hasFrontArithGap(front, 3, 2, 17);
+                }
+
+                function hasFrontGap4_2_11(front) {
+                    return hasFrontArithGap(front, 4, 2, 11);
+                }
+
+                function hasFrontGap5_2_8(front) {
+                    return hasFrontArithGap(front, 5, 2, 8);
+                }
+
+                /**
+                 * 前+后合集中是否存在长度为 k 的连号窗口，且窗口内同时含前区号与后区号。
+                 */
+                function hasFbLianHaoBoth(front, back, k) {
+                    const frontSet = new Set(front.map(x => parseInt(x, 10)));
+                    const backSet = new Set(back.map(x => parseInt(x, 10)));
+                    const all = Array.from(new Set([...frontSet, ...backSet])).sort((a, b) => a - b);
+                    if (all.length < k) return false;
+
+                    // 在合集中找极大连续段，再滑窗检查长度为 k 的子段
+                    let runStart = 0;
+                    for (let i = 1; i <= all.length; i++) {
+                        if (i === all.length || all[i] !== all[i - 1] + 1) {
+                            const runLen = i - runStart;
+                            if (runLen >= k) {
+                                for (let s = runStart; s + k <= i; s++) {
+                                    let hasF = false;
+                                    let hasB = false;
+                                    for (let t = s; t < s + k; t++) {
+                                        const n = all[t];
+                                        if (frontSet.has(n)) hasF = true;
+                                        if (backSet.has(n)) hasB = true;
+                                    }
+                                    if (hasF && hasB) return true;
+                                }
+                            }
+                            runStart = i;
+                        }
+                    }
+                    return false;
+                }
+
+                /**
+                 * 一注号码命中的特殊号类型列表。
+                 * 前后区组合 k 连号按「最长且前后区都参与」的长度精确归属（互斥）：
+                 *   例如最长为 5，则只记 fbLh5，不记 fbLh3/4。
+                 * gap3/gap4/gap5 可互相并存，也可与某一个 fbLhk 并存；
+                 * none 仅在其它均不成立时加入。
+                 */
+                function matchTeShuTypes(front, back) {
+                    const hit = [];
+                    if (hasFrontGap3_2_17(front)) hit.push('gap3');
+                    if (hasFrontGap4_2_11(front)) hit.push('gap4');
+                    if (hasFrontGap5_2_8(front)) hit.push('gap5');
+
+                    let maxFbLh = 0;
+                    for (let k = 7; k >= 3; k--) {
+                        if (hasFbLianHaoBoth(front, back, k)) {
+                            maxFbLh = k;
+                            break;
+                        }
+                    }
+                    if (maxFbLh === 3) hit.push('fbLh3');
+                    else if (maxFbLh === 4) hit.push('fbLh4');
+                    else if (maxFbLh === 5) hit.push('fbLh5');
+                    else if (maxFbLh === 6) hit.push('fbLh6');
+                    else if (maxFbLh === 7) hit.push('fbLh7');
+
+                    if (hit.length === 0) hit.push('none');
+                    return hit;
+                }
+
+                /**
                  * 类型匹配：moni 有 A/B/C/D/E 五组号池，
                  * 要求前区 5 个号分别来自不同一组（一一对应、不共用同一组）。
                  */
@@ -1404,6 +1942,11 @@
                         if (!xuHaoSt.QzhSlice.includes(calDltQzh(front))) return false;
                     }
 
+                    // 前区连号过滤（多选；空数组表示不限制；命中任一勾选类型即通过）
+                    if (xuHaoSt.LianHaoTypes && xuHaoSt.LianHaoTypes.length > 0) {
+                        if (!xuHaoSt.LianHaoTypes.includes(calDltLianHaoType(front))) return false;
+                    }
+
                     return checkTypeConditions(front, xuHaoSt, t2MoniABCDEs);
                 }
 
@@ -1458,6 +2001,21 @@
                     if (xuHaoSt.BackExcludeCombs.length !== 0 &&
                         xuHaoSt.BackExcludeCombs.includes(backStr)) {
                         return false;
+                    }
+
+                    // 前后区重号过滤（多选；命中任一勾选类型即通过）
+                    if (xuHaoSt.FbChongHaoTypes && xuHaoSt.FbChongHaoTypes.length > 0) {
+                        if (!xuHaoSt.FbChongHaoTypes.includes(calDltFbChongHaoType(front, back))) {
+                            return false;
+                        }
+                    }
+
+                    // 前后区特殊号过滤（多选；命中类型与勾选有交集即通过）
+                    if (xuHaoSt.TeShuTypes && xuHaoSt.TeShuTypes.length > 0) {
+                        const hit = matchTeShuTypes(front, back);
+                        if (!hit.some(t => xuHaoSt.TeShuTypes.includes(t))) {
+                            return false;
+                        }
                     }
 
                     // 4 重号：前4 / 前3+后1 / 前2+后2
@@ -1775,12 +2333,84 @@
          */
         function applyBadgeStyle(badge, value) {
             badge.textContent = value;
+            // 保留 data-eq / title 等属性，只重置颜色相关 class
+            const eq = badge.getAttribute('data-eq') || '';
             badge.className = 'combination-badge';
+            if (eq) badge.setAttribute('data-eq', eq);
             if (value === 0) badge.classList.add('badge-gray');
             else if (value <= 19) badge.classList.add('badge-green');
             else if (value <= 50) badge.classList.add('badge-orange');
             else if (value <= 80) badge.classList.add('badge-red');
             else badge.classList.add('badge-purple');
+        }
+
+        /**
+         * 读取「全部 + 三设备」四元组。
+         * allHis: 原 *His；eqHisMap: 对应 *EqHis（按 eq1/eq2/eq3）
+         */
+        function getStatQuad(allHis, eqHisMap, option, qiShu) {
+            const all = allHis?.[option]?.[qiShu] || 0;
+            return {
+                all: all,
+                eq1: eqHisMap?.['eq1']?.[option]?.[qiShu] || 0,
+                eq2: eqHisMap?.['eq2']?.[option]?.[qiShu] || 0,
+                eq3: eqHisMap?.['eq3']?.[option]?.[qiShu] || 0,
+            };
+        }
+
+        /** 按区块类型取四元组 */
+        function getStatQuadByTyp(typ, option, qiShu) {
+            switch (typ) {
+                case 'combs':
+                    return getStatQuad(txHis, txEqHis, option, qiShu);
+                case 'parity':
+                    return getStatQuad(oeHis, oeEqHis, option, qiShu);
+                case 'qzh':
+                    return getStatQuad(qzhHis, qzhEqHis, option, qiShu);
+                case 'danMa':
+                case 'frontInclude':
+                case 'frontExclude':
+                    return getStatQuad(frontDhHis, frontDhEqHis, option, qiShu);
+                case 'backInclude':
+                case 'backExclude':
+                    return getStatQuad(backDhHis, backDhEqHis, option, qiShu);
+                case 'backCombInclude':
+                case 'backCombExclude':
+                    // option 为 "01,02" 形式，与 backCombHis / backCombEqHis 的 key 一致
+                    return getStatQuad(backCombHis, backCombEqHis, option, qiShu);
+                case 'lianHao':
+                    return getStatQuad(lianHaoHis, lianHaoEqHis, option, qiShu);
+                case 'fbChongHao':
+                    return getStatQuad(fbChongHaoHis, fbChongHaoEqHis, option, qiShu);
+                case 'teShu':
+                    return getStatQuad(teShuHis, teShuEqHis, option, qiShu);
+                default:
+                    return { all: 0, eq1: 0, eq2: 0, eq3: 0 };
+            }
+        }
+
+        /** 在复选框项上创建四角标横排；id 形如 stat_combs_T1_all */
+        function appendMultiStatBadges(parentEl, idPrefix, quad) {
+            const stack = document.createElement('div');
+            stack.className = 'badge-stack';
+            STAT_BADGE_SLOTS.forEach(slot => {
+                const badge = document.createElement('div');
+                badge.id = `${idPrefix}_${slot.key}`;
+                badge.setAttribute('data-eq', slot.key);
+                badge.title = slot.title;
+                applyBadgeStyle(badge, quad[slot.key] || 0);
+                stack.appendChild(badge);
+            });
+            parentEl.appendChild(stack);
+            return stack;
+        }
+
+        /** 切换「最近几期」时更新某一选项的四角标 */
+        function updateMultiStatBadges(idPrefix, quad) {
+            STAT_BADGE_SLOTS.forEach(slot => {
+                const el = document.getElementById(`${idPrefix}_${slot.key}`);
+                if (el) applyBadgeStyle(el, quad[slot.key] || 0);
+            });
         }
 
         // 页面加载完成后初始化统计数据
@@ -2032,22 +2662,23 @@
 
             const statsData = fetchStats(qiShu, typ);
 
-            options.forEach(option => {
-                const newOption = option.replace(/[,\.-]/g, '').replace(/\s+/g, '');
+            options.forEach(item => {
+                const key = item.key;
+                const labelText = item.label;
                 const div = document.createElement('div');
                 // 视觉与组合项一致，但不可交互
                 div.className = 'checkbox-item cursor-default';
                 div.style.pointerEvents = 'none';
 
-                const badgeValue = statsData[option] || 0;
+                const badgeValue = statsData[key] || 0;
                 const badge = document.createElement('div');
-                badge.id = `stat_${newContainerId}_${newOption}`;
+                badge.id = `stat_${newContainerId}_${key}`;
                 applyBadgeStyle(badge, badgeValue);
                 div.appendChild(badge);
 
                 const label = document.createElement('div');
                 label.className = 'checkbox-label';
-                label.textContent = option;
+                label.textContent = labelText;
                 div.appendChild(label);
 
                 container.appendChild(div);
@@ -2084,26 +2715,17 @@
                     }
                 }
 
-                const badgeValue = statsData[option] || 0
-                // 创建统计标签
-                const badge = document.createElement('div');
-                badge.className = 'combination-badge';
-                badge.id = `stat_${newContainerId}_${newOption}`;
-                badge.textContent = "" + badgeValue;
-
-                if (badgeValue === 0) {
-                    badge.classList.add('badge-gray');
-                } else if (badgeValue >= 1 && badgeValue <= 19) {
-                    badge.classList.add('badge-green');
-                } else if (badgeValue >= 20 && badgeValue <= 50) {
-                    badge.classList.add('badge-orange');
-                } else if (badgeValue >= 51 && badgeValue <= 80) {
-                    badge.classList.add('badge-red');
+                // 四角标：全部 / 设备1 / 设备2 / 设备3
+                const idPrefix = `stat_${newContainerId}_${newOption}`;
+                if (MULTI_BADGE_TYPES.has(typ)) {
+                    appendMultiStatBadges(div, idPrefix, getStatQuadByTyp(typ, option, qiShu));
                 } else {
-                    badge.classList.add('badge-purple');
+                    const badgeValue = statsData[option] || 0;
+                    const badge = document.createElement('div');
+                    badge.id = idPrefix;
+                    applyBadgeStyle(badge, badgeValue);
+                    div.appendChild(badge);
                 }
-
-                div.appendChild(badge);
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -2135,7 +2757,7 @@
 
                 // 点击整个区域都可以选中
                 div.addEventListener('click', function(e) {
-                    if (e.target !== checkbox && e.target !== badge) {
+                    if (e.target !== checkbox && !e.target.classList.contains('combination-badge') && !e.target.classList.contains('badge-stack')) {
                         checkbox.checked = !checkbox.checked;
                     }
                     if (checkbox.checked) {
@@ -2180,10 +2802,10 @@
         /* ---- 从服务端注入的历史统计对象取角标数字 ---- */
         function fetchStats(qiShu, typ) {
             const stats = {};
-            // 设备分布（仅展示）
+            // 设备分布（仅展示；key 为 eq1/eq2/eq3）
             if (typ === "eq") {
-                eqOptions.forEach(option => {
-                    stats[option] = eqHis[option]?.[qiShu] || 0
+                eqOptions.forEach(item => {
+                    stats[item.key] = eqHis[item.key]?.[qiShu] || 0
                 })
             }
 
@@ -2645,32 +3267,23 @@
             for (let i = min; i <= max; i++) {
                 const numberStr = i.toString().padStart(2, '0');
                 const newOption = numberStr;
-                const badgeValue = statsData[newOption] || 0
                 const div = document.createElement('div');
                 div.className = 'checkbox-item';
                 if (defaultChecked) {
                     div.classList.add('selected');
                 }
 
-                // 创建统计标签
-                const badge = document.createElement('div');
-                badge.className = 'combination-badge';
-                badge.id = `stat_${newContainerId}_${newOption}`;
-                badge.textContent = "" + badgeValue;
-
-                if (badgeValue === 0) {
-                    badge.classList.add('badge-gray');
-                } else if (badgeValue >= 1 && badgeValue <= 19) {
-                    badge.classList.add('badge-green');
-                } else if (badgeValue >= 20 && badgeValue <= 50) {
-                    badge.classList.add('badge-orange');
-                } else if (badgeValue >= 51 && badgeValue <= 80) {
-                    badge.classList.add('badge-red');
+                // 四角标：全部 / 设备1 / 设备2 / 设备3
+                const idPrefix = `stat_${newContainerId}_${newOption}`;
+                if (MULTI_BADGE_TYPES.has(typ)) {
+                    appendMultiStatBadges(div, idPrefix, getStatQuadByTyp(typ, numberStr, qiShu));
                 } else {
-                    badge.classList.add('badge-purple');
+                    const badgeValue = statsData[newOption] || 0;
+                    const badge = document.createElement('div');
+                    badge.id = idPrefix;
+                    applyBadgeStyle(badge, badgeValue);
+                    div.appendChild(badge);
                 }
-
-                div.appendChild(badge);
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -2706,8 +3319,11 @@
                 label.className = 'checkbox-label';
                 label.textContent = numberStr;
 
-                // 点击整个区域都可以选中
+                // 点击整个区域都可以选中（点角标区域不切换勾选）
                 div.addEventListener('click', function(e) {
+                    if (e.target.closest('.badge-stack') || e.target.classList.contains('combination-badge')) {
+                        return;
+                    }
                     if (e.target !== checkbox) {
                         checkbox.checked = !checkbox.checked;
                     }
@@ -2716,7 +3332,6 @@
                     } else {
                         this.classList.remove('selected');
                     }
-                    // 触发change事件
                     checkbox.dispatchEvent(new Event('change'));
                 });
 
@@ -2741,7 +3356,6 @@
             const statsData = fetchStats(qiShu, typ);
 
             pairs.forEach(pair => {
-                const badgeValue = statsData[pair] || 0
                 const newOption = pair.replace(",", "");
                 const div = document.createElement('div');
                 div.className = 'combination-item';
@@ -2749,25 +3363,17 @@
                     div.classList.add('selected');
                 }
 
-                // 创建统计标签
-                const badge = document.createElement('div');
-                badge.className = 'combination-badge';
-                badge.id = `stat_${newContainerId}_${newOption}`;
-                badge.textContent = "" + badgeValue;
-
-                if (badgeValue === 0) {
-                    badge.classList.add('badge-gray');
-                } else if (badgeValue >= 1 && badgeValue <= 19) {
-                    badge.classList.add('badge-green');
-                } else if (badgeValue >= 20 && badgeValue <= 50) {
-                    badge.classList.add('badge-orange');
-                } else if (badgeValue >= 51 && badgeValue <= 80) {
-                    badge.classList.add('badge-red');
+                // 四角标：全部 / 设备1 / 设备2 / 设备3（查找 key 用带逗号的 pair）
+                const idPrefix = `stat_${newContainerId}_${newOption}`;
+                if (MULTI_BADGE_TYPES.has(typ)) {
+                    appendMultiStatBadges(div, idPrefix, getStatQuadByTyp(typ, pair, qiShu));
                 } else {
-                    badge.classList.add('badge-purple');
+                    const badgeValue = statsData[pair] || 0;
+                    const badge = document.createElement('div');
+                    badge.id = idPrefix;
+                    applyBadgeStyle(badge, badgeValue);
+                    div.appendChild(badge);
                 }
-
-                div.appendChild(badge);
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -2799,8 +3405,11 @@
                 label.className = 'combination-label';
                 label.textContent = pair;
 
-                // 点击整个区域都可以选中
+                // 点击整个区域都可以选中（点角标不切换勾选）
                 div.addEventListener('click', function(e) {
+                    if (e.target.closest('.badge-stack') || e.target.classList.contains('combination-badge')) {
+                        return;
+                    }
                     if (e.target !== checkbox) {
                         checkbox.checked = !checkbox.checked;
                     }
@@ -2809,7 +3418,6 @@
                     } else {
                         this.classList.remove('selected');
                     }
-                    // 触发change事件
                     checkbox.dispatchEvent(new Event('change'));
                 });
 
@@ -2991,6 +3599,309 @@
             return values;
         }
 
+        /**
+         * 前区连号：复选（可多选）。
+         * 过滤逻辑：勾选若干类型后，前区连号命中其中任一即通过；清空则不限制。
+         */
+        /* ---- 前区连号复选 ---- */
+        function generateLianHaoCheckboxGroup() {
+            const container = document.getElementById('lianHaoGroup');
+            if (!container) return;
+            const typ = 'lianHao';
+            const qiShu = defaultLastQiShuObj[typ] || '100';
+            container.innerHTML = '';
+
+            lianHaoOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+
+                appendMultiStatBadges(
+                    div,
+                    `stat_${typ}_${item.key}`,
+                    getStatQuadByTyp(typ, item.key, qiShu)
+                );
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'lianHaoTypes';
+                checkbox.value = item.key;
+                checkbox.id = `lianHao_${item.key}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = 'lianHaoGroup';
+                checkbox.checked = true; // 默认全选 7 种连号类型
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateLianHaoCount();
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox || e.target.closest('.badge-stack')) return;
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            const selectAllBtn = document.getElementById('selectAllLianHao');
+            if (selectAllBtn) {
+                selectAllBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = true;
+                        cb.closest('.checkbox-item')?.classList.add('selected');
+                    });
+                    updateLianHaoCount();
+                };
+            }
+
+            const clearBtn = document.getElementById('deselectLianHao');
+            if (clearBtn) {
+                clearBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item')?.classList.remove('selected');
+                    });
+                    updateLianHaoCount();
+                };
+            }
+
+            updateLianHaoCount();
+        }
+
+        function updateLianHaoCount() {
+            const total = lianHaoOptions.length;
+            const checkedCount = document.querySelectorAll('#lianHaoGroup input[type="checkbox"]:checked').length;
+            const badge = document.getElementById('lianHaoCount');
+            if (!badge) return;
+            badge.textContent = `${checkedCount}/${total}`;
+            if (checkedCount > 0 && checkedCount < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
+        /**
+         * 前后区重号：复选（可多选），默认全选。
+         * 过滤：勾选若干类型后，前后区重号个数命中任一即通过；清空则不限制。
+         */
+        /* ---- 前后区重号复选 ---- */
+        function generateFbChongHaoCheckboxGroup() {
+            const container = document.getElementById('fbChongHaoGroup');
+            if (!container) return;
+            const typ = 'fbChongHao';
+            const qiShu = defaultLastQiShuObj[typ] || '100';
+            container.innerHTML = '';
+
+            fbChongHaoOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+
+                appendMultiStatBadges(
+                    div,
+                    `stat_${typ}_${item.key}`,
+                    getStatQuadByTyp(typ, item.key, qiShu)
+                );
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'fbChongHaoTypes';
+                checkbox.value = item.key;
+                checkbox.id = `fbChongHao_${item.key}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = 'fbChongHaoGroup';
+                checkbox.checked = true;
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateFbChongHaoCount();
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox || e.target.closest('.badge-stack')) return;
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            const selectAllBtn = document.getElementById('selectAllFbChongHao');
+            if (selectAllBtn) {
+                selectAllBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = true;
+                        cb.closest('.checkbox-item')?.classList.add('selected');
+                    });
+                    updateFbChongHaoCount();
+                };
+            }
+
+            const clearBtn = document.getElementById('deselectFbChongHao');
+            if (clearBtn) {
+                clearBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item')?.classList.remove('selected');
+                    });
+                    updateFbChongHaoCount();
+                };
+            }
+
+            updateFbChongHaoCount();
+        }
+
+        function updateFbChongHaoCount() {
+            const total = fbChongHaoOptions.length;
+            const checkedCount = document.querySelectorAll('#fbChongHaoGroup input[type="checkbox"]:checked').length;
+            const badge = document.getElementById('fbChongHaoCount');
+            if (!badge) return;
+            badge.textContent = `${checkedCount}/${total}`;
+            if (checkedCount > 0 && checkedCount < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
+        /**
+         * 前后区特殊号：复选（可多选），默认全选。
+         * 过滤：一注命中的特殊类型与勾选集合有交集即通过；清空则不限制。
+         */
+        /* ---- 前后区特殊号复选 ---- */
+        function generateTeShuCheckboxGroup() {
+            const container = document.getElementById('teShuGroup');
+            if (!container) return;
+            const typ = 'teShu';
+            const qiShu = defaultLastQiShuObj[typ] || '100';
+            container.innerHTML = '';
+
+            teShuOptions.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item selected';
+
+                appendMultiStatBadges(
+                    div,
+                    `stat_${typ}_${item.key}`,
+                    getStatQuadByTyp(typ, item.key, qiShu)
+                );
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'teShuTypes';
+                checkbox.value = item.key;
+                checkbox.id = `teShu_${item.key}`;
+                checkbox.className = 'checkbox-input';
+                checkbox.dataset.group = 'teShuGroup';
+                checkbox.checked = true;
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('selected');
+                    } else {
+                        div.classList.remove('selected');
+                    }
+                    updateTeShuCount();
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'checkbox-label';
+                label.textContent = item.label;
+
+                div.addEventListener('click', function(e) {
+                    if (e.target === checkbox || e.target.closest('.badge-stack')) return;
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('selected');
+                    } else {
+                        this.classList.remove('selected');
+                    }
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+
+            const selectAllBtn = document.getElementById('selectAllTeShu');
+            if (selectAllBtn) {
+                selectAllBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = true;
+                        cb.closest('.checkbox-item')?.classList.add('selected');
+                    });
+                    updateTeShuCount();
+                };
+            }
+
+            const clearBtn = document.getElementById('deselectTeShu');
+            if (clearBtn) {
+                clearBtn.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item')?.classList.remove('selected');
+                    });
+                    updateTeShuCount();
+                };
+            }
+
+            updateTeShuCount();
+        }
+
+        function updateTeShuCount() {
+            const total = teShuOptions.length;
+            const checkedCount = document.querySelectorAll('#teShuGroup input[type="checkbox"]:checked').length;
+            const badge = document.getElementById('teShuCount');
+            if (!badge) return;
+            badge.textContent = `${checkedCount}/${total}`;
+            if (checkedCount > 0 && checkedCount < total) {
+                badge.classList.remove('limit-badge-info');
+                badge.classList.add('limit-badge-warning');
+            } else {
+                badge.classList.remove('limit-badge-warning');
+                badge.classList.add('limit-badge-info');
+            }
+        }
+
         // 初始化所有复选框组的函数
 
         /* ---- 初始化全部选项组 ---- */
@@ -3053,6 +3964,18 @@
             generateBhCombCheckboxGroupWithExclusion('bh-backCombIncludeGroup');
             // 12
             generatePcCombCheckboxGroupWithExclusion('pc-backCombExcludeGroup');
+
+            // 17. 前区连号情况（复选 + 四角标）
+            generateHeatOptions('lianHaoGroup');
+            generateLianHaoCheckboxGroup();
+
+            // 18. 前后区重号情况（复选 + 四角标）
+            generateHeatOptions('fbChongHaoGroup');
+            generateFbChongHaoCheckboxGroup();
+
+            // 19. 前后区特殊号（复选 + 四角标）
+            generateHeatOptions('teShuGroup');
+            generateTeShuCheckboxGroup();
 
         }
 
@@ -3142,6 +4065,9 @@
                 newFourRepeat: parseInt(newFourRepeatInput.value),
                 newFiveRepeat: parseInt(newFiveRepeatInput.value),
                 newSixRepeat: parseInt(newSixRepeatInput.value),
+                lianHaoTypes: getCheckboxValues('lianHaoGroup'),
+                fbChongHaoTypes: getCheckboxValues('fbChongHaoGroup'),
+                teShuTypes: getCheckboxValues('teShuGroup'),
             };
         }
 
@@ -3259,6 +4185,9 @@
                 Ch4MustGetCount: formData.newFourRepeat,
                 Ch5MustGetCount: formData.newFiveRepeat,
                 Ch6MustGetCount: formData.newSixRepeat,
+                LianHaoTypes: formData.lianHaoTypes || [],
+                FbChongHaoTypes: formData.fbChongHaoTypes || [],
+                TeShuTypes: formData.teShuTypes || [],
             }
 
             // showLoading();
@@ -3291,7 +4220,8 @@
 
         // 更新标签中的数字和 class
         function updateLabelValueAndClass(id, value) {
-            applyBadgeStyle(document.getElementById(id), value);
+            const el = document.getElementById(id);
+            if (el) applyBadgeStyle(el, value);
         }
 
         document.querySelectorAll('input[name^=heat]').forEach(radio => {
@@ -3305,53 +4235,40 @@
                 const zyContainerId = radio.getAttribute('data-zy-id')
                 const newContainerId = zyContainerId.replace("Group", "")
                 if (this.checked) {
-                    // 设备分布
+                    // 设备分布（单角标；DOM/数据 key 为 eq1/eq2/eq3）
                     if (typ === "eq") {
-                        eqOptions.forEach(option => {
-                            const key = option.replace(/[,\.-]/g, "").replace(/\s+/g, "");
-                            updateLabelValueAndClass(`stat_${newContainerId}_${key}`, eqHis[option]?.[qiShu] || 0)
+                        eqOptions.forEach(item => {
+                            updateLabelValueAndClass(`stat_${newContainerId}_${item.key}`, eqHis[item.key]?.[qiShu] || 0)
                         })
                     }
 
-                    if (typ === "combs") {
-                        combs.forEach(option => {
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, txHis[option][qiShu] || 0)
-                        })
-                    }
-
-                    // 奇偶比例
-                    if (typ === "parity") {
-                        parityOptions.forEach(option => {
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, oeHis[option][qiShu] || 0)
-                        })
-                    }
-
-                    // 前中后
-                    if (typ === "qzh") {
-                        qzhOptions.forEach(option => {
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, qzhHis[option][qiShu] || 0)
-                        })
-                    }
-
-                    if (typ === "danMa" || typ === "frontInclude" || typ === "frontExclude") {
-                        for (let i = 1; i <= 35; i++) {
-                            const option = i.toString().padStart(2, '0');
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, frontDhHis[option][qiShu] || 0)
+                    // 组合 / 奇偶 / 前中后 / 胆码 / 前后区号码与后区组合包含排除（四角标）
+                    if (MULTI_BADGE_TYPES.has(typ)) {
+                        let options = [];
+                        if (typ === "combs") options = combs;
+                        else if (typ === "parity") options = parityOptions;
+                        else if (typ === "qzh") options = qzhOptions;
+                        else if (typ === "danMa" || typ === "frontInclude" || typ === "frontExclude") {
+                            for (let i = 1; i <= 35; i++) options.push(i.toString().padStart(2, '0'));
+                        } else if (typ === "backInclude" || typ === "backExclude") {
+                            for (let i = 1; i <= 12; i++) options.push(i.toString().padStart(2, '0'));
+                        } else if (typ === "backCombInclude" || typ === "backCombExclude") {
+                            options = backCombPairs.slice();
+                        } else if (typ === "lianHao") {
+                            options = lianHaoOptions.map(item => item.key);
+                        } else if (typ === "fbChongHao") {
+                            options = fbChongHaoOptions.map(item => item.key);
+                        } else if (typ === "teShu") {
+                            options = teShuOptions.map(item => item.key);
                         }
-                    }
-
-                    if (typ === "backInclude" || typ === "backExclude") {
-                        for (let i = 1; i <= 12; i++) {
-                            const option = i.toString().padStart(2, '0');
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, backDhHis[option][qiShu] || 0)
-                        }
-                    }
-
-                    if (typ === "backCombInclude" || typ === "backCombExclude") {
-                        backCombPairs.forEach(pair => {
-                            const option = pair.replace(",", "");
-                            updateLabelValueAndClass(`stat_${newContainerId}_${option}`, backCombHis[pair][qiShu] || 0)
-                        })
+                        options.forEach(option => {
+                            // 后区组合：DOM id 去掉逗号；统计 key 仍用 "01,02"
+                            const key = String(option).replace(/[,\.-]/g, "").replace(/\s+/g, "");
+                            updateMultiStatBadges(
+                                `stat_${newContainerId}_${key}`,
+                                getStatQuadByTyp(typ, option, qiShu)
+                            );
+                        });
                     }
 
                 }

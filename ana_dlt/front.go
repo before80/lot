@@ -1970,10 +1970,15 @@ func DltEqFrontCrossDrawNumStat(crossDrawNum int, eqNumCount int) (res []DltTSN)
 	return
 }
 
-// FindNextCommonEqNumDlt 查找当前期之后的指定设备号的连续多少期的大乐透数据
-// eqNumCount = 0 表示任意设备号都可以
-// lxDrawNum 连续多少期
-func FindNextCommonEqNumDlt(curDrawNum string, eqNumCount int, lxDrawNum int, includeCurDrawNum bool) (nextDlts []models.Dlt) {
+// FindNextCommonEqNumDlt 查找指定设备号,且在当前期之前(即历史上比当前期更早的)的连续多少期的大乐透数据
+//
+//	@Description:
+//	@param curDrawNum 当前期数
+//	@param eqCount 若 eqCount = 0, 则表示任意设备号都可以
+//	@param crossDrawNum 连续多少期 (或称为 跨多少期)
+//	@param includeCurDrawNum
+//	@return nextDlts
+func FindNextCommonEqNumDlt(curDrawNum string, eqCount int, crossDrawNum int, includeCurDrawNum bool) (nextDlts []models.Dlt) {
 	count := 0
 	for _, dlt := range DxDlts {
 		if includeCurDrawNum {
@@ -1986,17 +1991,17 @@ func FindNextCommonEqNumDlt(curDrawNum string, eqNumCount int, lxDrawNum int, in
 			}
 		}
 
-		if eqNumCount != 0 && dlt.EquipmentCount == 0 {
+		if eqCount != 0 && dlt.EquipmentCount == 0 {
 			break
 		}
 
-		if eqNumCount != 0 && dlt.EquipmentCount != eqNumCount {
+		if eqCount != 0 && dlt.EquipmentCount != eqCount {
 			continue
 		}
 
 		nextDlts = append(nextDlts, dlt)
 		count++
-		if count >= lxDrawNum {
+		if count >= crossDrawNum {
 			break
 		}
 	}
@@ -2004,7 +2009,16 @@ func FindNextCommonEqNumDlt(curDrawNum string, eqNumCount int, lxDrawNum int, in
 	return
 }
 
-func DltFrontSpDrawNumCrossDrawNumStat(spDrawNum string, crossDrawNumSli []int, isLastest, needDealWithNumStr bool) (res []DltCrossTSN) {
+// DltFrontSpDrawNumCrossDrawNumStat
+//
+//	@Description:
+//	@param spDrawNum 指定某一期的开奖期数
+//	@param startCrossDrawNum 起始跨期数
+//	@param endCrossDrawNum 结束跨期数
+//	@param isLastest 是否是最近一期, 若是最近一期需要考虑不同情况
+//	@param needDealWithNumStr 是否需要计算出 DltTimesSliNumStr 结构体中的 NumStr 字段的值
+//	@return res
+func DltFrontSpDrawNumCrossDrawNumStat(spDrawNum string, startCrossDrawNum, endCrossDrawNum int, isLastest, needDealWithNumStr bool) (res []DltCrossTSN) {
 	i2Dlt := make(map[int]models.Dlt)
 	for i, dlt := range DxDlts {
 		i2Dlt[i] = dlt
@@ -2018,6 +2032,11 @@ func DltFrontSpDrawNumCrossDrawNumStat(spDrawNum string, crossDrawNumSli []int, 
 			curFrontHms = []string{curDlt.F1, curDlt.F2, curDlt.F3, curDlt.F4, curDlt.F5}
 			break
 		}
+	}
+
+	var crossDrawNumSli []int
+	for i := startCrossDrawNum; i <= endCrossDrawNum; i++ {
+		crossDrawNumSli = append(crossDrawNumSli, i)
 	}
 
 	var aDlt, eDlt []models.Dlt
@@ -2049,6 +2068,67 @@ func DltFrontSpDrawNumCrossDrawNumStat(spDrawNum string, crossDrawNumSli []int, 
 	return
 }
 
+func DltFrontSpDrawNumCrossDrawNumStatWithEqCount(spDrawNum string, startCrossDrawNum, endCrossDrawNum int, needDealWithNumStr bool, eqCount int) (res []DltCrossTSN) {
+	i2Dlt := make(map[int]models.Dlt)
+	for i, dlt := range DxDlts {
+		i2Dlt[i] = dlt
+	}
+
+	var curDlt, nextDlt models.Dlt
+	var curFrontHms, nextFrontHms []string
+	isWillNext := false
+	for _, dlt := range DxDlts {
+		if dlt.DrawNum == spDrawNum {
+			isWillNext = true
+			curDlt = dlt
+			curFrontHms = []string{curDlt.F1, curDlt.F2, curDlt.F3, curDlt.F4, curDlt.F5}
+			continue
+		}
+		if isWillNext {
+			if dlt.EquipmentCount == eqCount {
+				nextDlt = dlt
+				nextFrontHms = []string{nextDlt.F1, nextDlt.F2, nextDlt.F3, nextDlt.F4, nextDlt.F5}
+				break
+			}
+		}
+	}
+
+	var crossDrawNumSli []int
+	for i := startCrossDrawNum; i <= endCrossDrawNum; i++ {
+		crossDrawNumSli = append(crossDrawNumSli, i)
+	}
+
+	var aDlt, eDlt []models.Dlt
+	for _, crossDrawNum := range crossDrawNumSli {
+		aDlt, eDlt = nil, nil
+		aDlt = append([]models.Dlt{}, FindNextCommonEqNumDlt(curDlt.DrawNum, 0, crossDrawNum, true)...)
+		eDlt = append([]models.Dlt{}, FindNextCommonEqNumDlt(nextDlt.DrawNum, nextDlt.EquipmentCount, crossDrawNum, true)...)
+
+		aDltTimesSliNumStrSli := dealWaitStatDlt(aDlt, curFrontHms, needDealWithNumStr)
+		res = append(res, DltCrossTSN{
+			Cross:   crossDrawNum,
+			EqCount: 0,
+			Tsn:     aDltTimesSliNumStrSli,
+		})
+
+		eDltTimesSliNumStrSli := dealWaitStatDlt(eDlt, nextFrontHms, needDealWithNumStr)
+		res = append(res, DltCrossTSN{
+			Cross:   crossDrawNum,
+			EqCount: nextDlt.EquipmentCount,
+			Tsn:     eDltTimesSliNumStrSli,
+		})
+	}
+
+	return
+}
+
+// dealWaitStatDlt
+//
+//	@Description:
+//	@param waitStatDlts 待进行统计的大乐透数据
+//	@param curFrontHms 当前前区号码(字符串切片)
+//	@param needDealWithNumStr 是否需要处理(即计算) DltTimesSliNumStr 结构体中的 NumStr 字段的值
+//	@return dltTimesSliNumStrSli
 func dealWaitStatDlt(waitStatDlts []models.Dlt, curFrontHms []string, needDealWithNumStr bool) (dltTimesSliNumStrSli []DltTimesSliNumStr) {
 	// 统计 waitStatDlts 中的前区数据情况
 	typ2DltStatData := make(map[string]*DltStatData)
@@ -2072,7 +2152,7 @@ func dealWaitStatDlt(waitStatDlts []models.Dlt, curFrontHms []string, needDealWi
 		cs2FrontHmSli[dltStatData.Cs] = append(cs2FrontHmSli[dltStatData.Cs], typ)
 	}
 
-	// 次数/号码切片/对应当期的号码切片  的结构体切片, 用于后续处理
+	// 次数/号码切片/对应当期的号码切片 的结构体切片, 用于后续处理
 	for cs, frontHmSli := range cs2FrontHmSli {
 		dltTimesSliNumStrSli = append(dltTimesSliNumStrSli, DltTimesSliNumStr{
 			Times:  cs,
@@ -2096,7 +2176,7 @@ func dealWaitStatDlt(waitStatDlts []models.Dlt, curFrontHms []string, needDealWi
 		}
 	}
 
-	// 对 dltTimesSliNumStrSli , 先按照 NumStr 的个数进行降序排序, 再按照存放的 Times值的大小进行降序排序
+	// 对 dltTimesSliNumStrSli , 先按照 NumStr 的个数进行降序排序, 再按照存放的 Times 值的大小进行降序排序
 	sort.Slice(dltTimesSliNumStrSli, func(i, j int) bool {
 		return dltTimesSliNumStrSli[i].Times > dltTimesSliNumStrSli[j].Times
 	})

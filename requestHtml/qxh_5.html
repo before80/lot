@@ -862,7 +862,7 @@
      *
      * 依赖服务端注入数据：
      *   curT2MoniABCDEs, allHistoricalData, txHis, oeHis, qzhHis,
-     *   frontDhHis, backDhHis, backCombHis, eqHis, quShi2St, heatOptions
+     *   frontDhHis, backDhHis, backCombHis, quShi2St, heatOptions
      */
 
     const curT2MoniABCDEs = {
@@ -937,17 +937,6 @@
     {{end}}
     }
 
-    // 设备分布统计：key 为 "设备1" / "设备2" / "设备3"，内层 key 为期数
-    const eqHis = {
-    {{range $typeKey, $typeData := .EqHis}}
-    "{{$typeKey}}": {
-        {{range $groupKey, $numbers := $typeData}}
-        "{{$groupKey}}": {{$numbers}},
-        {{end}}
-    },
-    {{end}}
-    }
-
     const quShi2St = {
     {{range $typeKey, $typeData := .QuShi2St}}
     "{{$typeKey}}": {{$typeData}},
@@ -969,9 +958,6 @@
         "backCombExclude": "100",
     }
 
-
-    // 设备分布展示项（仅展示角标，不可勾选）
-    const eqOptions = ['eq1', 'eq2', 'eq3'];
 
     // 可选组合选项
     const combs = [
@@ -997,7 +983,7 @@
     // 热度选项
     // const heatOptions = [10,20,30,50,100,200,300,500,1000,1500,2000,2500,3500]
     const heatOptions = [
-        {{range .LastHisSlice}}
+    {{range .LastHisSlice}}
     {{.}},
     {{end}}
     ]
@@ -2018,42 +2004,6 @@
         // 生成复选框组
         // typ 的类型在 fetchStats 中
 
-        /**
-         * 设备分布：仅展示（外观接近组合复选框），不可勾选。
-         * 角标数字随 heatEqGroup 中「最近几期」单选变化。
-         */
-        /* ---- 设备分布展示（非复选） ---- */
-        function generateEqDisplayGroup(containerId, options) {
-            const container = document.getElementById(containerId);
-            const typ = containerId.replace('Group', '');
-            const qiShu = defaultLastQiShuObj[typ] || '5';
-            const newContainerId = typ;
-            container.innerHTML = '';
-
-            const statsData = fetchStats(qiShu, typ);
-
-            options.forEach(option => {
-                const newOption = option.replace(/[,\.-]/g, '').replace(/\s+/g, '');
-                const div = document.createElement('div');
-                // 视觉与组合项一致，但不可交互
-                div.className = 'checkbox-item cursor-default';
-                div.style.pointerEvents = 'none';
-
-                const badgeValue = statsData[option] || 0;
-                const badge = document.createElement('div');
-                badge.id = `stat_${newContainerId}_${newOption}`;
-                applyBadgeStyle(badge, badgeValue);
-                div.appendChild(badge);
-
-                const label = document.createElement('div');
-                label.className = 'checkbox-label';
-                label.textContent = option;
-                div.appendChild(label);
-
-                container.appendChild(div);
-            });
-        }
-
         /* ---- 通用复选框（组合/奇偶/前中后） ---- */
         function generateCheckboxGroup(containerId, options, defaultChecked = true) {
             const container = document.getElementById(containerId);
@@ -2180,13 +2130,6 @@
         /* ---- 从服务端注入的历史统计对象取角标数字 ---- */
         function fetchStats(qiShu, typ) {
             const stats = {};
-            // 设备分布（仅展示）
-            if (typ === "eq") {
-                eqOptions.forEach(option => {
-                    stats[option] = eqHis[option]?.[qiShu] || 0
-                })
-            }
-
             // 组合
             if (typ === "combs") {
                 combs.forEach(option => {
@@ -2995,9 +2938,8 @@
 
         /* ---- 初始化全部选项组 ---- */
         function initAllCheckboxGroups() {
-            // 0. 设备号分布（仅展示角标，不可勾选）
+            // 0. 设备号分布
             generateHeatOptions('eqGroup')
-            generateEqDisplayGroup('eqGroup', eqOptions);
 
             // 1. 组合
             generateHeatOptions('combsGroup')
@@ -3305,14 +3247,6 @@
                 const zyContainerId = radio.getAttribute('data-zy-id')
                 const newContainerId = zyContainerId.replace("Group", "")
                 if (this.checked) {
-                    // 设备分布
-                    if (typ === "eq") {
-                        eqOptions.forEach(option => {
-                            const key = option.replace(/[,\.-]/g, "").replace(/\s+/g, "");
-                            updateLabelValueAndClass(`stat_${newContainerId}_${key}`, eqHis[option]?.[qiShu] || 0)
-                        })
-                    }
-
                     if (typ === "combs") {
                         combs.forEach(option => {
                             updateLabelValueAndClass(`stat_${newContainerId}_${option}`, txHis[option][qiShu] || 0)

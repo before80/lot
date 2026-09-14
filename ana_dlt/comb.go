@@ -49,6 +49,13 @@ type DltExcelData struct {
 	NewAddCh7           int // 当期新增7重号数
 	DangQiTotalNewAddCh int // 当期总的新增重号数
 	LeiJiaCh            int // 累加重号数
+	WuFrontLh           int // 前区是否无连号
+	FrontLh             int // 前区连号情况
+	WuFbCh              int // 前后区是否无重号
+	FbCh                int // 前后区重号情况
+	WuTeShu             int // 前后区是否无特殊号
+	TeShuFrontJianGe    int // 前后区特殊号之前区是否存在3或4或5间隔号的情况
+	TeShuFbLianXu       int // 前后区特殊号之 前后区可以组成3或4或5或6或7连续号的情况
 	T71                 int
 	T72                 int
 	T73                 int
