@@ -56,6 +56,38 @@ func UpdateDlt1() {
 	time.Sleep(10 * time.Second)
 }
 
+// UpdateDlt2 从官网获取最近设备号为空的大乐透开奖数据并批量更新数据表
+func UpdateDlt2() {
+	// startTime := time.Now()
+	thatDlt := dbop.GetDltWhereEqCountEqualZero()
+	fmt.Printf("thatDlt = %#v\n", thatDlt)
+	ltDlt, err := dbop.GetDltWhereIdLtMax(thatDlt.ID)
+	if err != nil {
+		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("从数据库获取数据出现错误：%v\n", err), 3)
+		return
+	}
+
+	//db.DB.Last(&lastDlt)
+	lg.InfoToFileAndStdOut(fmt.Sprintf("当前数据库中equipment_coun> 0的最大的一条记录为 %v \n", ltDlt))
+
+	ldn := strconv.Itoa(time.Now().Year())[2:] + "156"
+
+	dlts, err := GetSomeDltFromWeb(ltDlt, ldn)
+	fmt.Printf("dlts = %#v\n", dlts)
+
+	if err != nil {
+		lg.ErrorToFileAndStdOutWithSleepSecond(fmt.Sprintf("从网页获取开奖数据出现错误：%v\n", err), 3)
+		return
+	}
+
+	for _, dlt := range dlts {
+		dbop.UpdateDlt(dlt)
+	}
+
+	lg.InfoToFileAndStdOut(fmt.Sprintf("已经处理完毕! \n等待2秒钟后自动关闭窗口\n"))
+	time.Sleep(2 * time.Second)
+}
+
 // UpdateDlt 接收命令行参数并从官网获取最新的大乐透开奖数据并批量更新数据表,并且会下载对应开奖数据的PDF文档
 func UpdateDlt(cmd *cobra.Command) {
 	var err error

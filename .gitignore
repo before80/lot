@@ -17,3 +17,4 @@ lot
 *.xlsx
 *.xls
 *.zip
+.DS_Store

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/before80/lot/ana_dlt"
+	"github.com/before80/lot/dlt"
 )
 
 func main() {
@@ -17,7 +17,9 @@ func main() {
 
 	// | ------ 以下只能在本地电脑执行, 服务器不能使用go-rod打开浏览器-----------|
 	// 从官网获取最新的大乐透开奖数据并批量更新数据表
-	//dlt.UpdateDlt1()
+	// 更新大于 11001期，但设备号为0的期数的相关数据，主要是一二等奖的追加注数以及设备号和开奖顺序号
+	// go build -o gl .
+	dlt.UpdateDlt2()
 	// | ------ 以上只能在本地电脑执行, 服务器不能使用go-rod打开浏览器-----------|
 
 	// 不预先执行模拟,再整理大乐透相关数据到Excel表中
@@ -28,11 +30,11 @@ func main() {
 
 	// 不预先执行模拟,再整理大乐透更多的相关数据到Excel表中
 	// go build -o dlt_excel_more_without_moni_new.exe .
-	//ana_dlt.DltMoreDataToExcel(false)
+	// 	ana_dlt.DltMoreDataToExcel(false)
 
 	// 预先执行模拟,再整理大乐透更多的相关数据到Excel表中
 	// go build -o dlt_excel_more_with_moni_new.exe .
-	ana_dlt.DltMoreDataToExcel(true)
+	// ana_dlt.DltMoreDataToExcel(true)
 
 	// 前区跨期数统计
 	//ana_dlt.DltFrontStatDataToExcel([]int{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}, "2_30", 0)
@@ -55,7 +57,7 @@ func main() {
 	//	81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100})
 
 	// go build -o dlt_excel_next_spDrawNum_front_stat.exe .
-	//ana_dlt.DltNextFrontStatDataToExcel(GetSpDrawNumString(), 2, 200, 50)
+	// ana_dlt.DltNextFrontStatDataToExcel(GetSpDrawNumString(), 2, 200, 50)
 
 	// 计算 某个模式下的某种规则, 与 指定 Tx 类型的前区号码的交集
 	//

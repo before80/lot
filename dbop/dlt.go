@@ -38,6 +38,17 @@ func InsertDltMoni(moni models.DltMoni) {
 	//}
 }
 
+func UpdateDlt(dlt models.Dlt) {
+	res := db.DB.Model(&models.Dlt{}).
+		Where("draw_num = ?", dlt.DrawNum).
+		Updates(models.Dlt{EquipmentCount: dlt.EquipmentCount, UnSortDrawResult: dlt.UnSortDrawResult,
+			DrawPdfUrl:    dlt.DrawPdfUrl,
+			StakeCount201: dlt.StakeCount201, StakeCount401: dlt.StakeCount401,
+			StakeAmount201: dlt.StakeAmount201, StakeAmount401: dlt.StakeAmount401, DataSrc: 0})
+	fmt.Printf("res = %#v\n", res)
+
+}
+
 func UpdateOrInsertDltMoni(moni models.DltMoni, groupNeedStr string) {
 	var newMoni models.DltMoni
 	var result *gorm.DB
@@ -122,6 +133,38 @@ func InsertDltBatch(dlts []models.Dlt, batchSize int) (insertedRow int, err erro
 func GetLastDlt() (lastDlt models.Dlt) {
 	db.DB.Last(&lastDlt)
 	return lastDlt
+}
+
+func GetDltWhereEqCountEqualZero() (dlt models.Dlt) {
+	var dlts []models.Dlt
+	var err error
+	if err = db.DB.Order("id desc").Where("equipment_count = ?", 0).Where("draw_num >= ?", "11001").Find(&dlts).Error; err != nil {
+		fmt.Printf("出现错误：%v", err)
+		return GetLastDlt()
+	}
+	var minId uint
+	// fmt.Printf("len dlts = %d\n", len(dlts))
+	// fmt.Printf("dlts = %#v\n", dlts)
+
+	for _, idlt := range dlts {
+		if idlt.DrawNum >= "11001" {
+			// fmt.Printf("2 iidlt=%#v\n\n", idlt)
+			if minId == 0 || minId > idlt.ID {
+				minId = idlt.ID
+				dlt = idlt
+			}
+		}
+	}
+
+	return dlt
+}
+
+func GetDltWhereIdLtMax(id uint) (dlt models.Dlt, err error) {
+	if err = db.DB.Order("id desc").Where("id < ?", id).First(&dlt).Error; err != nil {
+		return
+	}
+
+	return
 }
 
 // ReadAllDlt 读取所有大乐透开奖数据
